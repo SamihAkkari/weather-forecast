@@ -1,7 +1,6 @@
 
 import logging
 import requests
-from src.api.api import MeteoFranceAPI
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +60,7 @@ class Client(object):
         self.session = requests.Session()
         self.session.headers.update(api.accept_header)
 
-        logger.info("Client initialized for API: %s with endpoint: %s", api.name, api.get_full_url())
+        logger.info("Client initialized for API: %s with endpoint: %s", api.name, api.full_url)
         self.token_manager = TokenManager(self, api)
         logger.info("TokenManager initialized with API: %s", api.name) 
 
@@ -70,7 +69,7 @@ class Client(object):
         logger.info("Session headers updated with new token")
 
     def request(self, params):
-        url = self.api.get_full_url()
+        url = self.api.full_url
         logger.info("Sending request to %s with params %s", url, params)
 
         if not self.token_manager.there_is_a_token():

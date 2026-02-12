@@ -1,6 +1,6 @@
 import os
 os.chdir('c:\\Users\\sakkari\\Code\\weather-forecast')
-from src.api.api import MeteoFranceAPI
+from src.api.api_factory import APIFactory
 from src.client.client import Client
 import logging
 from logging.handlers import RotatingFileHandler
@@ -19,6 +19,8 @@ logging.basicConfig(
         handler,
     ],
 )
-api = MeteoFranceAPI(selected_endpoint_name='observations')
+
+api = APIFactory.create("meteofrance_observations")
 client = Client(api)
 response = client.request(params={'id_station': '77113002', 'format': 'json'})
+
