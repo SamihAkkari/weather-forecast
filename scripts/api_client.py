@@ -20,7 +20,13 @@ logging.basicConfig(
     ],
 )
 
-api = APIFactory.create("meteofrance_observations")
+api = APIFactory.create("meteofrance_observations", "stations_infrahoraire-6m")
 client = Client(api)
-response = client.request(params={'id_station': '77113002', 'format': 'json'})
+# response = client.request(params={'id_station': '77113002', 'format': 'json'})
+response = client.request(params={'date': '2026-02-15T02:12:00Z', 'format':'json'})
 
+data = response.json()
+
+response.raise_for_status()
+    
+content_type = response.headers.get('Content-Type', '')

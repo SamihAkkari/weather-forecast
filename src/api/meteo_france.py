@@ -36,13 +36,26 @@ class MeteoFranceBase:
 
 class MeteoFranceObservations(MeteoFranceBase):
     """MétéoFrance Observations API"""
+    endpoints = {
+        "liste-stations": Config.OBSERVATIONS_LISTESTATION_ENDPOINT,
+        "infrahoraire-6m": Config.OBSERVATIONS_INFRAHORAIRE6m_ENDPOINT,
+        "horaire": Config.OBSERVATIONS_HORAIRE_ENDPOINT,
+        "stations_infrahoraire-6m": Config.OBSERVATIONS_STATIONS_INFRAHORAIRE6m_ENDPOINT
+    }
+
     def __init__(self,
-                 app_id = Config.METEOFRANCE_APP_ID,
-                 endpoint_path = Config.OBSERVATIONS_ENDPOINT):
+                 service,
+                 app_id = Config.METEOFRANCE_APP_ID):
         super().__init__()
         """Return the endpoint path"""
         self.app_id = app_id
-        self.endpoint_path = endpoint_path
+        self.service = service
+        if service not in self.endpoints:
+            available = ', '.join(self.endpoints.keys())
+            raise ValueError(
+                f"Unknown service '{service}'. Available: {available}"
+            )
+        self.endpoint_path = self.endpoints[service]
 
 class MeteoFranceForecast(MeteoFranceBase):
     def __init__(self):

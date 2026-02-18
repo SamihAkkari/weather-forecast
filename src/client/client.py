@@ -69,6 +69,11 @@ class Client(object):
         logger.info("Session headers updated with new token")
 
     def request(self, params):
+        """
+        params: Dict
+        this dictionary should contain two keys necessary for the service API
+        """
+        
         url = self.api.full_url
         logger.info("Sending request to %s with params %s", url, params)
 
@@ -76,11 +81,21 @@ class Client(object):
             logger.info("No token found, generating a new one")
             self.token_manager.generate_token()
             self.update_headers_with_token()
-        response = self.session.request('GET', url, params=params)
-        if not self.token_manager.is_token_valid(response):
+        self.response = self.session.request('GET', url, params=params)
+        if not self.token_manager.is_token_valid(self.response):
             logger.warning("Token expired, regenerating token and retrying request")
             self.token_manager.generate_token()
             self.update_headers_with_token()
-            response = self.session.request('GET', url, params=params)
-        logger.info("Request completed with status code %s", response.status_code)
-        return response
+            self.response = self.session.request('GET', url, params=params)
+        logger.info("Request completed with status code %s", self.response.status_code)
+        return self.response
+    
+    def get_json(self, params):
+        """Returns JSON response as dict"""
+        if 'format' not in params.keys():
+            params['format'] = 'json'
+        elif params['format'] != 'json':
+            raise ValueError ("The format requested is not available for get_json method")
+        response = self.request(params)
+        response.raise_for_status()
+        return response.json()

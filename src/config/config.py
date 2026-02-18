@@ -1,14 +1,11 @@
-"""
-Configuration - ONLY holds configuration values
-No business logic, no complex methods
-"""
-
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 
 
-env_path = Path(__file__).parent.parent / '.env'
+env_path = Path.cwd() / '.env'
+
+# env_path = Path(__file__).parent.parent / '.env'
 load_dotenv(env_path)
 
 
@@ -29,23 +26,29 @@ class Config:
     TOKEN_HEADERS = {'Authorization': 'Basic ' + METEOFRANCE_APP_ID}
     
     # Endpoints
-    OBSERVATIONS_ENDPOINT = 'DPPaquetObs/v1/paquet/infrahoraire-6m'
+    OBSERVATIONS_LISTESTATION_ENDPOINT = 'DPPaquetObs/v1/liste-stations'
+    OBSERVATIONS_INFRAHORAIRE6m_ENDPOINT = 'DPPaquetObs/v1/paquet/infrahoraire-6m'
+    OBSERVATIONS_HORAIRE_ENDPOINT = 'DPPaquetObs/v1/paquet/horaire'
+    OBSERVATIONS_STATIONS_INFRAHORAIRE6m_ENDPOINT = 'DPPaquetObs/v1/paquet/stations/infrahoraire-6m'
+    
+    API_INFRAHORAIRE6m_TIME_STEPS = 6 # in minutes (time steps of the observations )
+    
     FORECAST_ENDPOINT = 'DPPrevision-Decoupage/v1/previsions'
     RADAR_ENDPOINT = 'DPRadar/v1/radars'
 
     
-    
     # Database Configuration
-    # DB_HOST = os.getenv('DB_HOST', 'localhost')
-    # DB_PORT = int(os.getenv('DB_PORT', '5432'))
-    # DB_NAME = os.getenv('DB_NAME')
-    # DB_USER = os.getenv('DB_USER')
-    # DB_PASSWORD = os.getenv('DB_PASSWORD')
+    POSTGRES_HOST = os.getenv('POSTGRES_HOST', 'localhost')
+    POSTGRES_PORT = os.getenv('POSTGRES_PORT', '5432')
+    POSTGRES_DB = os.getenv('POSTGRES_DB')
+    POSTGRES_USER = os.getenv('POSTGRES_USER')
+    POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
+
+    CORE_SCHEMA = 'core'
+    BRONZE_SCHEMA = 'bronze'
+    SILVER_SCHEMA = 'silver'
     
-    # # Cache Configuration
-    # CACHE_TYPE = os.getenv('CACHE_TYPE', 'file')
-    # REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
-    # REDIS_PORT = int(os.getenv('REDIS_PORT', '6379'))
-    
-    # # Logging
-    # LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
+    STATIONS_TABLE_NAME = 'stations'
+    Data_TABLE_NAME = 'observations'
+
+    API_FORMAT = 'json' 

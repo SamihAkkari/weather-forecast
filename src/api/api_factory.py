@@ -1,9 +1,4 @@
-"""
-API Catalog - Maps API names to their configurations
-Separate from Config because this is API metadata, not environment config
-"""
-
-from src.api.meteo_france import MeteoFranceObservations, MeteoFranceForecast, MeteoFranceRadar 
+from src.api.meteo_france import MeteoFranceObservations
 
 # Factory pattern for creating API instances
 class APIFactory:
@@ -11,8 +6,8 @@ class APIFactory:
     
     _registry = {
         'meteofrance_observations': MeteoFranceObservations,
-        'meteofrance_forecast': MeteoFranceForecast,
-        'meteofrance_radar': MeteoFranceRadar,
+        # 'meteofrance_forecast': MeteoFranceForecast,
+        # 'meteofrance_radar': MeteoFranceRadar,
     }
     
     @classmethod
@@ -21,7 +16,7 @@ class APIFactory:
         cls._registry[name] = api_class
     
     @classmethod
-    def create(cls, name: str, **kwargs):
+    def create(cls, name: str, service:str, **kwargs):
         """Create an API instance by name"""
         if name not in cls._registry:
             available = ', '.join(cls._registry.keys())
@@ -30,7 +25,7 @@ class APIFactory:
             )
         
         api_class = cls._registry[name]
-        return api_class(**kwargs)
+        return api_class(service, **kwargs)
     
     @classmethod
     def list_available(cls) -> list[str]:
