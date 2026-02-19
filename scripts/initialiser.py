@@ -104,6 +104,6 @@ def make_observations_table_without_data(SCHEMA, TABLE):
 
 if __name__ == "__main__":
     make_stations_table("data/liste-stations-obs-metropole-om_completed.csv", 
-                        Config.CORE_SCHEMA, 
+                        Config.BRONZE_SCHEMA, 
                         Config.STATIONS_TABLE_NAME)
     make_observations_table_without_data(Config.BRONZE_SCHEMA, Config.Data_TABLE_NAME)

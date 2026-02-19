@@ -44,7 +44,6 @@ class Config:
     POSTGRES_USER = os.getenv('POSTGRES_USER')
     POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
 
-    CORE_SCHEMA = 'core'
     BRONZE_SCHEMA = 'bronze'
     SILVER_SCHEMA = 'silver'
     

@@ -27,4 +27,4 @@ logging.basicConfig(
 api = APIFactory.create("meteofrance_observations", "stations_infrahoraire-6m")
 client = Client(api)
 Ingestor = RealTimeIngestor(client)
-Ingestor.run()
+Ingestor.run_loop()
