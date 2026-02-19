@@ -77,17 +77,20 @@ class RealTimeIngestor:
         except Exception as e:
             logger.error(f"Ingestion error: {e}")
 
-    def run(self):
+    def run_once(self):
+        """This can be used later with advanced schedulers"""
+        date = TimeManager.last_interval_iso()
+        logger.info(f"Fetching data for the date: {date}")
+        data = self.fetch(date)
+        logger.info(f"Ingesting the data obtained with {len(data)} stations")
+        self.ingest(data)
+        
+    def run_loop(self):
         """Start continuous ingestion loop"""
         self.running = True
         logger.info("Real-time ingestor started")
-
         while self.running:
-            date = TimeManager.last_interval_iso()
-            logger.info(f"Fetching data for the date: {date}")
-            data = self.fetch(date)
-            logger.info(f"Ingesting the data obtained with {len(data)} stations")
-            self.ingest(data)
+            self.run_once()
             time.sleep(self.interval)
 
     def stop(self):
