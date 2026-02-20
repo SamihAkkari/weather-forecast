@@ -102,8 +102,50 @@ def make_observations_table_without_data(SCHEMA, TABLE):
     cur.close()
     conn.close()
 
+
+def make_silver_observation_table_without_data(SCHEMA, TABLE):
+    make_schema_sql = f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}"
+    make_observations_table = f"""
+    CREATE TABLE IF NOT EXISTS {SCHEMA}.{TABLE} (
+    	station_id TEXT,
+        me_step_fr timestamptz,
+        mperature_celsius Double precision, 
+        midity_percentage Double precision, 
+        nd_direction_degree Double precision, 
+        nd_speed_m_per_s Double precision, 
+        ecipitation_mm Double precision, 
+        obal_radiation_J_m2 Double precision,
+        ansfer_time_fr timestamptz
+    );
+    """
+
+        # ---- Step 2: connect to Postgres
+    conn = psycopg2.connect(
+        dbname = Config.POSTGRES_DB,
+        user = Config.POSTGRES_USER,
+        password = Config.POSTGRES_PASSWORD,
+        host = "localhost",
+        port = Config.POSTGRES_PORT
+    )
+
+    cur = conn.cursor()
+    # ---- Step 3: create schema if not exists
+    cur.execute(make_schema_sql)
+
+    # ---- Step 4: create table inside schema
+    cur.execute(make_observations_table)
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+
+
 if __name__ == "__main__":
     make_stations_table("data/liste-stations-obs-metropole-om_completed.csv", 
                         Config.BRONZE_SCHEMA, 
                         Config.STATIONS_TABLE_NAME)
     make_observations_table_without_data(Config.BRONZE_SCHEMA, Config.Data_TABLE_NAME)
+    make_silver_observation_table_without_data(Config.SILVER_SCHEMA, Config.Data_TABLE_NAME)
+    
