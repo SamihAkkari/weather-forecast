@@ -1,0 +1,30 @@
+
+version: 2
+
+models:
+  - name: observations
+    description: "A model that transforms newly ingested data and appends them into a new clean table in silver"
+    columns:
+      - name: station_id
+        description: "The id of the station ddnnnpp with dd = department number, nnn = commune number (ddnnn = code Insee), pp = site identification"
+        tests:
+          - not_null
+      - name: time_step_fr
+        description: "Date and hour/minute of when data was taken (it is 6 minutes increments)"
+      - name: temperature_celsius
+        description: ""
+      - name: humidity_percentage
+        description: "Relative humidity in %"
+      - name: wind_direction_degree
+        description: ""
+      - name: wind_speed_m_per_s
+        description: "Wind speed at 10m above ground in m/s"
+      - name: precipitation_mm
+        description: ""
+      - name: global_radiation_J_m2
+        description: ""
+      - name: transfer_time_fr
+        description: "The time at whcih the data was transformed from bronze to silver"
+
+  - name: stations
+    description: "A model that transfroms the stations table in bronze into silver with some cleansing"

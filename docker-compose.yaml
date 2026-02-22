@@ -31,6 +31,19 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
+  dbt:
+    image: ghcr.io/dbt-labs/dbt-postgres:1.7.9
+    container_name: dbt_runner
+    env_file: .env
+    ports:
+    - "8081:8080"   # <--- expose container port to host
+    volumes:
+      - ./dbt:/usr/app/dbt
+    working_dir: /usr/app/dbt
+    environment:
+      DBT_PROFILES_DIR: /usr/app/dbt
+    entrypoint: ["tail", "-f", "/dev/null"]
+
 volumes:
   db_data:
   pgadmin_data:

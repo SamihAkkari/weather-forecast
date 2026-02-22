@@ -108,14 +108,14 @@ def make_silver_observation_table_without_data(SCHEMA, TABLE):
     make_observations_table = f"""
     CREATE TABLE IF NOT EXISTS {SCHEMA}.{TABLE} (
     	station_id TEXT,
-        me_step_fr timestamptz,
-        mperature_celsius Double precision, 
-        midity_percentage Double precision, 
-        nd_direction_degree Double precision, 
-        nd_speed_m_per_s Double precision, 
-        ecipitation_mm Double precision, 
-        obal_radiation_J_m2 Double precision,
-        ansfer_time_fr timestamptz
+        time_step_fr timestamptz,
+        temperature_celsius Double precision, 
+        humidity_percentage Double precision, 
+        wind_direction_degree Double precision, 
+        wind_speed_m_per_s Double precision, 
+        precipitation_mm Double precision, 
+        global_radiation_J_m2 Double precision,
+        transfer_time_fr timestamptz
     );
     """
 
