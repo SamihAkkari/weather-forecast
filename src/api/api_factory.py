@@ -1,4 +1,5 @@
 from src.api.meteo_france import MeteoFranceObservations
+from src.api.meteo_france import MeteoFranceForecastArome
 
 # Factory pattern for creating API instances
 class APIFactory:
@@ -6,7 +7,7 @@ class APIFactory:
     
     _registry = {
         'meteofrance_observations': MeteoFranceObservations,
-        # 'meteofrance_forecast': MeteoFranceForecast,
+        'meteofrance_forecast_arome': MeteoFranceForecastArome,
         # 'meteofrance_radar': MeteoFranceRadar,
     }
     

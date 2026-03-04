@@ -26,15 +26,15 @@ class Config:
     TOKEN_HEADERS = {'Authorization': 'Basic ' + METEOFRANCE_APP_ID}
     
     # Endpoints
-    OBSERVATIONS_LISTESTATION_ENDPOINT = 'DPPaquetObs/v1/liste-stations'
-    OBSERVATIONS_INFRAHORAIRE6m_ENDPOINT = 'DPPaquetObs/v1/paquet/infrahoraire-6m'
-    OBSERVATIONS_HORAIRE_ENDPOINT = 'DPPaquetObs/v1/paquet/horaire'
-    OBSERVATIONS_STATIONS_INFRAHORAIRE6m_ENDPOINT = 'DPPaquetObs/v1/paquet/stations/infrahoraire-6m'
+    OBSERVATIONS_LISTESTATION_ENDPOINT = 'public/DPPaquetObs/v1/liste-stations'
+    OBSERVATIONS_INFRAHORAIRE6m_ENDPOINT = 'public/DPPaquetObs/v1/paquet/infrahoraire-6m'
+    OBSERVATIONS_HORAIRE_ENDPOINT = 'public/DPPaquetObs/v1/paquet/horaire'
+    OBSERVATIONS_STATIONS_INFRAHORAIRE6m_ENDPOINT = 'public/DPPaquetObs/v1/paquet/stations/infrahoraire-6m'
     
     API_INFRAHORAIRE6m_TIME_STEPS = 6 # in minutes (time steps of the observations )
     
-    FORECAST_ENDPOINT = 'DPPrevision-Decoupage/v1/previsions'
-    RADAR_ENDPOINT = 'DPRadar/v1/radars'
+    FORECAST_AROME_PACKAGE_0025SP1_ENDPOINT = 'previnum/DPPaquetAROME/v1/models/AROME/grids/0.025/packages/SP1/productARO' #SP1 data with 0.025° resolution (2.5km resolution)
+    # RADAR_ENDPOINT = 'DPRadar/v1/radars'
 
     
     # Database Configuration

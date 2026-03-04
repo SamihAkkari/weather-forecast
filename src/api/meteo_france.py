@@ -57,9 +57,24 @@ class MeteoFranceObservations(MeteoFranceBase):
             )
         self.endpoint_path = self.endpoints[service]
 
-class MeteoFranceForecast(MeteoFranceBase):
-    def __init__(self):
-        raise NotImplementedError()
+class MeteoFranceForecastArome(MeteoFranceBase):
+    """MétéoFrance AROME package API"""
+    endpoints = {
+        "0025SP1": Config.FORECAST_AROME_PACKAGE_0025SP1_ENDPOINT
+    }
+    def __init__(self,
+                 service,
+                 app_id = Config.METEOFRANCE_APP_ID):
+        super().__init__()
+        """Return the endpoint path"""
+        self.app_id = app_id
+        self.service = service
+        if service not in self.endpoints:
+            available = ', '.join(self.endpoints.keys())
+            raise ValueError(
+                f"Unknown service '{service}'. Available: {available}"
+            )
+        self.endpoint_path = self.endpoints[service]
 
 class MeteoFranceRadar(MeteoFranceBase):
     """MétéoFrance Observations API"""
