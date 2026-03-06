@@ -1,7 +1,7 @@
 import os
 os.chdir('c:\\Users\\sakkari\\Code\\weather-forecast')
 from src.api.api_factory import APIFactory
-from src.client.client import Client
+from client.clients import Client
 import logging
 from logging.handlers import RotatingFileHandler
 import cfgrib

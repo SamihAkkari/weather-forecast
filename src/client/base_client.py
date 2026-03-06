@@ -52,8 +52,7 @@ class TokenManager:
     def token_headers(self):
         return {'Authorization': 'Bearer ' + self.token}
 
-
-class Client(object):
+class BaseClient(object):
 
     def __init__(self, api):
         self.api = api
@@ -89,13 +88,3 @@ class Client(object):
             self.response = self.session.request('GET', url, params=params)
         logger.info("Request completed with status code %s", self.response.status_code)
         return self.response
-    
-    def get_json(self, params):
-        """Returns JSON response as dict"""
-        if 'format' not in params.keys():
-            params['format'] = 'json'
-        elif params['format'] != 'json':
-            raise ValueError ("The format requested is not available for get_json method")
-        response = self.request(params)
-        response.raise_for_status()
-        return response.json()

@@ -2,7 +2,7 @@
 import os
 os.chdir('c:\\Users\\sakkari\\Code\\weather-forecast')
 from src.api.api_factory import APIFactory
-from src.client.client import Client
+from client.clients import Client
 from src.ingestion.ingestor import RealTimeIngestor
 
 import logging
@@ -36,7 +36,7 @@ Ingestor.run_loop()
 import os
 os.chdir('c:\\Users\\sakkari\\Code\\weather-forecast')
 from src.api.api_factory import APIFactory
-from src.client.client import Client
+from src.client.clients import ForecastAromeClient
 import xarray as xr
 import cfgrib
 
@@ -59,30 +59,24 @@ logging.basicConfig(
     force = True
 )
 
-api= APIFactory.create("meteofrance_forecast_arome", "0025SP1")
-client = Client(api)
 
+
+## 2. download_grib(url, tmp_path)
+api= APIFactory.create("meteofrance_forecast_arome", "0025SP1")
+client = ForecastAromeClient(api)
 params = {
     "referencetime": "2026-03-05T15:00:00Z",
     "time": "07H12H",
     "format": "grib2"
 }
+client.load_data_into_grib(params=params)
 
-## 2. get_active_stations()
+
+## 3. get_active_stations()
 from src.data.repository import DatabaseRepository
 stations = DatabaseRepository.get_stations()
 
-## 3. download_grib(url, tmp_path)
-api = APIFactory.create("meteofrance_forecast_arome", "0025SP1")
-client = Client(api)
-params = {
-    "referencetime": "2026-03-05T15:00:00Z",
-    "time": "07H12H",
-    "format": "grib2"
-}
-response = client.request(params=params)
-response.raise_for_status()
-open("file.grib2", "wb").write(response.content)
+
 
 
 ## 4. open_and_group_datasets(tmp_path)

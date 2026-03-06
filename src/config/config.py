@@ -52,3 +52,5 @@ class Config:
     FORECAST_TABLE_NAME = 'forecast'
 
     API_FORMAT = 'json' 
+
+    TEMPORARY_GRIB_PATH = 'data/temp/file.grib2'
