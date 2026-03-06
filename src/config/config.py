@@ -49,5 +49,6 @@ class Config:
     
     STATIONS_TABLE_NAME = 'stations'
     Data_TABLE_NAME = 'observations'
+    FORECAST_TABLE_NAME = 'forecast'
 
     API_FORMAT = 'json' 

@@ -139,6 +139,43 @@ def make_silver_observation_table_without_data(SCHEMA, TABLE):
     cur.close()
     conn.close()
 
+def make_bronze_forecast_table_without_data(SCHEMA, TABLE):
+    make_schema_sql = f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}"
+    make_forecast_table = f"""
+    CREATE TABLE IF NOT EXISTS {SCHEMA}.{TABLE} (
+    	station_id BIGINT,
+      run_time   timestamptz,
+      valid_time timestamptz,
+      t2m Double precision,
+      r2 Double precision,
+      si10 Double precision,
+      wdir10 Double precision,
+      ssrd Double precision,
+      tp Double precision,
+      ingestion_time timestamptz
+    );
+    """
+
+        # ---- Step 2: connect to Postgres
+    conn = psycopg2.connect(
+        dbname = Config.POSTGRES_DB,
+        user = Config.POSTGRES_USER,
+        password = Config.POSTGRES_PASSWORD,
+        host = "localhost",
+        port = Config.POSTGRES_PORT
+    )
+
+    cur = conn.cursor()
+    # ---- Step 3: create schema if not exists
+    cur.execute(make_schema_sql)
+
+    # ---- Step 4: create table inside schema
+    cur.execute( make_forecast_table)
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
 
 
 
@@ -148,4 +185,5 @@ if __name__ == "__main__":
                         Config.STATIONS_TABLE_NAME)
     make_observations_table_without_data(Config.BRONZE_SCHEMA, Config.Data_TABLE_NAME)
     make_silver_observation_table_without_data(Config.SILVER_SCHEMA, Config.Data_TABLE_NAME)
+    make_bronze_forecast_table_without_data(Config.BRONZE_SCHEMA, Config.FORECAST_TABLE_NAME)
     
