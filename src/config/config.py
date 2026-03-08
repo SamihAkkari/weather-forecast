@@ -54,3 +54,6 @@ class Config:
     API_FORMAT = 'json' 
 
     TEMPORARY_GRIB_PATH = 'data/temp/file.grib2'
+
+    AROME_FORECAST_UPDATE_TIMES = ["00:00:00", "03:00:00", "06:00:00", "09:00:00", "12:00:00", "15:00:00", "18:00:00", "21:00:00"]
+    AROME_FORECAST_UPDATE_FREQUENCY_HOURS = 5 # hours

@@ -1,6 +1,8 @@
 
 import logging
 from src.config.config import Config
+from src.data.models import BronzeForecastRecords, BronzeObservationRecords, BronzeStationRecords
+from src.data.db import DatabaseConnection
 
 logger = logging.getLogger(__name__)
 
@@ -9,63 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseRepository:
-    
-    # Observations table columns in order (for bulk inserts)
-
-    OBSERVATIONS_COLUMNS = [
-        'lat', 
-        'lon', 
-        'geo_id_insee', 
-        'reference_time', 
-        'insert_time', 
-        'validity_time', 
-        't', 
-        'td',
-        'u',
-        'dd',
-        'ff',
-        'dxi10',
-        'fxi10',
-        'rr_per',
-        't_10',
-        't_20',
-        't_50',
-        't_100',
-        'vv',
-        'etat_sol',
-        'sss',
-        'insolh',
-        'ray_glo01',
-        'pres',
-        'pmer'
-    ]
-
-    # Pre-built SQL for batch inserts
-    OBSERVATIONS_INSERT_SQL = f"""
-        INSERT INTO {Config.BRONZE_SCHEMA}.{Config.Data_TABLE_NAME} 
-        ({', '.join(OBSERVATIONS_COLUMNS)}) 
-        VALUES ({', '.join(['%s'] * len(OBSERVATIONS_COLUMNS))})
-    """
-    
-
-    FORECAST_COLUMNS = [
-    	'station_id',
-      'run_time',
-      'valid_time',
-      't2m',
-      'r2',
-      'si10',
-      'wdir10',
-      'ssrd',
-      'tp',
-      'ingestion_time'
-    ]
-
-    FORECAST_INSERT_SQL = f"""
-        INSERT INTO {Config.BRONZE_SCHEMA}.{Config.FORECAST_TABLE_NAME}
-        ({', '.join(FORECAST_COLUMNS)})
-        VALUES ({', '.join(['%s'] * len(FORECAST_COLUMNS))})
-    """
 
     # FORECAST_RUN_SQL = """
     #     INSERT INTO forecast_runs (model, run_time, status, n_rows)
@@ -97,35 +42,65 @@ class DatabaseRepository:
     # """
 
     @staticmethod
-    def ingest(data):
+    def _build_insert_sql(model_cls, table: str, conflict_columns: list[str] = None) -> str:
+        cols        = model_cls.columns()
+        placeholders = ', '.join(['%s'] * len(cols))
+        col_names    = ', '.join(cols)
+
+        sql = f"""
+            INSERT INTO {table} ({col_names})
+            VALUES ({placeholders})
+        """
+
+        # if conflict_columns:
+        #     updates = ', '.join(
+        #         f"{c} = EXCLUDED.{c}"
+        #         for c in cols
+        #         if c not in conflict_columns
+        #     )
+        #     conflict = ', '.join(conflict_columns)
+        #     sql += f"ON CONFLICT ({conflict}) DO UPDATE SET {updates}"
+
+        return sql
+    
+    @staticmethod
+    def _insert(
+        records        : list,
+        table          : str,
+        conflict_cols  : list[str] | None = None
+    ):
+        if not records:
+            logger.warning(f"No records to insert into {table}")
+            return
+
+        sql = DatabaseRepository._build_insert_sql(
+            type(records[0]),
+            table=table,
+            conflict_columns=conflict_cols
+        )
+
         try:
             with DatabaseConnection() as conn:
                 with conn.cursor() as cur:
-                    cur = conn.cursor()
-                    # Use the pre-built SQL statement
-                    rows = [[row[col] for col in DatabaseRepository.OBSERVATIONS_COLUMNS] for row in data]
-                    cur.executemany(DatabaseRepository.OBSERVATIONS_INSERT_SQL, rows)               
-                    logger.info(f"Ingested {len(data)} observations")
+                    cur.executemany(sql, [r.values() for r in records])
+                    logger.info(f"Inserted {len(records)} rows into {table}")
         except Exception as e:
-            logger.error(f"Error saving observation: {e}")
+            logger.error(f"Error inserting into {table}: {e}")
             raise
-
 
     @staticmethod
-    def ingest_forecasts(data: list[dict]):
-        """Mirrors your existing ingest() pattern exactly."""
-        try:
-            with DatabaseConnection() as conn:
-                with conn.cursor() as cur:
-                    rows = [
-                        [row[col] for col in DatabaseRepository.FORECAST_COLUMNS]
-                        for row in data
-                    ]
-                    cur.executemany(DatabaseRepository.FORECAST_INSERT_SQL, rows)
-                    logger.info(f"Upserted {len(rows)} forecast rows")
-        except Exception as e:
-            logger.error(f"Error saving forecasts: {e}")
-            raise
+    def insert_observations(records: list[BronzeObservationRecords]):
+        DatabaseRepository._insert(
+            records,
+            table=f"{Config.BRONZE_SCHEMA}.{Config.OBSERVATIONS_TABLE_NAME}"
+        )
+
+    @staticmethod
+    def insert_forecasts(records: list[BronzeForecastRecords]):
+        DatabaseRepository._insert(
+            records,
+            table=f"{Config.BRONZE_SCHEMA}.{Config.FORECAST_TABLE_NAME}"
+        )
 
 
     @staticmethod
@@ -170,41 +145,61 @@ class DatabaseRepository:
         except Exception as e:
             logger.error(f"Error checking if date {date} is already ingested: {e}")
 
-    # @staticmethod
-    # def is_run_already_ingested_forecast(model: str, run_time) -> bool:
-    #     """Mirrors your _this_date_is_already_ingested() pattern."""
-    #     try:
-    #         with DatabaseConnection() as conn:
-    #             with conn.cursor() as cur:
-    #                 cur.execute("""
-    #                     SELECT 1 FROM forecast_runs
-    #                     WHERE model = %s
-    #                     AND run_time = %s
-    #                     AND status = 'success'
-    #                     LIMIT 1
-    #                 """, (model, run_time))
-    #                 return cur.fetchone() is not None
-    #     except Exception as e:
-    #         logger.error(f"Error checking forecast run: {e}")
-    #         raise
-
-
     @staticmethod
-    def get_stations() -> list[dict]:
-        """Fetch active stations — used by forecast extractor."""
+    def forecast_run_already_ingested(reference_time) -> bool:
+        """Mirrors your _this_date_is_already_ingested() pattern."""
         try:
             with DatabaseConnection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(f"""
-                        SELECT station_id, latitude, longitude
-                        FROM  {Config.BRONZE_SCHEMA}.{Config.STATIONS_TABLE_NAME}
+                        SELECT 1 
+                        FROM {Config.BRONZE_SCHEMA}.{Config.FORECAST_TABLE_NAME}
+                        WHERE run_time = %s
+                        LIMIT 1
+                    """, (reference_time,))
+                    return cur.fetchone() is not None
+        except Exception as e:
+            logger.error(f"Error checking forecast run: {e}")
+            raise
+
+
+    @staticmethod
+    def get_stations() -> list[BronzeStationRecords]:
+        cols = ', '.join(BronzeStationRecords.columns()) 
+        try:
+            with DatabaseConnection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(f"""
+                        SELECT {cols}
+                        FROM {Config.BRONZE_SCHEMA}.{Config.STATIONS_TABLE_NAME}
                         ORDER BY station_id
                     """)
-                    cols = [desc[0] for desc in cur.description]
-                    return [dict(zip(cols, row)) for row in cur.fetchall()]
+                    return [
+                        BronzeStationRecords(*row)   
+                        for row in cur.fetchall()
+                    ]
         except Exception as e:
             logger.error(f"Error fetching stations: {e}")
             raise
+
+
+
+    # @staticmethod
+    # def get_stations() -> list[dict]:
+    #     """Fetch active stations — used by forecast extractor."""
+    #     try:
+    #         with DatabaseConnection() as conn:
+    #             with conn.cursor() as cur:
+    #                 cur.execute(f"""
+    #                     SELECT station_id, latitude, longitude
+    #                     FROM  {Config.BRONZE_SCHEMA}.{Config.STATIONS_TABLE_NAME}
+    #                     ORDER BY station_id
+    #                 """)
+    #                 cols = [desc[0] for desc in cur.description]
+    #                 return [dict(zip(cols, row)) for row in cur.fetchall()]
+    #     except Exception as e:
+    #         logger.error(f"Error fetching stations: {e}")
+    #         raise
     
     # @staticmethod
     # def mark_forecast_run(model: str, run_time, status: str, n_rows: int = 0):

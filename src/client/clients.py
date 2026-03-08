@@ -23,7 +23,7 @@ class ForecastAromeClient(BaseClient):
     def __init__(self, api):
         super().__init__(api)
     
-    def load_data_into_grib(self, params):
+    def fetch_data(self, params):
         
         if 'format' not in params.keys():
             params['format'] = 'grib2'
@@ -40,11 +40,13 @@ class ForecastAromeClient(BaseClient):
             raise ValueError ("The time parameter is required for get_grib method")
 
         response = self.request(params = params)
-        response.raise_for_status()
         if response.status_code == 200:
             logger.info("GRIB data fetched successfully")
+            return response.content
+        elif response.status_code == 404:
+            logger.info("GRIB data not found for the given parameters")
+            return None
         else:
             logger.error(f"Error fetching GRIB data: {response.status_code}")
             raise Exception(f"Error fetching GRIB data: {response.status_code}")
-        open(Config.TEMPORARY_GRIB_PATH, "wb").write(response.content)
         
