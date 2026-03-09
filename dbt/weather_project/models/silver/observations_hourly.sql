@@ -10,7 +10,7 @@ WITH last_silver AS (
 new_times AS (
     SELECT DISTINCT
         validity_time::timestamptz AT TIME ZONE 'Europe/Paris' AS time_step_fr
-    FROM {{ source('bronze', 'observations') }} b
+    FROM {{ source('bronze', 'observations_hourly') }} b
     CROSS JOIN last_silver l
     WHERE validity_time::timestamptz AT TIME ZONE 'Europe/Paris' > l.last_time
 ),
@@ -36,9 +36,9 @@ clean_obs AS (
         u AS humidity_percentage,
         dd AS wind_direction_degree,
         ff AS wind_speed_m_per_s,
-        rr_per AS precipitation_mm,
+        rr1 AS precipitation_mm,
         ray_glo01 AS global_radiation_J_m2
-    FROM {{ source('bronze', 'observations') }} b
+    FROM {{ source('bronze', 'observations_hourly') }} b
     CROSS JOIN last_silver l
     WHERE validity_time::timestamptz AT TIME ZONE 'Europe/Paris' > l.last_time
 )

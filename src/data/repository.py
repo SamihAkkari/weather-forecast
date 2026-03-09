@@ -1,7 +1,7 @@
 
 import logging
 from src.config.config import Config
-from src.data.models import BronzeForecastRecords, BronzeObservationRecords, BronzeStationRecords
+from src.data.models import ObservationListeStationsRecords, BaseRecord
 from src.data.db import DatabaseConnection
 
 logger = logging.getLogger(__name__)
@@ -89,14 +89,14 @@ class DatabaseRepository:
             raise
 
     @staticmethod
-    def insert_observations(records: list[BronzeObservationRecords], target_table_name: str):
+    def insert_observations(records: list[BaseRecord], target_table_name: str):
         DatabaseRepository._insert(
             records,
-            table=f"{Config.BRONZE_SCHEMA}.{Config.target_table_name}"
+            table=f"{Config.BRONZE_SCHEMA}.{target_table_name}"
         )
 
     @staticmethod
-    def insert_forecasts(records: list[BronzeForecastRecords], target_table_name: str):
+    def insert_forecasts(records: list[BaseRecord], target_table_name: str):
         DatabaseRepository._insert(
             records,
             table=f"{Config.BRONZE_SCHEMA}.{target_table_name}"
@@ -164,8 +164,8 @@ class DatabaseRepository:
 
 
     @staticmethod
-    def get_stations() -> list[BronzeStationRecords]:
-        cols = ', '.join(BronzeStationRecords.columns()) 
+    def get_stations() -> list[ObservationListeStationsRecords]:
+        cols = ', '.join(ObservationListeStationsRecords.columns()) 
         try:
             with DatabaseConnection() as conn:
                 with conn.cursor() as cur:
@@ -175,7 +175,7 @@ class DatabaseRepository:
                         ORDER BY station_id
                     """)
                     return [
-                        BronzeStationRecords(*row)   
+                        ObservationListeStationsRecords(*row)   
                         for row in cur.fetchall()
                     ]
         except Exception as e:

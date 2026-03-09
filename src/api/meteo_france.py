@@ -1,13 +1,15 @@
 from src.config.config import Config
 from dataclasses import dataclass, field
-from typing import Callable, Optional
+from typing import Callable, Optional, Type
 import logging
+from src.data import models as data_models
 
 logger = logging.getLogger(__name__)
 
 @dataclass
 class EndpointConfig:
     path: str
+    record_class:    Optional[Type[data_models.BaseRecord]] = None      # <-- schema lives here
     required_params: list[str] = field(default_factory=list) # list of required parameters for this endpoint (ensures an empty list if it was not defined)
     optional_params: list[str] = field(default_factory=list) # list of optional parameters for this endpoint
     bronze_table: Optional[str] = None # target table for this endpoint's data
@@ -45,6 +47,7 @@ class MeteoFranceBase:
         # Endpoint config unpacked from the descriptor for easy access
         self.service = service
         cfg: EndpointConfig = self.endpoints[service]
+        self.record_class = cfg.record_class
         self.endpoint_path = cfg.path
         self.bronze_table = cfg.bronze_table
         self.required_params = cfg.required_params
@@ -93,7 +96,8 @@ class MeteoFranceObservations(MeteoFranceBase):
         "liste-stations": EndpointConfig(
             path=Config.OBSERVATIONS_LISTESTATION_ENDPOINT,
             return_response=lambda x: x.json(),
-            bronze_table=Config.STATIONS_TABLE_NAME
+            bronze_table=Config.STATIONS_TABLE_NAME,
+            record_class = data_models.ObservationListeStationsRecords
         ),
         "stations_infrahoraire-6m": EndpointConfig(
             path=Config.OBSERVATIONS_STATIONS_INFRAHORAIRE6m_ENDPOINT,
@@ -101,7 +105,8 @@ class MeteoFranceObservations(MeteoFranceBase):
             update_frequency=60,
             time_step=360,
             steps_back=1,
-            bronze_table=Config.OBSERVATIONS_TABLE_NAME_6m
+            bronze_table=Config.OBSERVATIONS_TABLE_NAME_6m,
+            record_class = data_models.ObservationInfrahoraire6mRecord
         ),
         "stations_horaire": EndpointConfig(
             path=Config.OBSERVATIONS_STATIONS_HORAIRE_ENDPOINT,
@@ -109,15 +114,18 @@ class MeteoFranceObservations(MeteoFranceBase):
             update_frequency=3600,
             time_step=3600,
             steps_back=0,
-            bronze_table=Config.OBSERVATIONS_TABLE_NAME_HOURLY
+            bronze_table=Config.OBSERVATIONS_TABLE_NAME_HOURLY,
+            record_class = data_models.ObservationHoraireRecord
         ),
         "infrahoraire-6m": EndpointConfig(
             path=Config.OBSERVATIONS_STATIONS_INFRAHORAIRE6m_ENDPOINT,
             return_response=lambda x: x.json(),
+            record_class = None 
         ),
         "horaire": EndpointConfig(
             path=Config.OBSERVATIONS_STATIONS_HORAIRE_ENDPOINT,
             return_response=lambda x: x.json(),
+            record_class = None
         ),
     }
 
@@ -137,12 +145,14 @@ class MeteoFranceForecastArome(MeteoFranceBase):
             required_params=["referencetime", "time", "format"],
             return_response=lambda x: x.content,
             update_frequency=10800,
-            bronze_table=Config.FORECAST_TABLE_NAME
+            bronze_table=Config.FORECAST_TABLE_NAME,
+            record_class= data_models.ForecastAromeRecord
         ),
         "0025SP1_available_data": EndpointConfig(
             path=Config.FORECAST_AROME_PACKAGE_0025SP1_AVAILABLE_DATA_ENDPOINT,
             update_frequency=10800,
             return_response=lambda x: x.json(),
+            record_class= None 
         ),
     }   
     

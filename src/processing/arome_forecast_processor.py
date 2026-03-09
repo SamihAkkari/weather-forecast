@@ -6,7 +6,7 @@ import cfgrib
 import xarray as xr
 import tempfile
 from src.processing.spatial import extract_at_indices, find_nearest_grid_indices
-from src.data.models import BronzeForecastRecords
+from src.data.models import BaseRecord
 from src.data.repository import DatabaseRepository
 import logging
 # from src.processing.grib_grouping_rules import GroupingRule
@@ -29,7 +29,7 @@ class GribProcessor:
             pass
             # os.remove(tmp.name)
     
-    def get_ready_to_ingest_records(self):
+    def get_ready_to_ingest_records(self, records_class):
         """
         This is the pipeline of all data transformations needed to get from raw GRIB bytes to station-level records.
         Explanation of the steps:
@@ -45,9 +45,9 @@ class GribProcessor:
 
         stations = DatabaseRepository.get_stations()
         
-        variables = BronzeForecastRecords.forecast_variables()  # all non-metadata fields
+        variables = records_class.forecast_variables()  # all non-metadata fields
         extracted_data = GribProcessor.extract_forecast_variables_data(self.datasets, variables)
-        records = GribProcessor.extract_data_at_stations_records(extracted_data, stations, grid_lats, grid_lons, self.run_time)
+        records = GribProcessor.extract_data_at_stations_records(extracted_data, stations, grid_lats, grid_lons, self.run_time, records_class)
 
         return records
 
@@ -115,6 +115,7 @@ class GribProcessor:
         grid_lats : np.ndarray,
         grid_lons : np.ndarray,
         run_time  : str,
+        records_class: BaseRecord
     ) -> list[dict]:
 
         indices   = find_nearest_grid_indices(stations, grid_lats, grid_lons)
@@ -153,7 +154,7 @@ class GribProcessor:
         records = []
         for s_idx, station_id in enumerate(station_ids):
             for valid_time in sorted(all_valid_times):
-                records.append(BronzeForecastRecords(
+                records.append(records_class(
                     station_id     = station_id,
                     run_time       = run_time_ts,
                     valid_time     = valid_time,

@@ -49,6 +49,7 @@ class ObservationsIngestor(BaseIngestor):
         self.step_back = api_client.api.steps_back
         self.time_steps_seconds = api_client.api.time_step_seconds
         self.data_base_target_table = api_client.api.bronze_table
+        self.records_class = api_client.api.record_class
         self.running = False
 
     def fetch(self, params):
@@ -56,7 +57,7 @@ class ObservationsIngestor(BaseIngestor):
         try:
             response = self.api_client.fetch_data(params = params)  # your API method
             observation_processor = ObservationProcessor(response)
-            records = observation_processor.get_ready_to_ingest_records()
+            records = observation_processor.get_ready_to_ingest_records(self.records_class)
             self._log_fetch("observations", len(records))
         except Exception as e:
             self._log_error("Observations fetching error", e)
@@ -117,6 +118,7 @@ class ForecastIngestor(BaseIngestor):
         self.description_api_client = description_api_client
         self.update_frequency = data_api_client.api.update_frequency_seconds
         self.data_base_target_table = data_api_client.api.bronze_table
+        self.data_api_record_class = data_api_client.api.record_class
 
 
     def fetch(self, params: dict) -> str | None:
@@ -125,7 +127,7 @@ class ForecastIngestor(BaseIngestor):
             response = self.data_api_client.fetch_data(params = params)  # your API method
             if response:
                 grib_processor = GribProcessor(response, params.get("referencetime"))
-                records = grib_processor.get_ready_to_ingest_records()
+                records = grib_processor.get_ready_to_ingest_records(self.data_api_record_class)
                 self._log_fetch("forecast", len(records))
             else:
                 records = None

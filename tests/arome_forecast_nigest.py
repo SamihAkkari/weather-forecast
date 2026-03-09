@@ -9,7 +9,6 @@ import logging
 from logging.handlers import RotatingFileHandler
 from src.processing.arome_forecast_processor import GribProcessor
 # from src.processing.grib_grouping_rules import AROME_GROUPING_RULES
-from src.data.models import BronzeForecastRecords
 from src.data.repository import DatabaseRepository
 from src.ingestion.time_manager import TimeManager
 from src.ingestion.ingestor import ForecastIngestor
@@ -33,67 +32,9 @@ logging.basicConfig(
 
 data_api= APIFactory.create("meteofrance_forecast_arome", "0025SP1")
 data_client = ForecastAromeClient(data_api)
-params = {
-    "referencetime": "2026-03-08T15:00:00Z",
-    "time": "07H12H",
-    "format": "grib2"
-}
-d = data_client.fetch_data(params = params)
 
 description_api= APIFactory.create("meteofrance_forecast_arome", "0025SP1_available_data")
 description_client = ForecastAromeClient(description_api)
-d = description_client.fetch_data()
 
 ingestor = ForecastIngestor(data_client, description_client)
 ingestor.run_once()
-
-
-
-
-
-reference_time = TimeManager.last_arome_forecast_run_time_iso()
-
-## 2. download_grib(url, tmp_path)
-api= APIFactory.create("meteofrance_forecast_arome", "0025SP1")
-client = ForecastAromeClient(api)
-params = {
-    "referencetime": "2026-03-08T15:00:00Z",
-    "time": "07H12H",
-    "format": "grib2"
-}
-
-params = {
-    "referencetime": reference_time,
-    "time": ["00H06H", "07H12H", "13H18H", "19H24H", "25H30H", "31H36H", "37H42H", "43H48H", "49H51H"],
-    "format": "grib2"
-}
-
-data = client.fetch_data(params=params)
-
-
-## 3. get_active_stations()
-from src.data.repository import DatabaseRepository
-stations = DatabaseRepository.get_stations()
-
-## 4. open_and_group_datasets(tmp_path)
-run_time = params["referencetime"]
-gribprocessor = GribProcessor(data, run_time)
-gribprocessor.load()
-records = gribprocessor.get_ready_to_ingest_records()
-
-
-DatabaseRepository.insert_forecasts(records)
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -5,7 +5,9 @@ sources:
     database: "{{ env_var('POSTGRES_DB') }}"
     schema: bronze             # schema where bronze tables live
     tables:
-      - name: observations
+      - name: observations_6m
         description: "Raw ingestion table from MateoFrance paquet 6m API (the API that ingests the data of all available stations at a single timestep)"
+      - name: observations_hourly
+        description: "Raw ingestion table from MateoFrance paquet hourly API (the API that ingests the data of all available stations at a single timestep)"
       - name: stations
         description: "Table containing all the available stations for this API with their metadata"
