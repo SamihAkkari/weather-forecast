@@ -1,5 +1,6 @@
 import time
 import logging
+from urllib.parse import parse_qs, urlparse
 from src.config.config import Config
 from datetime import datetime, timezone, timedelta
 from src.data.repository import DatabaseRepository
@@ -36,36 +37,42 @@ class TimeManager:
         )
 
     @staticmethod
-    def last_interval_minutes(interval: int = Config.API_INFRAHORAIRE6m_TIME_STEPS, steps_back = 1):
+    def last_interval_minutes(time_step, steps_back):
         """
-        Floor UTC time to the last multiple of `interval` minutes
+        Floor UTC time to the last multiple of `time_step` minutes
         """
         now = TimeManager.utc_now_minute()
-        remainder = now.minute % interval
+        remainder = now.minute % time_step
         floored = now - timedelta(minutes=remainder)
         if steps_back > 0:
-            floored -= timedelta(minutes=interval * steps_back)
+            floored -= timedelta(minutes=time_step * steps_back)
         return floored
 
     @staticmethod
-    def last_interval_iso(interval: int = Config.API_INFRAHORAIRE6m_TIME_STEPS):
-        return TimeManager.last_interval_minutes(interval).strftime(
+    def last_interval_iso(time_step: int, steps_back: int):
+        return TimeManager.last_interval_minutes(time_step/60, steps_back).strftime(
             "%Y-%m-%dT%H:%M:%SZ"
         )
     
-    def last_arome_forecast_run_time():
-        now = TimeManager.utc_now()
-        for update_time in reversed(Config.AROME_FORECAST_UPDATE_TIMES):           
-            update_dt = datetime.strptime(update_time, "%H:%M:%S").time()
-            candidate_dt = datetime.combine(now.date(), update_dt, tzinfo=timezone.utc)
-            if candidate_dt <= now:
-                return candidate_dt
-        # If no update time is before now, return the last one from yesterday
-        last_update_time = Config.AROME_FORECAST_UPDATE_TIMES[-1]
-        last_update_dt = datetime.strptime(last_update_time, "%H:%M:%S").time()
-        return datetime.combine(now.date() - timedelta(days=1), last_update_dt, tzinfo=timezone.utc)
+    # def last_arome_forecast_run_time():
+    #     now = TimeManager.utc_now()
+    #     for update_time in reversed(Config.AROME_FORECAST_UPDATE_TIMES):           
+    #         update_dt = datetime.strptime(update_time, "%H:%M:%S").time()
+    #         candidate_dt = datetime.combine(now.date(), update_dt, tzinfo=timezone.utc)
+    #         if candidate_dt <= now:
+    #             return candidate_dt
+    #     # If no update time is before now, return the last one from yesterday
+    #     last_update_time = Config.AROME_FORECAST_UPDATE_TIMES[-1]
+    #     last_update_dt = datetime.strptime(last_update_time, "%H:%M:%S").time()
+    #     return datetime.combine(now.date() - timedelta(days=1), last_update_dt, tzinfo=timezone.utc)
 
-    def last_arome_forecast_run_time_iso():
-        return TimeManager.last_arome_forecast_run_time().strftime(
-            "%Y-%m-%dT%H:%M:%SZ"
-        )
+    # def last_arome_forecast_run_time_iso():
+    #     return TimeManager.last_arome_forecast_run_time().strftime(
+    #         "%Y-%m-%dT%H:%M:%SZ"
+    #     )
+    
+    def last_arome_forecast_run_time(href):
+        parsed = urlparse(href)
+        query = parse_qs(parsed.query)
+        reference_time = query["referencetime"][0]
+        return reference_time

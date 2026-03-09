@@ -89,17 +89,17 @@ class DatabaseRepository:
             raise
 
     @staticmethod
-    def insert_observations(records: list[BronzeObservationRecords]):
+    def insert_observations(records: list[BronzeObservationRecords], target_table_name: str):
         DatabaseRepository._insert(
             records,
-            table=f"{Config.BRONZE_SCHEMA}.{Config.OBSERVATIONS_TABLE_NAME}"
+            table=f"{Config.BRONZE_SCHEMA}.{Config.target_table_name}"
         )
 
     @staticmethod
-    def insert_forecasts(records: list[BronzeForecastRecords]):
+    def insert_forecasts(records: list[BronzeForecastRecords], target_table_name: str):
         DatabaseRepository._insert(
             records,
-            table=f"{Config.BRONZE_SCHEMA}.{Config.FORECAST_TABLE_NAME}"
+            table=f"{Config.BRONZE_SCHEMA}.{target_table_name}"
         )
 
 
@@ -116,27 +116,27 @@ class DatabaseRepository:
             logger.error(f"Error validating schemas: {e}")
             raise
 
-    @staticmethod
-    def _ensure_tables_exist():
-        """Checks if bronze table exists"""
-        with DatabaseConnection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(f"""
-                            SELECT to_regclass({Config.BRONZE_SCHEMA}.{Config.Data_TABLE_NAME})
-                            """)
-                table_exists = cur.fetchone()[0] is not None
-                if not table_exists:
-                    logger.error("Bronze table does not exist")
-                else:
-                    logger.info("Bronze tables is ready")
+    # @staticmethod
+    # def _ensure_tables_exist():
+    #     """Checks if bronze table exists"""
+    #     with DatabaseConnection() as conn:
+    #         with conn.cursor() as cur:
+    #             cur.execute(f"""
+    #                         SELECT to_regclass({Config.BRONZE_SCHEMA}.{Config.Data_TABLE_NAME})
+    #                         """)
+    #             table_exists = cur.fetchone()[0] is not None
+    #             if not table_exists:
+    #                 logger.error("Bronze table does not exist")
+    #             else:
+    #                 logger.info("Bronze tables is ready")
     
-    def _this_date_is_already_ingested(date):
+    def _this_date_is_already_ingested(date, target_table_name: str):
         try:
             with DatabaseConnection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(f"""
                                 SELECT 1 
-                                FROM {Config.BRONZE_SCHEMA}.{Config.Data_TABLE_NAME}
+                                FROM {Config.BRONZE_SCHEMA}.{target_table_name}
                                 WHERE validity_time = %s
                                 LIMIT 1;
                                 """, (date,))
@@ -146,14 +146,14 @@ class DatabaseRepository:
             logger.error(f"Error checking if date {date} is already ingested: {e}")
 
     @staticmethod
-    def forecast_run_already_ingested(reference_time) -> bool:
+    def forecast_run_already_ingested(reference_time, target_table_name: str):
         """Mirrors your _this_date_is_already_ingested() pattern."""
         try:
             with DatabaseConnection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(f"""
                         SELECT 1 
-                        FROM {Config.BRONZE_SCHEMA}.{Config.FORECAST_TABLE_NAME}
+                        FROM {Config.BRONZE_SCHEMA}.{target_table_name}
                         WHERE run_time = %s
                         LIMIT 1
                     """, (reference_time,))

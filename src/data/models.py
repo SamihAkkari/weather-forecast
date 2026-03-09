@@ -7,12 +7,12 @@ class BronzeForecastRecords:
     station_id     : int
     run_time       : datetime # Time when the forecast model was run (e.g. 2026-03-05T12:00:00Z)
     valid_time     : datetime # Time for which the forecast is valid (e.g. 2026-03-05T15:00:00Z)
-    t2m            : float | None # 2 metre temperature
-    r2             : float | None # Relative humidity
-    si10           : float | None # 10 metre wind speed
-    wdir10         : float | None # 10 metre wind direction
-    ssrd           : float | None # Surface solar radiation downwards
-    tp             : float | None # Total precipitation
+    t2m            : float  # 2 metre temperature
+    r2             : float  # Relative humidity
+    si10           : float  # 10 metre wind speed
+    wdir10         : float  # 10 metre wind direction
+    ssrd           : float  # Surface solar radiation downwards
+    tp             : float  # Total precipitation
     ingestion_time : datetime # Time when the forecast was ingested into the database
 
     @classmethod

@@ -30,10 +30,12 @@ class Config:
     OBSERVATIONS_INFRAHORAIRE6m_ENDPOINT = 'public/DPPaquetObs/v1/paquet/infrahoraire-6m'
     OBSERVATIONS_HORAIRE_ENDPOINT = 'public/DPPaquetObs/v1/paquet/horaire'
     OBSERVATIONS_STATIONS_INFRAHORAIRE6m_ENDPOINT = 'public/DPPaquetObs/v1/paquet/stations/infrahoraire-6m'
+    OBSERVATIONS_STATIONS_HORAIRE_ENDPOINT = 'public/DPPaquetObs/v1/paquet/stations/horaire'
     
     API_INFRAHORAIRE6m_TIME_STEPS = 6 # in minutes (time steps of the observations )
     
     FORECAST_AROME_PACKAGE_0025SP1_ENDPOINT = 'previnum/DPPaquetAROME/v1/models/AROME/grids/0.025/packages/SP1/productARO' #SP1 data with 0.025° resolution (2.5km resolution)
+    FORECAST_AROME_PACKAGE_0025SP1_AVAILABLE_DATA_ENDPOINT = 'previnum/DPPaquetAROME/v1/models/AROME/grids/0.025/packages/SP1'
     # RADAR_ENDPOINT = 'DPRadar/v1/radars'
 
     
@@ -48,12 +50,14 @@ class Config:
     SILVER_SCHEMA = 'silver'
     
     STATIONS_TABLE_NAME = 'stations'
-    Data_TABLE_NAME = 'observations'
+    OBSERVATIONS_TABLE_NAME_6m = 'observations_6m'
     FORECAST_TABLE_NAME = 'forecast'
+    OBSERVATIONS_TABLE_NAME_HOURLY = 'observations_hourly'
 
     API_FORMAT = 'json' 
 
     TEMPORARY_GRIB_PATH = 'data/temp/file.grib2'
 
     AROME_FORECAST_UPDATE_TIMES = ["00:00:00", "03:00:00", "06:00:00", "09:00:00", "12:00:00", "15:00:00", "18:00:00", "21:00:00"]
-    AROME_FORECAST_UPDATE_FREQUENCY_HOURS = 5 # hours
+    
+    # AROME_FORECAST_UPDATE_FREQUENCY_HOURS = 5 # hours

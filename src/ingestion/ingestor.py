@@ -1,5 +1,6 @@
 import copy
 import logging
+from time import time
 
 from src.data.repository import DatabaseRepository
 from src.processing.arome_forecast_processor import GribProcessor
@@ -41,23 +42,22 @@ class BaseIngestor(ABC):
 class ObservationsIngestor(BaseIngestor):
     """Continuously ingest real-time weather observations"""
 
-    def __init__(self, api_client, interval_seconds=60):
+    def __init__(self, api_client):
         super().__init__(api_client)
         # self.repository = repository
-        self.interval = interval_seconds
+        self.update_frequency = api_client.api.update_frequency_seconds
+        self.step_back = api_client.api.steps_back
+        self.time_steps_seconds = api_client.api.time_step_seconds
+        self.data_base_target_table = api_client.api.bronze_table
         self.running = False
 
     def fetch(self, params):
         """Fetch data from API"""
         try:
-            if not DatabaseRepository._this_date_is_already_ingested(params.get("date")):
-                response = self.api_client.fetch_data(params = params)  # your API method
-                observation_processor = ObservationProcessor(response)
-                records = observation_processor.get_ready_to_ingest_records()
-                self._log_fetch("observations", len(records))
-            else:
-                records = []
-                self._log_skip(f"The data of date: {params.get("date")} has already been ingested")
+            response = self.api_client.fetch_data(params = params)  # your API method
+            observation_processor = ObservationProcessor(response)
+            records = observation_processor.get_ready_to_ingest_records()
+            self._log_fetch("observations", len(records))
         except Exception as e:
             self._log_error("Observations fetching error", e)
             raise
@@ -66,22 +66,31 @@ class ObservationsIngestor(BaseIngestor):
     def ingest(self, records):
         """Ingest the fetched data into the database"""
         try:
-            if records != []:
-                DatabaseRepository.insert_observations(records)
-                self._log_ingest("observations", len(records))
-            else:
-                self._log_skip("No new data to ingest")
+            DatabaseRepository.insert_observations(records, self.data_base_target_table)
+            self._log_ingest("observations", len(records))
         except Exception as e:
             self._log_error("Observations ingestion error", e)
             raise
 
     def run_once(self):
         """This can be used later with advanced schedulers"""
-        date = TimeManager.last_interval_iso()
-        logger.info(f"Fetching data for the date: {date}")
-        data = self.fetch(date)
-        logger.info(f"Ingesting the data obtained with {len(data)} stations")
-        self.ingest(data)
+        date = TimeManager.last_interval_iso(self.time_steps_seconds, self.step_back)
+        
+        params = {
+            "date": date,
+            "format": "json"
+        }
+
+        if DatabaseRepository._this_date_is_already_ingested(params.get("date"), self.data_base_target_table):
+            self._log_skip(f"The data of date: {params.get("date")} has already been ingested")
+        else:
+            logger.info(f"Fetching data for the date: {date}")
+            records = self.fetch(params)            
+            if records != []:
+                logger.info(f"Ingesting the data obtained with {len(records)} stations")
+                self.ingest(records)   
+            else:
+                logger.info(f"No data to ingest")    
         
     def run_loop(self):
         """Start continuous ingestion loop"""
@@ -89,7 +98,7 @@ class ObservationsIngestor(BaseIngestor):
         logger.info("Real-time ingestor started")
         while self.running:
             self.run_once()
-            time.sleep(self.interval)
+            time.sleep(self.update_frequency)
 
     # def stop(self):
     #     self.running = False
@@ -102,14 +111,18 @@ class ForecastIngestor(BaseIngestor):
     Trigger externally (cron, scheduler) — this class does not manage timing.
     """
 
-    def __init__(self, api_client):
-        super().__init__(api_client)
-        self.api_client = api_client
+    def __init__(self, data_api_client, description_api_client):
+        super().__init__(data_api_client)
+        self.data_api_client = data_api_client
+        self.description_api_client = description_api_client
+        self.update_frequency = data_api_client.api.update_frequency_seconds
+        self.data_base_target_table = data_api_client.api.bronze_table
+
 
     def fetch(self, params: dict) -> str | None:
         """Download GRIB file to a temp path. Returns path or None on failure."""
         try:       
-            response = self.api_client.fetch_data(params = params)  # your API method
+            response = self.data_api_client.fetch_data(params = params)  # your API method
             if response:
                 grib_processor = GribProcessor(response, params.get("referencetime"))
                 records = grib_processor.get_ready_to_ingest_records()
@@ -125,32 +138,35 @@ class ForecastIngestor(BaseIngestor):
     def ingest(self, records: list[dict]) -> None:
         """Insert records into DB."""
         try:
-            if records:
-                DatabaseRepository.insert_forecasts(records)
-                logger.info(f"Ingested {len(records)} forecast records")
-            else:
-                logger.info("No records to ingest")
+            DatabaseRepository.insert_forecasts(records, self.data_base_target_table)
+            logger.info(f"Ingested {len(records)} forecast records")
         except Exception as e:
             logger.error(f"Ingestion error: {e}")
             raise
 
+    def get_last_run_time(self):
+        response = self.description_api_client.fetch_data()
+        href = response.get("links", [])[-1].get("href", "")
+        last_run_time_iso_format = TimeManager.last_arome_forecast_run_time(href)
+        return last_run_time_iso_format
+
     def run_once(self) -> None:
         """This can be used later with advanced schedulers"""
-        run_time = TimeManager.last_arome_forecast_run_time_iso()
-
-        params = {
-            "referencetime" : "2026-03-08T09:00:00Z",
-            "time": ["00H06H", "07H12H", "13H18H", "19H24H", "25H30H", "31H36H", "37H42H", "43H48H", "49H51H"],
-            "format": "grib2"
-        }
+        run_time = self.get_last_run_time()
 
         # params = {
-        #     "referencetime" : run_time,
+        #     "referencetime" : "2026-03-08T09:00:00Z",
         #     "time": ["00H06H", "07H12H", "13H18H", "19H24H", "25H30H", "31H36H", "37H42H", "43H48H", "49H51H"],
         #     "format": "grib2"
         # }
 
-        if DatabaseRepository.forecast_run_already_ingested(params.get("referencetime")):
+        params = {
+            "referencetime" : run_time,
+            "time": ["00H06H", "07H12H", "13H18H", "19H24H", "25H30H", "31H36H", "37H42H", "43H48H", "49H51H"],
+            "format": "grib2"
+        }
+
+        if DatabaseRepository.forecast_run_already_ingested(params.get("referencetime"), self.data_base_target_table):
             self._log_skip(f"Forecast run {params.get("referencetime")} already ingested — skipping")
         else:
             parameters = copy.deepcopy(params)       
@@ -162,4 +178,12 @@ class ForecastIngestor(BaseIngestor):
                     logger.info(f"Ingesting the data obtained with {len(records)} stations")
                     self.ingest(records)   
                 else:
-                    logger.info(f"No data to ingest for forecast run time: {run_time} and forecast time: {value}")     
+                    logger.info(f"No data to ingest for forecast run time: {run_time} and forecast time: {value}")    
+
+    def run_loop(self):
+        """Start continuous ingestion loop"""
+        self.running = True
+        logger.info("Real-time ingestor started")
+        while self.running:
+            self.run_once()
+            time.sleep(self.update_frequency)
