@@ -177,6 +177,18 @@ def make_silver_observation_infrahoraire6m_table_without_data(SCHEMA, TABLE):
     );
     """
 
+
+    #Convert to Timescale hypertable
+    create_hypertable_sql = f"""
+    SELECT create_hypertable(
+        '{SCHEMA}.{TABLE}',
+        'time_step_fr',
+        'station_id',
+        4,
+        if_not_exists => TRUE
+    );
+    """
+
         # ---- Step 2: connect to Postgres
     conn = psycopg2.connect(
         dbname = Config.POSTGRES_DB,
@@ -187,11 +199,17 @@ def make_silver_observation_infrahoraire6m_table_without_data(SCHEMA, TABLE):
     )
 
     cur = conn.cursor()
+
+    cur.execute("CREATE EXTENSION IF NOT EXISTS timescaledb;")
+
     # ---- Step 3: create schema if not exists
     cur.execute(make_schema_sql)
 
     # ---- Step 4: create table inside schema
     cur.execute(make_observations_table)
+
+    # THIS makes it TimescaleDB
+    cur.execute(create_hypertable_sql)
 
     conn.commit()
     cur.close()
@@ -213,6 +231,17 @@ def make_silver_observation_horaire_table_without_data(SCHEMA, TABLE):
     );
     """
 
+    #Convert to Timescale hypertable
+    create_hypertable_sql = f"""
+    SELECT create_hypertable(
+        '{SCHEMA}.{TABLE}',
+        'time_step_fr',
+        'station_id',
+        4,
+        if_not_exists => TRUE
+    );
+    """
+
         # ---- Step 2: connect to Postgres
     conn = psycopg2.connect(
         dbname = Config.POSTGRES_DB,
@@ -223,11 +252,16 @@ def make_silver_observation_horaire_table_without_data(SCHEMA, TABLE):
     )
 
     cur = conn.cursor()
+    cur.execute("CREATE EXTENSION IF NOT EXISTS timescaledb;")
+
     # ---- Step 3: create schema if not exists
     cur.execute(make_schema_sql)
 
     # ---- Step 4: create table inside schema
     cur.execute(make_observations_table)
+
+    # THIS makes it TimescaleDB
+    cur.execute(create_hypertable_sql)
 
     conn.commit()
     cur.close()
@@ -272,6 +306,58 @@ def make_bronze_forecast_table_without_data(SCHEMA, TABLE):
     conn.close()
 
 
+def make_silver_forecast_table_without_data(SCHEMA, TABLE):
+    make_schema_sql = f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}"
+    make_observations_table = f"""
+    CREATE TABLE IF NOT EXISTS {SCHEMA}.{TABLE} (
+    	station_id TEXT,
+        run_time timestamptz,
+        time_step_fr timestamptz,
+        temperature_celsius Double precision, 
+        humidity_percentage Double precision, 
+        wind_direction_degree Double precision, 
+        wind_speed_m_per_s Double precision, 
+        precipitation_mm Double precision, 
+        global_radiation_J_m2 Double precision,
+        transfer_time_fr timestamptz
+    );
+    """
+
+    #Convert to Timescale hypertable
+    create_hypertable_sql = f"""
+    SELECT create_hypertable(
+        '{SCHEMA}.{TABLE}',
+        'run_time',
+        'station_id',
+        4,
+        if_not_exists => TRUE
+    );
+    """
+
+        # ---- Step 2: connect to Postgres
+    conn = psycopg2.connect(
+        dbname = Config.POSTGRES_DB,
+        user = Config.POSTGRES_USER,
+        password = Config.POSTGRES_PASSWORD,
+        host = "localhost",
+        port = Config.POSTGRES_PORT
+    )
+
+    cur = conn.cursor()
+    cur.execute("CREATE EXTENSION IF NOT EXISTS timescaledb;")
+
+    # ---- Step 3: create schema if not exists
+    cur.execute(make_schema_sql)
+
+    # ---- Step 4: create table inside schema
+    cur.execute(make_observations_table)
+
+    # THIS makes it TimescaleDB
+    cur.execute(create_hypertable_sql)
+
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
 if __name__ == "__main__":
@@ -286,4 +372,5 @@ if __name__ == "__main__":
     make_silver_observation_infrahoraire6m_table_without_data(Config.SILVER_SCHEMA, Config.OBSERVATIONS_TABLE_NAME_6m)
     
     make_bronze_forecast_table_without_data(Config.BRONZE_SCHEMA, Config.FORECAST_TABLE_NAME)
-    
+    make_silver_forecast_table_without_data(Config.SILVER_SCHEMA, Config.FORECAST_TABLE_NAME)
+ 

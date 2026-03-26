@@ -2,7 +2,7 @@
 version: 2
 
 models:
-  - name: observations
+  - name: observations_6m
     description: "A model that transforms newly ingested data and appends them into a new clean table in silver"
     columns:
       - name: station_id

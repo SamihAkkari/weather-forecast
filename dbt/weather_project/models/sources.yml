@@ -11,3 +11,5 @@ sources:
         description: "Raw ingestion table from MateoFrance paquet hourly API (the API that ingests the data of all available stations at a single timestep)"
       - name: stations
         description: "Table containing all the available stations for this API with their metadata"
+      - name: forecast
+        description: "Table containing the forecast of AROME model"
