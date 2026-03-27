@@ -1,6 +1,7 @@
 import copy
 import logging
 from time import time
+import subprocess
 
 from src.data.repository import DatabaseRepository
 from src.processing.arome_forecast_processor import GribProcessor
@@ -27,6 +28,32 @@ class BaseIngestor(ABC):
     @abstractmethod
     def run_once(self, *args): ...
 
+    def trigger_dbt(self, tag): # rigid function to change later         
+        try:
+            subprocess.run([
+                "docker", "exec",
+                "-w", "/usr/app/dbt/weather_project",
+                "dbt_runner",
+                "dbt", "run",
+                "--select", f"tag:{tag}"
+            ], 
+            check=True, 
+            capture_output=True, # This captures stdout and stderr
+            text=True            # This returns strings instead of bytes
+            )
+            logger.info("dbt model executed successfully Success!")
+
+        except subprocess.CalledProcessError as e:
+            if "Completed successfully" in e.stdout and "PASS=1" in e.stdout:
+                logger.info("dbt logic passed, but dbt crashed during logging/cleanup.")
+            else:
+                logger.error(f"dbt command failed with exit code {e.returncode}")
+                logger.error("--- STDOUT ---")
+                logger.error(e.stdout)
+                logger.error("--- STDERR ---")
+                logger.error(e.stderr)
+                raise
+             
     def _log_fetch(self, identifier, count):
         self.logger.info(f"Fetched {count} records for {identifier}")
 
@@ -89,7 +116,8 @@ class ObservationsIngestor(BaseIngestor):
             records = self.fetch(params)            
             if records != []:
                 logger.info(f"Ingesting the data obtained with {len(records)} stations")
-                self.ingest(records)   
+                self.ingest(records)
+                self.trigger_dbt(tag = "observations_6m")  
             else:
                 logger.info(f"No data to ingest")    
         
@@ -168,6 +196,7 @@ class ForecastIngestor(BaseIngestor):
             "format": "grib2"
         }
 
+        # TODO: BIG issue (sometimes for the same runtime some of the hours are available and some are not so we have to change the logic to accept retries here)
         if DatabaseRepository.forecast_run_already_ingested(params.get("referencetime"), self.data_base_target_table):
             self._log_skip(f"Forecast run {params.get("referencetime")} already ingested — skipping")
         else:
@@ -178,9 +207,11 @@ class ForecastIngestor(BaseIngestor):
                 records = self.fetch(parameters)
                 if records:
                     logger.info(f"Ingesting the data obtained with {len(records)} stations")
-                    self.ingest(records)   
+                    self.ingest(records)  
                 else:
                     logger.info(f"No data to ingest for forecast run time: {run_time} and forecast time: {value}")    
+            self.trigger_dbt(tag = "forecast")
+
 
     def run_loop(self):
         """Start continuous ingestion loop"""

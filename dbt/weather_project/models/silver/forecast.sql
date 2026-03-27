@@ -1,4 +1,7 @@
-{{ config(materialized='incremental') }}
+{{ config(
+    materialized='incremental',
+    tags=['forecast']
+) }}
 
 -- 1. This returns only the last run time availbale in silver forecast
 WITH last_silver AS (

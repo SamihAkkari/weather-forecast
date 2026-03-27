@@ -1,5 +1,6 @@
 {{ config(
-    materialized='incremental'
+    materialized='incremental',
+    tags=['observations_6m']
 ) }}
 
 WITH last_silver AS (
