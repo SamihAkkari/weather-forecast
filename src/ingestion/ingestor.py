@@ -196,21 +196,54 @@ class ForecastIngestor(BaseIngestor):
             "format": "grib2"
         }
 
-        # TODO: BIG issue (sometimes for the same runtime some of the hours are available and some are not so we have to change the logic to accept retries here)
+        MAX_RETRIES = 5
+        WAIT_SECONDS = 6*60  # adjust based on how long data usually takes
+
         if DatabaseRepository.forecast_run_already_ingested(params.get("referencetime"), self.data_base_target_table):
             self._log_skip(f"Forecast run {params.get("referencetime")} already ingested — skipping")
         else:
-            parameters = copy.deepcopy(params)       
+            parameters = copy.deepcopy(params)
             for value in params.get("time"):
-                parameters['time'] = value 
-                logger.info(f"Fetching data for the forecast run time: {run_time}")
-                records = self.fetch(parameters)
+                parameters['time'] = value
+                logger.info(f"Fetching data for run: {run_time}, forecast time: {value}")
+
+                retries = 0
+                records = None
+
+                while retries < MAX_RETRIES:
+                    records = self.fetch(parameters)
+
+                    if records:
+                        logger.info(f"Data found after {retries} retries")
+                        break
+
+                    retries += 1
+                    logger.info(f"No data yet for forecast time {value}, retry {retries}/{MAX_RETRIES} in {WAIT_SECONDS}s")
+                    time.sleep(WAIT_SECONDS)
+
                 if records:
-                    logger.info(f"Ingesting the data obtained with {len(records)} stations")
-                    self.ingest(records)  
+                    logger.info(f"Ingesting {len(records)} stations")
+                    self.ingest(records)
                 else:
-                    logger.info(f"No data to ingest for forecast run time: {run_time} and forecast time: {value}")    
-            self.trigger_dbt(tag = "forecast")
+                    logger.warning(f"Giving up on forecast time {value} after {MAX_RETRIES} retries")
+
+            self.trigger_dbt(tag="forecast")
+        
+        
+        # if DatabaseRepository.forecast_run_already_ingested(params.get("referencetime"), self.data_base_target_table):
+        #     self._log_skip(f"Forecast run {params.get("referencetime")} already ingested — skipping")
+        # else:
+        #     parameters = copy.deepcopy(params)       
+        #     for value in params.get("time"):
+        #         parameters['time'] = value 
+        #         logger.info(f"Fetching data for the forecast run time: {run_time} and forecast time: {value}")
+        #         records = self.fetch(parameters)
+        #         if records:
+        #             logger.info(f"Ingesting the data obtained with {len(records)} stations")
+        #             self.ingest(records)  
+        #         else:
+        #             logger.info(f"No data to ingest for forecast run time: {run_time} and forecast time: {value}")    
+        #     self.trigger_dbt(tag = "forecast")
 
 
     def run_loop(self):
