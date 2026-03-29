@@ -1,4 +1,4 @@
-from src.data.repository import DatabaseRepository
+from src.data.getter import DatabaseGetter
 
 class ObservationProcessor:
     def __init__(self, response_data: list[dict]):
@@ -8,7 +8,7 @@ class ObservationProcessor:
         records = []
         import pdb
         pdb.set_trace()
-        stations = DatabaseRepository.get_stations()
+        stations = DatabaseGetter.get_stations()
         stations_ids = [station.station_id for station in stations]
         for observation in self.response_data:
             if int(observation["geo_id_insee"]) in stations_ids:

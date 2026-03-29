@@ -7,7 +7,7 @@ import xarray as xr
 import tempfile
 from src.processing.spatial import extract_at_indices, find_nearest_grid_indices
 from src.data.models import BaseRecord
-from src.data.repository import DatabaseRepository
+from src.data.getter import DatabaseGetter
 import logging
 # from src.processing.grib_grouping_rules import GroupingRule
 
@@ -43,7 +43,7 @@ class GribProcessor:
         grid_lats = self.reference_data.latitude.values
         grid_lons = self.reference_data.longitude.values
 
-        stations = DatabaseRepository.get_stations()
+        stations = DatabaseGetter.get_stations()
         
         variables = records_class.forecast_variables()  # all non-metadata fields
         extracted_data = GribProcessor.extract_forecast_variables_data(self.datasets, variables)
