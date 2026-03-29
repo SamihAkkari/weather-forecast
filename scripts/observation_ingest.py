@@ -30,4 +30,4 @@ api = APIFactory.create("meteofrance_observations", "stations_infrahoraire-6m")
 client = ObservationsClient(api)
 
 ingestor = ObservationsIngestor(client)
-ingestor.run_once()
+ingestor.run_loop()

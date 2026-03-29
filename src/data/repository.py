@@ -147,7 +147,7 @@ class DatabaseRepository:
 
     @staticmethod
     def forecast_run_already_ingested(reference_time, target_table_name: str):
-        """Mirrors your _this_date_is_already_ingested() pattern."""
+        """Mirrors _this_date_is_already_ingested() pattern."""
         try:
             with DatabaseConnection() as conn:
                 with conn.cursor() as cur:

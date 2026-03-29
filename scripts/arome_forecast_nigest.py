@@ -37,4 +37,4 @@ description_api= APIFactory.create("meteofrance_forecast_arome", "0025SP1_availa
 description_client = ForecastAromeClient(description_api)
 
 ingestor = ForecastIngestor(data_client, description_client)
-ingestor.run_once()
+ingestor.run_loop()

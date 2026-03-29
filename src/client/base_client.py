@@ -58,6 +58,7 @@ class BaseClient(object):
         self.api = api
         self.session = requests.Session()
         self.session.headers.update(api.accept_header)
+        self.session.headers.update({"Connection": "close"})  # no persistent connections
 
         logger.info("Client initialized for API: %s with endpoint: %s", api.name, api.full_url)
         self.token_manager = TokenManager(self, api)
@@ -88,3 +89,10 @@ class BaseClient(object):
             self.response = self.session.request('GET', url, params=params)
         logger.info("Request completed with status code %s", self.response.status_code)
         return self.response
+    
+    # def reset_session(self):
+    #     """This is called after the long inter-run wait."""
+    #     logger.info("Resetting session before new api fetch")
+    #     self.session.close()
+    #     self.session = requests.Session()
+    #     self.session.headers.update(self.api.accept_header)

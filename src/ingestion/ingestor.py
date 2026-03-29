@@ -1,6 +1,6 @@
 import copy
 import logging
-from time import time
+import time
 import subprocess
 
 from src.data.repository import DatabaseRepository
@@ -119,7 +119,7 @@ class ObservationsIngestor(BaseIngestor):
                 self.ingest(records)
                 self.trigger_dbt(tag = "observations_6m")  
             else:
-                logger.info(f"No data to ingest")    
+                logger.info("No data to ingest")    
         
     def run_loop(self):
         """Start continuous ingestion loop"""
@@ -197,7 +197,7 @@ class ForecastIngestor(BaseIngestor):
         }
 
         MAX_RETRIES = 5
-        WAIT_SECONDS = 6*60  # adjust based on how long data usually takes
+        WAIT_SECONDS = 6*60  # to readjust based on how long data usually takes
 
         if DatabaseRepository.forecast_run_already_ingested(params.get("referencetime"), self.data_base_target_table):
             self._log_skip(f"Forecast run {params.get("referencetime")} already ingested — skipping")
