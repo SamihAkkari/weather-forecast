@@ -51,8 +51,7 @@ def select_stations(df, max_stations_per_dept=2, difference_threshold=0.3):
         # Check how different the stations actually are
         # by looking at the variance in the scaled features
         variance = features_scaled.var(axis=0).mean()
-        import pdb
-        pdb.set_trace()
+
         if variance < difference_threshold:
             # stations are all very similar → just pick 1 closest to centroid
             centroid_lat = group['latitude'].mean()
@@ -92,68 +91,49 @@ print(f"Departments with 2 stations: {(counts == 2).sum()}")
 
 
 import folium
-import pandas as pd
 
-def visualize_stations(selected_df, all_df):
+def visualize_all_vs_selected(all_df, selected_df):
     m = folium.Map(location=[46.8, 2.3], zoom_start=6)
     
-    # count stations per department
-    counts = selected_df.groupby('department').size()
+    selected_ids = set(selected_df['station_id'])
     
+    # plot all stations in red (not selected)
+    for _, row in all_df.iterrows():
+        if row['station_id'] not in selected_ids:
+            folium.CircleMarker(
+                location=[row['latitude'], row['longitude']],
+                radius=3,
+                color='red',
+                fill=True,
+                fill_opacity=0.4,
+                popup=f"Station: {row['station_id']} | Alt: {row['altitude']}m"
+            ).add_to(m)
+    
+    # plot selected stations in green (on top)
     for _, row in selected_df.iterrows():
-        dept = row['department']
-        n_stations = counts[dept]
-        
-        # green = 2 stations selected (diverse dept)
-        # blue  = 1 station selected (homogeneous dept)
-        color = 'green' if n_stations == 2 else 'blue'
-        
         folium.CircleMarker(
             location=[row['latitude'], row['longitude']],
             radius=6,
-            color=color,
+            color='green',
             fill=True,
-            fill_opacity=0.8,
-            popup=folium.Popup(
-                f"""
-                <b>Station:</b> {row['station_id']}<br>
-                <b>Department:</b> {dept}<br>
-                <b>Altitude:</b> {row['altitude']}m<br>
-                <b>Lat:</b> {row['latitude']:.3f}<br>
-                <b>Lon:</b> {row['longitude']:.3f}
-                """,
-                max_width=200
-            )
+            fill_opacity=0.9,
+            popup=f"Station: {row['station_id']} | Dept: {row['department_id']} | Alt: {row['altitude']}m"
         ).add_to(m)
-    
-    # add legend
+
+    # legend
     legend_html = """
     <div style="position: fixed; bottom: 50px; left: 50px; z-index: 1000;
                 background-color: white; padding: 10px; border-radius: 5px;
-                border: 2px solid grey;">
-        <b>Stations selected</b><br>
-        <i class="fa fa-circle" style="color:green"></i> 2 stations (diverse)<br>
-        <i class="fa fa-circle" style="color:blue"></i>  1 station (homogeneous)
+                border: 2px solid grey; font-size: 14px;">
+        <b>Stations</b><br>
+        <span style="color:green;">●</span> Selected<br>
+        <span style="color:red;">●</span> Not selected
     </div>
     """
     m.get_root().html.add_child(folium.Element(legend_html))
+    
     m.save('stations_selection.html')
-    print(f"Map saved to stations_selection.html")
     return m
 
-m = visualize_stations(selected, df)
-m  # displays inline in jupyter
-```
-
-**What to look for visually:**
-```
-Good signs ✓
-├── Mountain departments (Alps, Pyrenees) → green (2 stations)
-├── Coastal departments → green (2 stations)  
-├── Flat departments (Beauce, Landes) → blue (1 station)
-└── No obvious geographic gaps across France
-
-Bad signs ✗
-├── Alps or Pyrenees showing blue → threshold too strict, lower it
-├── Flat northern France showing green → threshold too loose, raise it
-└── Big geographic gaps with no stations → some departments missing
+m = visualize_all_vs_selected(df, selected)
+m
