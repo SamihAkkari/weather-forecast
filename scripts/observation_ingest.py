@@ -31,3 +31,4 @@ client = ObservationsClient(api)
 
 ingestor = ObservationsIngestor(client)
 ingestor.run_loop()
+
