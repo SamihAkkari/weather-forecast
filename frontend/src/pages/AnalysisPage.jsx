@@ -1,11 +1,12 @@
-
+import Navbar from '../components/common/Navbar'
 
 function AnalysisPage() {
     return (
-        <>
+        <div className="min-h-screen bg-white">
             <title> Weather analysis </title>
-            <div> This is the weather analysis page </div>
-        </>
+            <Navbar />
+            COMMING SOON
+        </div>
 
     );
 }
