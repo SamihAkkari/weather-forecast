@@ -2,6 +2,7 @@ import Navbar from '../components/common/Navbar'
 import StationSummary from '../components/weather/StationSummary'
 import TemperatureChart from '../components/weather/TemperatureChart'
 import { mockStation, mockCurrentConditions, mockForecast } from '../data/mockData'
+import HourlyCards from '../components/weather/HourlyCards'
 
 function WeatherViewerPage() {
     return (
@@ -26,6 +27,9 @@ function WeatherViewerPage() {
 
                 {/* Chart and hourly cards coming next */}
                 <TemperatureChart forecast={mockForecast} />
+
+                {/* Hourly forecast cards */}
+                <HourlyCards forecast={mockForecast} />
 
             </div>
 
