@@ -59,29 +59,3 @@ function HomePage() {
 }
 
 export default HomePage
-
-
-
-
-
-
-
-
-
-
-
-
-
-// function HomePage() {
-//     return (
-//         <>
-//             <title> Weather app </title>
-//             <div className="bg-blue-500 text-white p-8">
-//                 This is the home page
-//             </div>
-//         </>
-
-//     );
-// }
-
-// export default HomePage
