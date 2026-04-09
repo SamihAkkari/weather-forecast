@@ -111,7 +111,7 @@ class MeteoFranceObservations(MeteoFranceBase):
         "stations_horaire": EndpointConfig(
             path=Config.OBSERVATIONS_STATIONS_HORAIRE_ENDPOINT,
             required_params=["date", "format"],
-            update_frequency=3600,
+            update_frequency=1800,
             time_step=3600,
             steps_back=3,
             bronze_table=Config.OBSERVATIONS_TABLE_NAME_HOURLY,

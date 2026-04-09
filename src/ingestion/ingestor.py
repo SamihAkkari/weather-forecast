@@ -73,7 +73,7 @@ class ObservationsIngestor(BaseIngestor):
         super().__init__(api_client)
         # self.repository = repository
         self.update_frequency = api_client.api.update_frequency_seconds
-        self.step_back = api_client.api.steps_back
+        self.steps_back = api_client.api.steps_back
         self.time_steps_seconds = api_client.api.time_step_seconds
         self.data_base_target_table = api_client.api.bronze_table
         self.records_class = api_client.api.record_class
@@ -124,7 +124,7 @@ class ObservationsIngestor(BaseIngestor):
         self.running = True
         logger.info("Real-time ingestor started")
         while self.running:
-            for step_back in reversed(range(0, len(self.step_back))):
+            for step_back in reversed(range(0, len(self.steps_back))):
                 date = TimeManager.last_interval_iso(self.time_steps_seconds, step_back)
                 self.run_once(date)
             time.sleep(self.update_frequency)
