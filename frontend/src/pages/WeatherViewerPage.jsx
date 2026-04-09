@@ -3,14 +3,21 @@ import Navbar from '../components/common/Navbar'
 import StationSummary from '../components/weather/StationSummary'
 import TemperatureChart from '../components/weather/TemperatureChart'
 // import { mockStation, mockCurrentConditions, mockForecast, mockStations } from '../data/mockData'
-import { mockStations, mockWeatherByStation } from '../data/mockData'
+// import { mockStations, mockWeatherByStation } from '../data/mockData'
 import HourlyCards from '../components/weather/HourlyCards'
 
 import StationMap from '../components/weather/StationMap'
 
+import useStations from '../hooks/useStations'
+import useStationData from '../hooks/useStationData'
+
 function WeatherViewerPage() {
-    const [selectedStation, setSelectedStation] = useState(mockStations[0])
-    const stationData = mockWeatherByStation[selectedStation?.id]
+    const [selectedStation, setSelectedStation] = useState(null)
+    const { stations, loading: loadingStations } = useStations()
+    const { stationData, loading: loadingData } = useStationData(selectedStation?.id)
+    
+    // const [selectedStation, setSelectedStation] = useState(mockStations[0])
+    // const stationData = mockWeatherByStation[selectedStation?.id]
 
     return (
         <div className="min-h-screen bg-white">
@@ -22,7 +29,7 @@ function WeatherViewerPage() {
                 <div className="grid grid-cols-2 gap-4 mb-6">
                     {/* Map card */}
                     <StationMap
-                        stations={mockStations}
+                        stations={stations}
                         selectedStation={selectedStation}
                         onStationClick={setSelectedStation}
                     />

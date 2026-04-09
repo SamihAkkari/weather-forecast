@@ -14,8 +14,8 @@ function formatHour(timeString) {
 
 function TemperatureChart({ forecast }) {
   const data = forecast.map(entry => ({
-    hour: formatHour(entry.time),
-    temperature: entry.temperature,
+    hour: formatHour(entry.time_step_fr),
+    temperature: entry.temperature_celsius,
   }))
 
   return (

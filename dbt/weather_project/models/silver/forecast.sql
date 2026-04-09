@@ -92,7 +92,7 @@ SELECT
     END AS station_id,
     run_time::timestamptz AT TIME ZONE 'Europe/Paris'       AS run_time,
     valid_time::timestamptz AT TIME ZONE 'Europe/Paris'     AS time_step_fr,
-	t2m  AS temperature_celsius,
+	t2m - 273.15  AS temperature_celsius,
  	r2   AS humidity_percentage,
 	wdir10 AS wind_direction_degree,
 	si10   AS wind_speed_m_per_s,

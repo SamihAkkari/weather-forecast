@@ -8,19 +8,19 @@ function StationSummary({ station, conditions }) {
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-gray-50 rounded-lg p-3">
           <p className="text-xs text-gray-400 mb-1">Temperature</p>
-          <p className="text-2xl font-medium text-gray-900">{conditions.temperature}°C</p>
+          <p className="text-2xl font-medium text-gray-900">{conditions.temperature_celsius}°C</p>
         </div>
         <div className="bg-gray-50 rounded-lg p-3">
           <p className="text-xs text-gray-400 mb-1">Humidity</p>
-          <p className="text-2xl font-medium text-gray-900">{conditions.humidity}%</p>
+          <p className="text-2xl font-medium text-gray-900">{conditions.humidity_percentage}%</p>
         </div>
         <div className="bg-gray-50 rounded-lg p-3">
           <p className="text-xs text-gray-400 mb-1">Wind</p>
-          <p className="text-2xl font-medium text-gray-900">{conditions.windSpeed} m/s</p>
+          <p className="text-2xl font-medium text-gray-900">{conditions.wind_speed_m_per_s} m/s</p>
         </div>
         <div className="bg-gray-50 rounded-lg p-3">
           <p className="text-xs text-gray-400 mb-1">Rain</p>
-          <p className="text-2xl font-medium text-gray-900">{conditions.precipitation} mm</p>
+          <p className="text-2xl font-medium text-gray-900">{conditions.precipitation_mm} mm</p>
         </div>
       </div>
     </div>

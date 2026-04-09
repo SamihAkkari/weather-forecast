@@ -24,10 +24,10 @@ function HourlyCards({ forecast }) {
                     <div
                         key={index}
                         className="min-w-20 border border-gray-100 rounded-xl p-3 text-center flex-shrink-0">
-                        <p className="text-xs text-gray-400 mb-2">{formatHour(entry.time)}</p>
-                        <p className="text-base mb-2">{getWeatherIcon(entry.precipitation)}</p>
-                        <p className="text-sm font-medium text-gray-900 mb-1">{entry.temperature}°</p>
-                        <p className="text-xs text-gray-400">{entry.precipitation}mm</p>
+                        <p className="text-xs text-gray-400 mb-2">{formatHour(entry.time_step_fr)}</p>
+                        <p className="text-base mb-2">{getWeatherIcon(entry.precipitation_mm)}</p>
+                        <p className="text-sm font-medium text-gray-900 mb-1">{entry.temperature_celsius}°</p>
+                        <p className="text-xs text-gray-400">{entry.precipitation_mm}mm</p>
                     </div>
                 ))}
             </div>

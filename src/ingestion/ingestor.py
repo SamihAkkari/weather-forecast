@@ -115,7 +115,7 @@ class ObservationsIngestor(BaseIngestor):
             if records != []:
                 logger.info(f"Ingesting the data obtained with {len(records)} stations")
                 self.ingest(records)
-                self.trigger_dbt(tag = "observations_hourly")  
+                self.trigger_dbt(tag = self.data_base_target_table) #Here we use the bronze table name since bronze and silver have the same tables names just schema is what differs  
             else:
                 logger.info("No data to ingest")    
         
@@ -124,7 +124,7 @@ class ObservationsIngestor(BaseIngestor):
         self.running = True
         logger.info("Real-time ingestor started")
         while self.running:
-            for step_back in reversed(range(0, len(self.steps_back))):
+            for step_back in reversed(range(0, self.steps_back)):
                 date = TimeManager.last_interval_iso(self.time_steps_seconds, step_back)
                 self.run_once(date)
             time.sleep(self.update_frequency)

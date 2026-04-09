@@ -11,3 +11,7 @@ from src.ingestion.time_manager import TimeManager
 
 
 TimeManager.last_interval_iso(time_step=  3600, steps_back =2)
+
+T_now = TimeManager.utc_now_truncated(to="hour")
+
+TimeManager.utc_to_france(T_now)

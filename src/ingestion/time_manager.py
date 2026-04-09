@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 import cfgrib
 import requests
-
+from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +22,16 @@ class TimeManager:
     # @staticmethod
     # def utc_now():
     #     return datetime.now(timezone.utc)
+
+    @staticmethod
+    def utc_to_france(dt: datetime) -> datetime:
+        """
+        Convert a UTC datetime to France local time (handles DST automatically).
+        """
+        if dt.tzinfo is None:
+            raise ValueError("Datetime must be timezone-aware (UTC)")
+
+        return dt.astimezone(ZoneInfo("Europe/Paris"))
 
     def utc_now_truncated(to="minute"):
         now = datetime.now(timezone.utc)
@@ -66,6 +76,12 @@ class TimeManager:
             "%Y-%m-%dT%H:%M:%SZ"
         )
     
+    @staticmethod
+    def convert_to_iso(time):
+        return time.strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
+
     # def last_arome_forecast_run_time():
     #     now = TimeManager.utc_now()
     #     for update_time in reversed(Config.AROME_FORECAST_UPDATE_TIMES):           

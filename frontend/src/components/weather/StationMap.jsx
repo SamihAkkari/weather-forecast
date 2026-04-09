@@ -35,7 +35,10 @@ function StationMap({ stations, selectedStation, onStationClick }) {
               }}
             >
               <Tooltip direction="top" offset={[0, -8]}>
-                {station.name}
+                <div>
+                  <div>{station.name}</div>
+                  <div>{station.altitude} m</div>
+                </div>
               </Tooltip>
             </CircleMarker>
           )

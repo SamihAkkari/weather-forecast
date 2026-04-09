@@ -1,17 +1,31 @@
 
 from src.config.config import Config
 from src.data.db import DatabaseConnection
-from src.data.models import ObservationListeStationsRecords, BaseRecord
+from src.data.models import ObservationListeStationsRecords
 import logging
 from typing import Tuple, List
-import psycopg2.extensions
 
 logger = logging.getLogger(__name__)
 
 class DatabaseGetter:
 
+
     @staticmethod
-    def transform_data_to_list_of_dict(data: List[Tuple], cur: psycopg2.extensions.cursor):
+    def transform_list_of_objects_to_list_of_dict(data: List[object]):
+        """
+        data: is a tuble of list of tuples, where each tuple is a row from the observation table in the database
+        
+        returns
+        -------
+            List of dictionaries where each dictionary is a row in the data
+        """
+        results = []
+        for obj in data:
+            results.append(obj.__dict__)
+        return results
+
+    @staticmethod
+    def transform_data_to_list_of_dict(data: List[Tuple], cur):
         """
         data: is a tuble of list of tuples, where each tuple is a row from the observation table in the database
         cur: is teh cursor returned when fetching this data
@@ -43,14 +57,24 @@ class DatabaseGetter:
         return data
 
     @staticmethod
-    def get_frontend_formatted_data_for_basicV(station_id, time = None):
+    def get_frontend_formatted_data_for_basicV(station_id, time = None, obs_table_name = None):
         """
         time: is the current time when the request is send from the backend
         """
-        current_observation = DatabaseGetter.get_formatted_observations(station_id = station_id, fromm = Config.OBSERVATIONS_TABLE_NAME_6m, time = time)
-        if len(current_observation) == 0 or len(current_observation) > 1:
-            logger.error("Current observation for a station should be exactly one record in the data, however, either it was not found or more than one record was returned")
+        if obs_table_name is None:
+            obs_fromm = Config.OBSERVATIONS_TABLE_NAME_HOURLY
+        else:
+            obs_fromm = Config.OBSERVATIONS_TABLE_NAME_6m
+        current_observation = DatabaseGetter.get_formatted_observations(station_id = station_id, fromm = obs_fromm, time = time)
+        
+        if len(current_observation) > 1:
+            logger.error("Current observation for a station should be exactly one record in the data, however, more than one record was found")
             raise ValueError()
+        
+        if len(current_observation) == 0 or len(current_observation) > 1:
+            current_observation = [0] #quick fix
+            logger.warning("Current observation for a station should be exactly one record in the data, however, no records were found, now I force a zero value")
+        
         forecasts = DatabaseGetter.get_formatted_forecasts(station_id = station_id, fromm = Config.FORECAST_TABLE_NAME, time = time, exactly_at_time = False)
         data = {"conditions" : current_observation[0],
                 "forecast" : forecasts}
@@ -58,6 +82,11 @@ class DatabaseGetter:
 
     @staticmethod
     def get_observations(station_id, fromm, time = None):
+        # if "6m" in fromm:
+        #     dataclass_obj = ObservationInfrahoraire6mRecord
+        # else:
+        #     dataclass_obj = ObservationHoraireRecord
+
         with DatabaseConnection() as conn:
             with conn.cursor() as cur:
                 if time is None:
@@ -75,8 +104,7 @@ class DatabaseGetter:
                                 station_id = %s and time_step_fr = %s
                             
                             """, (station_id,time,))
-                data = cur.fetchall()
-                return data, cur
+                return cur.fetchall(), cur
 
     @staticmethod
     def get_forecasts(station_id, fromm, time = None, exactly_at_time = False):
@@ -103,8 +131,8 @@ class DatabaseGetter:
                                 station_id = %s AND time_step_fr {condition} %s
                             ORDER BY station_id, time_step_fr, run_time DESC;
                                 """, (station_id, time,))
-                data = cur.fetchall()
-                return data, cur
+                return cur.fetchall(), cur
+
 
     @staticmethod
     def get_stations() -> list[ObservationListeStationsRecords]:
@@ -121,6 +149,13 @@ class DatabaseGetter:
                         ObservationListeStationsRecords(*row)   
                         for row in cur.fetchall()
                     ]
+        
         except Exception as e:
             logger.error(f"Error fetching stations: {e}")
             raise
+
+    @staticmethod
+    def get_stations_to_show_on_map_in_basicV():
+        raw_stations= DatabaseGetter.get_stations()
+        stations = DatabaseGetter.transform_list_of_objects_to_list_of_dict(raw_stations)
+        return stations
