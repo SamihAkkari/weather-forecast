@@ -5,33 +5,23 @@ Created on Mon Mar 30 00:27:59 2026
 @author: sakkari
 """
 
+import os
+os.chdir('c:\\Users\\sakkari\\Code\\weather-forecast')
 from src.config.config import Config
 from src.data.db import DatabaseConnection
-with DatabaseConnection() as conn:
-    with conn.cursor() as cur:
-        cur.execute(f"""
-                        SELECT * 
-                        FROM {Config.SILVER_SCHEMA}.{Config.OBSERVATIONS_TABLE_NAME_6m}
-                        WHERE
-                            station_id = %s 
-                        """, ("01014002",))
-        data = cur.fetchall()
+from src.data.getter import DatabaseGetter
 
-{
-        "station_id": "01014002",
-        "data": [
-            {"timestamp": r.timestamp.isoformat(), "value": r.value}
-            for r in data
-        ]
-    }
+from src.ingestion.time_manager import TimeManager
 
-columns = [desc[0] for desc in cur.description]
-result = []
-for row in data:
-    record = dict(zip(columns, row))
+station_id =  "01014002"
+time = "2026-03-09 22:54:00+00"
+fromm = Config.FORECAST_TABLE_NAME
 
-    for key, value in record.items():
-        if hasattr(value, "isoformat"):  # datetime
-            record[key] = value.isoformat()
+data = DatabaseGetter.get_formatted_observations(station_id, fromm, time)
 
-    result.append(record)
+data = DatabaseGetter.get_forecasts(station_id, fromm, time = time, exactly_at_time = False)
+
+data = DatabaseGetter.get_formatted_forecasts(station_id, fromm, time = time, exactly_at_time = True)
+
+data = DatabaseGetter.get_frontend_formatted_data_for_basicV(station_id, time = time)
+

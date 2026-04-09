@@ -100,10 +100,8 @@ class ObservationsIngestor(BaseIngestor):
             self._log_error("Observations ingestion error", e)
             raise
 
-    def run_once(self):
-        """This can be used later with advanced schedulers"""
-        date = TimeManager.last_interval_iso(self.time_steps_seconds, self.step_back)
-        
+    def run_once(self, date):
+        """This can be used later with advanced schedulers"""        
         params = {
             "date": date,
             "format": "json"
@@ -117,7 +115,7 @@ class ObservationsIngestor(BaseIngestor):
             if records != []:
                 logger.info(f"Ingesting the data obtained with {len(records)} stations")
                 self.ingest(records)
-                self.trigger_dbt(tag = "observations_6m")  
+                self.trigger_dbt(tag = "observations_hourly")  
             else:
                 logger.info("No data to ingest")    
         
@@ -126,7 +124,9 @@ class ObservationsIngestor(BaseIngestor):
         self.running = True
         logger.info("Real-time ingestor started")
         while self.running:
-            self.run_once()
+            for step_back in reversed(range(0, len(self.step_back))):
+                date = TimeManager.last_interval_iso(self.time_steps_seconds, step_back)
+                self.run_once(date)
             time.sleep(self.update_frequency)
 
     # def stop(self):

@@ -6,8 +6,6 @@ class ObservationProcessor:
 
     def get_ready_to_ingest_records(self, records_class):
         records = []
-        import pdb
-        pdb.set_trace()
         stations = DatabaseGetter.get_stations()
         stations_ids = [station.station_id for station in stations]
         for observation in self.response_data:

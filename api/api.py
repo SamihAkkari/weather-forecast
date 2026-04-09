@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from src.data.getter import DatabaseGetter
+from src.ingestion.time_manager import TimeManager
 
 app = FastAPI(title="Weather Forecast API", version="1.0.0")
 
@@ -18,15 +19,8 @@ def get_stations():
         for station in stations
     }
 
-@app.get("/observations/{station_id}")
-def get_observations(station_id: str):
-    data, cur = DatabaseGetter.get_observations(station_id)
-    columns = [desc[0] for desc in cur.description]
-    result = []
-    for row in data:
-        record = dict(zip(columns, row))
-        for key, value in record.items():
-            if hasattr(value, "isoformat"):  # datetime
-                record[key] = value.isoformat()
-        result.append(record)
-    return result
+@app.get("/station-current-forecast/{station_id}")
+def get_frontend_formatted_data_for_basicV(station_id: str):
+    time = TimeManager.utc_now_truncated(to="minute")
+    data = DatabaseGetter.get_frontend_formatted_data_for_basicV(station_id, time = time)
+    return data

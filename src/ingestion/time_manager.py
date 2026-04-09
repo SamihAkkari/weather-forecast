@@ -19,29 +19,41 @@ logger = logging.getLogger(__name__)
 class TimeManager:
     """Time utilities for ingestion"""
 
-    @staticmethod
-    def utc_now():
-        return datetime.now(timezone.utc)
+    # @staticmethod
+    # def utc_now():
+    #     return datetime.now(timezone.utc)
 
-    @staticmethod
-    def utc_now_minute():
-        return (
-            datetime.now(timezone.utc)
-            .replace(second=0, microsecond=0)
-        )
+    def utc_now_truncated(to="minute"):
+        now = datetime.now(timezone.utc)
+        if to == "hour":
+            return now.replace(minute=0, second=0, microsecond=0)
+        elif to == "minute":
+            return now.replace(second=0, microsecond=0)
+        elif to == "second":
+            return now.replace(microsecond=0)
+        else:
+            raise ValueError("Invalid value for 'to'. Use: 'hour', 'minute', or 'second'")
 
-    @staticmethod
-    def utc_now_iso():
-        return TimeManager.utc_now_minute().strftime(
-            "%Y-%m-%dT%H:%M:%SZ"
-        )
+
+    # @staticmethod
+    # def utc_now_minute():
+    #     return (
+    #         datetime.now(timezone.utc)
+    #         .replace(second=0, microsecond=0)
+    #     )
+
+    # @staticmethod
+    # def utc_now_iso():
+    #     return TimeManager.utc_now_minute().strftime(
+    #         "%Y-%m-%dT%H:%M:%SZ"
+    #     )
 
     @staticmethod
     def last_interval_minutes(time_step, steps_back):
         """
         Floor UTC time to the last multiple of `time_step` minutes
         """
-        now = TimeManager.utc_now_minute()
+        now = TimeManager.utc_now_truncated(to="minute")
         remainder = now.minute % time_step
         floored = now - timedelta(minutes=remainder)
         if steps_back > 0:

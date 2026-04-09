@@ -3,21 +3,106 @@ from src.config.config import Config
 from src.data.db import DatabaseConnection
 from src.data.models import ObservationListeStationsRecords, BaseRecord
 import logging
+from typing import Tuple, List
+import psycopg2.extensions
 
 logger = logging.getLogger(__name__)
 
 class DatabaseGetter:
-    
+
     @staticmethod
-    def get_observations(station_id):
+    def transform_data_to_list_of_dict(data: List[Tuple], cur: psycopg2.extensions.cursor):
+        """
+        data: is a tuble of list of tuples, where each tuple is a row from the observation table in the database
+        cur: is teh cursor returned when fetching this data
+        
+        returns
+        -------
+            List of dictionaries where each dictionary is a row in the data
+        """
+        columns = [desc[0] for desc in cur.description]
+        result = []
+        for row in data:
+            record = dict(zip(columns, row))
+            for key, value in record.items():
+                if hasattr(value, "isoformat"):  # datetime
+                    record[key] = value.isoformat()
+            result.append(record)
+        return result
+        
+    @staticmethod
+    def get_formatted_observations(station_id, fromm, time = None):
+        row_data, cur = DatabaseGetter.get_observations(station_id, fromm, time)
+        data = DatabaseGetter.transform_data_to_list_of_dict(row_data, cur)
+        return data
+   
+    @staticmethod
+    def get_formatted_forecasts(station_id, fromm, time = None, exactly_at_time = False):
+        row_data, cur = DatabaseGetter.get_forecasts(station_id, fromm, time, exactly_at_time)
+        data = DatabaseGetter.transform_data_to_list_of_dict(row_data, cur)
+        return data
+
+    @staticmethod
+    def get_frontend_formatted_data_for_basicV(station_id, time = None):
+        """
+        time: is the current time when the request is send from the backend
+        """
+        current_observation = DatabaseGetter.get_formatted_observations(station_id = station_id, fromm = Config.OBSERVATIONS_TABLE_NAME_6m, time = time)
+        if len(current_observation) == 0 or len(current_observation) > 1:
+            logger.error("Current observation for a station should be exactly one record in the data, however, either it was not found or more than one record was returned")
+            raise ValueError()
+        forecasts = DatabaseGetter.get_formatted_forecasts(station_id = station_id, fromm = Config.FORECAST_TABLE_NAME, time = time, exactly_at_time = False)
+        data = {"conditions" : current_observation[0],
+                "forecast" : forecasts}
+        return data
+
+    @staticmethod
+    def get_observations(station_id, fromm, time = None):
         with DatabaseConnection() as conn:
             with conn.cursor() as cur:
-                cur.execute(f"""
-                        SELECT * 
-                        FROM {Config.SILVER_SCHEMA}.{Config.OBSERVATIONS_TABLE_NAME_6m}
-                        WHERE
-                            station_id = %s 
-                        """, (station_id,))
+                if time is None:
+                    cur.execute(f"""
+                            SELECT * 
+                            FROM {Config.SILVER_SCHEMA}.{fromm}
+                            WHERE
+                                station_id = %s 
+                            """, (station_id,))
+                else:
+                    cur.execute(f"""
+                            SELECT * 
+                            FROM {Config.SILVER_SCHEMA}.{fromm}
+                            WHERE
+                                station_id = %s and time_step_fr = %s
+                            
+                            """, (station_id,time,))
+                data = cur.fetchall()
+                return data, cur
+
+    @staticmethod
+    def get_forecasts(station_id, fromm, time = None, exactly_at_time = False):
+        if exactly_at_time:
+            condition = "="
+        else:
+            condition = ">"
+
+        with DatabaseConnection() as conn:
+            with conn.cursor() as cur:
+                if time is None:
+                    cur.execute(f"""
+                            SELECT DISTINCT ON (station_id, time_step_fr) *
+                            FROM {Config.SILVER_SCHEMA}.{fromm}
+                            WHERE 
+                                station_id = %s
+                            ORDER BY station_id, time_step_fr, run_time DESC;
+                                """, (station_id,))
+                else:
+                    cur.execute(f"""
+                            SELECT DISTINCT ON (station_id, time_step_fr) *
+                            FROM {Config.SILVER_SCHEMA}.{fromm}
+                            WHERE 
+                                station_id = %s AND time_step_fr {condition} %s
+                            ORDER BY station_id, time_step_fr, run_time DESC;
+                                """, (station_id, time,))
                 data = cur.fetchall()
                 return data, cur
 

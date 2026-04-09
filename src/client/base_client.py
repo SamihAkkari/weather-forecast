@@ -17,17 +17,23 @@ class TokenManager:
     def get_token(self):
         return self.token
 
+    # def is_token_valid(self, response):
+    #     status = response.status_code
+    #     content_type = response.headers.get('Content-Type', '')
+    #     if status == 401 and self.api.accept_header['Accept'] in content_type:
+    #         try:
+    #             repJson = response.json()
+    #             if 'description' in repJson and 'Invalid JWT token' in repJson['description']:
+    #                 logger.warning("JWT token is invalid or expired")
+    #                 return False
+    #         except Exception as e:
+    #             logger.exception("Failed to parse token validation response")
+    #     return True
+
     def is_token_valid(self, response):
         status = response.status_code
-        content_type = response.headers.get('Content-Type', '')
-        if status == 401 and self.api.accept_header['Accept'] in content_type:
-            try:
-                repJson = response.json()
-                if 'description' in repJson and 'Invalid JWT token' in repJson['description']:
-                    logger.warning("JWT token is invalid or expired")
-                    return False
-            except Exception as e:
-                logger.exception("Failed to parse token validation response")
+        if status == 401:
+            return False
         return True
 
     def generate_token(self):
