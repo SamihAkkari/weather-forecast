@@ -104,7 +104,7 @@ class MeteoFranceObservations(MeteoFranceBase):
             required_params=["date", "format"],
             update_frequency=60,
             time_step=360,
-            steps_back=1,
+            steps_back=3,
             bronze_table=Config.OBSERVATIONS_TABLE_NAME_6m,
             record_class = data_models.ObservationInfrahoraire6mRecord
         ),
@@ -113,7 +113,7 @@ class MeteoFranceObservations(MeteoFranceBase):
             required_params=["date", "format"],
             update_frequency=3600,
             time_step=3600,
-            steps_back=0,
+            steps_back=3,
             bronze_table=Config.OBSERVATIONS_TABLE_NAME_HOURLY,
             record_class = data_models.ObservationHoraireRecord
         ),
