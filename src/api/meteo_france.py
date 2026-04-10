@@ -14,7 +14,9 @@ class EndpointConfig:
     optional_params: list[str] = field(default_factory=list) # list of optional parameters for this endpoint
     bronze_table: Optional[str] = None # target table for this endpoint's data
     return_response: Callable = lambda x: x.json() # function to process the raw response (default response.json())
+    retry_frequency: Optional[int] = None   # seconds, None = not real-time
     update_frequency: Optional[int] = None   # seconds, None = not real-time
+    max_retries: Optional[int] = None         # how many times to retry if no new data (None = infinite) 
     time_step: Optional[int] = None          # seconds between data points
     steps_back: Optional[int] = None         # how many steps back to tolerate
 
@@ -53,7 +55,9 @@ class MeteoFranceBase:
         self.required_params = cfg.required_params
         self.optional_params = cfg.optional_params
         self.return_response = cfg.return_response
+        self.retry_frequency_seconds = cfg.retry_frequency
         self.update_frequency_seconds = cfg.update_frequency
+        self.max_retries = cfg.max_retries
         self.time_step_seconds = cfg.time_step
         self.steps_back = cfg.steps_back
 
@@ -102,7 +106,8 @@ class MeteoFranceObservations(MeteoFranceBase):
         "stations_infrahoraire-6m": EndpointConfig(
             path=Config.OBSERVATIONS_STATIONS_INFRAHORAIRE6m_ENDPOINT,
             required_params=["date", "format"],
-            update_frequency=60,
+            retry_frequency=60,
+            max_retries = 4,
             time_step=360,
             steps_back=3,
             bronze_table=Config.OBSERVATIONS_TABLE_NAME_6m,
@@ -111,7 +116,8 @@ class MeteoFranceObservations(MeteoFranceBase):
         "stations_horaire": EndpointConfig(
             path=Config.OBSERVATIONS_STATIONS_HORAIRE_ENDPOINT,
             required_params=["date", "format"],
-            update_frequency=1800,
+            retry_frequency=120,
+            max_retries = 20,
             time_step=3600,
             steps_back=3,
             bronze_table=Config.OBSERVATIONS_TABLE_NAME_HOURLY,

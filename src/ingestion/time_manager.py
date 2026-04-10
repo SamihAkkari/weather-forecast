@@ -19,9 +19,20 @@ logger = logging.getLogger(__name__)
 class TimeManager:
     """Time utilities for ingestion"""
 
-    # @staticmethod
-    # def utc_now():
-    #     return datetime.now(timezone.utc)
+    @staticmethod
+    def utc_now():
+        return datetime.now(timezone.utc)
+    
+    @staticmethod
+    def utc_truncated(_time, to="minute"):
+        if to == "hour":
+            return _time.replace(minute=0, second=0, microsecond=0)
+        elif to == "minute":
+            return _time.replace(second=0, microsecond=0)
+        elif to == "second":
+            return _time.replace(microsecond=0)
+        else:
+            raise ValueError("Invalid value for 'to'. Use: 'hour', 'minute', or 'second'")
 
     @staticmethod
     def utc_to_france(dt: datetime) -> datetime:
@@ -36,11 +47,11 @@ class TimeManager:
     def utc_now_truncated(to="minute"):
         now = datetime.now(timezone.utc)
         if to == "hour":
-            return now.replace(minute=0, second=0, microsecond=0)
+            return TimeManager.utc_truncated(now, to="hour")
         elif to == "minute":
-            return now.replace(second=0, microsecond=0)
+            return TimeManager.utc_truncated(now, to="minute")
         elif to == "second":
-            return now.replace(microsecond=0)
+            return TimeManager.utc_truncated(now, to="second")
         else:
             raise ValueError("Invalid value for 'to'. Use: 'hour', 'minute', or 'second'")
 

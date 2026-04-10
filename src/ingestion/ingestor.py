@@ -7,6 +7,7 @@ from src.data.repository import DatabaseRepository
 from src.processing.arome_forecast_processor import GribProcessor
 from src.processing.observations_processor import ObservationProcessor
 from src.ingestion.time_manager import TimeManager
+from datetime import timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -72,12 +73,19 @@ class ObservationsIngestor(BaseIngestor):
     def __init__(self, api_client):
         super().__init__(api_client)
         # self.repository = repository
-        self.update_frequency = api_client.api.update_frequency_seconds
+        self.retry_frequency = api_client.api.retry_frequency_seconds
         self.steps_back = api_client.api.steps_back
         self.time_steps_seconds = api_client.api.time_step_seconds
         self.data_base_target_table = api_client.api.bronze_table
         self.records_class = api_client.api.record_class
+        self.max_retries = api_client.api.max_retries
         self.running = False
+
+    def sleep_until_next_hour(self):
+        now = TimeManager.utc_now()
+        next_hour = TimeManager.utc_truncated(now + timedelta(hours=1), to='hour')
+        sleep_seconds = (next_hour - now).total_seconds()
+        time.sleep(sleep_seconds)
 
     def fetch(self, params):
         """Fetch data from API"""
@@ -102,22 +110,33 @@ class ObservationsIngestor(BaseIngestor):
 
     def run_once(self, date):
         """This can be used later with advanced schedulers"""        
-        params = {
-            "date": date,
-            "format": "json"
-        }
+        retry_count = 0
+        while True:
+            params = {
+                "date": date,
+                "format": "json"
+            }
 
-        if DatabaseRepository._this_date_is_already_ingested(params.get("date"), self.data_base_target_table):
-            self._log_skip(f"The data of date: {params.get("date")} has already been ingested")
-        else:
+            if DatabaseRepository._this_date_is_already_ingested(params.get("date"), self.data_base_target_table):
+                self._log_skip(f"The data of date: {params.get("date")} has already been ingested")
+                break
+
             logger.info(f"Fetching data for the date: {date}")
             records = self.fetch(params)            
             if records != []:
-                logger.info(f"Ingesting the data obtained with {len(records)} stations")
+                logger.info(f"Ingesting the data obtained with {len(records)} stations after {retry_count} retries")
                 self.ingest(records)
                 self.trigger_dbt(tag = self.data_base_target_table) #Here we use the bronze table name since bronze and silver have the same tables names just schema is what differs  
+                break # stop retrying
+
+            retry_count += 1
+            if retry_count < self.max_retries:
+                logger.info(f"Data not available yet, retrying {retry_count}/{self.max_retries} in {self.retry_frequency}s")
+                time.sleep(self.retry_frequency)
+                break
             else:
-                logger.info("No data to ingest")    
+                logger.warning(f"Giving up on observation at time {date} after {self.max_retries} retries")
+    
         
     def run_loop(self):
         """Start continuous ingestion loop"""
@@ -127,7 +146,8 @@ class ObservationsIngestor(BaseIngestor):
             for step_back in reversed(range(0, self.steps_back)):
                 date = TimeManager.last_interval_iso(self.time_steps_seconds, step_back)
                 self.run_once(date)
-            time.sleep(self.update_frequency)
+            logger.info(f"Sleeping until next hour...")
+            self.sleep_until_next_hour()
 
     # def stop(self):
     #     self.running = False
