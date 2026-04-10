@@ -4,10 +4,16 @@ function getWeatherIcon(precipitation) {
     return '🌤'
 }
 
+// function formatHour(timeString) {
+//     const date = new Date(timeString)
+//     return `${date.getHours()}:00`
+// }
+
+// The API returns the values in France time but with +00:00 timezone which makes the js think it is UTC, now this is a quick fix here but need to fix it in the backend
 function formatHour(timeString) {
     const date = new Date(timeString)
-    return `${date.getHours()}:00`
-}
+    return `${date.getUTCHours()}:00`
+} 
 
 function HourlyCards({ forecast }) {
     return (

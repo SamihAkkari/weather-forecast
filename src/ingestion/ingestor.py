@@ -8,6 +8,7 @@ from src.processing.arome_forecast_processor import GribProcessor
 from src.processing.observations_processor import ObservationProcessor
 from src.ingestion.time_manager import TimeManager
 from datetime import timedelta
+from urllib.parse import urlparse, parse_qs
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +112,7 @@ class ObservationsIngestor(BaseIngestor):
     def run_once(self, date):
         """This can be used later with advanced schedulers"""        
         retry_count = 0
-        while True:
+        while retry_count < self.max_retries:
             params = {
                 "date": date,
                 "format": "json"
@@ -133,7 +134,6 @@ class ObservationsIngestor(BaseIngestor):
             if retry_count < self.max_retries:
                 logger.info(f"Data not available yet, retrying {retry_count}/{self.max_retries} in {self.retry_frequency}s")
                 time.sleep(self.retry_frequency)
-                break
             else:
                 logger.warning(f"Giving up on observation at time {date} after {self.max_retries} retries")
     
@@ -194,15 +194,47 @@ class ForecastIngestor(BaseIngestor):
             logger.error(f"Ingestion error: {e}")
             raise
 
-    def get_last_run_time(self):
+    def extract_referencetime(self, href):
+        """Extract referencetime from URL if present"""
+        if "referencetime=" not in href:
+            return None
+
+        parsed = urlparse(href)
+        query = parse_qs(parsed.query)
+        reference_time = query["referencetime"][0]
+        return reference_time
+
+    def get_latest_run_time(self):
         response = self.description_api_client.fetch_data()
-        href = response.get("links", [])[-1].get("href", "")
-        last_run_time_iso_format = TimeManager.last_arome_forecast_run_time(href)
-        return last_run_time_iso_format
+        runs_history = response.get("links", [])
+        
+        latest_run_time = None
+        for item in runs_history:
+            href = item.get("href")
+
+            if not href:
+                continue
+
+            ref_time_iso_format = self.extract_referencetime(href)
+
+            # skip items without referencetime
+            if ref_time_iso_format is None:
+                continue
+
+            ref_time_datetime = TimeManager.convert_iso_datetime(ref_time_iso_format)
+
+            if latest_run_time is None or ref_time_datetime > latest_run_time:
+                latest_run_time = ref_time_datetime
+
+        if latest_run_time is None:
+            logger.error("No valid forecast run found in the api")
+            raise ValueError("No valid forecast run found in the api")
+        else:
+            return TimeManager.convert_to_iso(latest_run_time)
 
     def run_once(self) -> None:
         """This can be used later with advanced schedulers"""
-        run_time = self.get_last_run_time()
+        run_time = self.get_latest_run_time()
 
         # params = {
         #     "referencetime" : "2026-03-08T09:00:00Z",

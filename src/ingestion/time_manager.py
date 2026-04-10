@@ -88,6 +88,10 @@ class TimeManager:
         )
     
     @staticmethod
+    def convert_iso_datetime(time_iso):
+        return datetime.fromisoformat(time_iso.replace("Z", "+00:00"))
+
+    @staticmethod
     def convert_to_iso(time):
         return time.strftime(
             "%Y-%m-%dT%H:%M:%SZ"
@@ -110,8 +114,8 @@ class TimeManager:
     #         "%Y-%m-%dT%H:%M:%SZ"
     #     )
     
-    def last_arome_forecast_run_time(href):
-        parsed = urlparse(href)
-        query = parse_qs(parsed.query)
-        reference_time = query["referencetime"][0]
-        return reference_time
+    # def last_arome_forecast_run_time(href):
+    #     parsed = urlparse(href)
+    #     query = parse_qs(parsed.query)
+    #     reference_time = query["referencetime"][0]
+    #     return reference_time
