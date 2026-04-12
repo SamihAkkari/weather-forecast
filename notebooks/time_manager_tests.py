@@ -22,3 +22,7 @@ def sleep_until_next_hour():
     now = TimeManager.utc_now()
     next_hour = TimeManager.utc_truncated(now + timedelta(hours=1), to='hour')
     sleep_seconds = (next_hour - now).total_seconds()
+
+time = TimeManager.utc_now_truncated(to="hour")
+time = TimeManager.utc_to_france(time)
+time = TimeManager.convert_to_iso(time)

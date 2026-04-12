@@ -97,6 +97,14 @@ class TimeManager:
             "%Y-%m-%dT%H:%M:%SZ"
         )
 
+    @staticmethod
+    def current_france_time_iso(time_truncation = "hour"):
+        time = TimeManager.utc_now_truncated(to=time_truncation)
+        time = TimeManager.utc_to_france(time)
+        time = TimeManager.convert_to_iso(time)
+        return time
+
+
     # def last_arome_forecast_run_time():
     #     now = TimeManager.utc_now()
     #     for update_time in reversed(Config.AROME_FORECAST_UPDATE_TIMES):           

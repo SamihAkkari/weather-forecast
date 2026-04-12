@@ -1,7 +1,7 @@
 
 from src.config.config import Config
 from src.data.db import DatabaseConnection
-from src.data.models import ObservationListeStationsRecords
+from src.data.models import SilverObservationListeStationsRecords
 import logging
 from typing import Tuple, List
 
@@ -57,7 +57,7 @@ class DatabaseGetter:
         return data
 
     @staticmethod
-    def get_frontend_formatted_data_for_basicV(station_id, time = None, obs_table_name = None):
+    def get_frontend_formatted_data_for_basicV(station, time = None, obs_table_name = None):
         """
         time: is the current time when the request is send from the backend
         """
@@ -65,7 +65,7 @@ class DatabaseGetter:
             obs_fromm = Config.OBSERVATIONS_TABLE_NAME_HOURLY
         else:
             obs_fromm = Config.OBSERVATIONS_TABLE_NAME_6m
-        current_observation = DatabaseGetter.get_formatted_observations(station_id = station_id, fromm = obs_fromm, time = time)
+        current_observation = DatabaseGetter.get_formatted_observations(station_id = station.station_id, fromm = obs_fromm, time = time)
         
         if len(current_observation) > 1:
             logger.error("Current observation for a station should be exactly one record in the data, however, more than one record was found")
@@ -75,9 +75,11 @@ class DatabaseGetter:
             current_observation = [0] #quick fix
             logger.warning("Current observation for a station should be exactly one record in the data, however, no records were found, now I force a zero value")
         
-        forecasts = DatabaseGetter.get_formatted_forecasts(station_id = station_id, fromm = Config.FORECAST_TABLE_NAME, time = time, exactly_at_time = False)
-        data = {"conditions" : current_observation[0],
-                "forecast" : forecasts}
+        forecasts = DatabaseGetter.get_formatted_forecasts(station_id = station.station_id, fromm = Config.FORECAST_TABLE_NAME, time = time, exactly_at_time = False)
+        data = {
+            "station_info" : station.__dict__,
+            "conditions" : current_observation[0],
+            "forecast" : forecasts}
         return data
 
     @staticmethod
@@ -135,18 +137,18 @@ class DatabaseGetter:
 
 
     @staticmethod
-    def get_stations() -> list[ObservationListeStationsRecords]:
-        cols = ', '.join(ObservationListeStationsRecords.columns()) 
+    def get_stations() -> list[SilverObservationListeStationsRecords]:
+        cols = ', '.join(SilverObservationListeStationsRecords.columns()) 
         try:
             with DatabaseConnection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(f"""
                         SELECT {cols}
-                        FROM {Config.BRONZE_SCHEMA}.{Config.STATIONS_TABLE_NAME}
+                        FROM {Config.SILVER_SCHEMA}.{Config.STATIONS_TABLE_NAME}
                         ORDER BY station_id
                     """)
                     return [
-                        ObservationListeStationsRecords(*row)   
+                        SilverObservationListeStationsRecords(*row)   
                         for row in cur.fetchall()
                     ]
         

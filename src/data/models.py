@@ -16,7 +16,7 @@ class BaseRecord:
 
 
 @dataclass
-class ObservationListeStationsRecords(BaseRecord):
+class BronzeObservationListeStationsRecords(BaseRecord):
     station_id:     int
     department_id:  int
     name:           str
@@ -25,6 +25,18 @@ class ObservationListeStationsRecords(BaseRecord):
     altitude:       float
     openning_date:  str
     pack:           str
+
+@dataclass
+class SilverObservationListeStationsRecords(BaseRecord):
+    station_id:     str
+    department_id:  str
+    location_name:  str
+    latitude:       float
+    longitude:      float
+    altitude:       float
+    openning_date:  datetime
+    station_type:   str
+    transfer_time_fr: datetime
 
 
 @dataclass

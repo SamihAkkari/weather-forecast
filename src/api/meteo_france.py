@@ -97,11 +97,11 @@ class MeteoFranceObservations(MeteoFranceBase):
     """MétéoFrance Observations API"""
     
     endpoints = {
-        "liste-stations": EndpointConfig(
+        "bronze_liste-stations": EndpointConfig(
             path=Config.OBSERVATIONS_LISTESTATION_ENDPOINT,
             return_response=lambda x: x.json(),
             bronze_table=Config.STATIONS_TABLE_NAME,
-            record_class = data_models.ObservationListeStationsRecords
+            record_class = data_models.BronzeObservationListeStationsRecords
         ),
         "stations_infrahoraire-6m": EndpointConfig(
             path=Config.OBSERVATIONS_STATIONS_INFRAHORAIRE6m_ENDPOINT,

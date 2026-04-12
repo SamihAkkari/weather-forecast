@@ -1,12 +1,25 @@
 import numpy as np
 from dataclasses import dataclass
 import xarray as xr
+from src.data.models import SilverObservationListeStationsRecords
+
 
 @dataclass
 class StationNearestGrid:
     station_id : int
     lat_nearest_grid_idx : int
     lon_nearest_grid_idx : int
+
+def find_nearest_station(stations: list[SilverObservationListeStationsRecords], lat: float, long: float) -> SilverObservationListeStationsRecords:
+    min_distance = float('inf')
+    nearest_station = None
+
+    for station in stations:
+        distance = np.sqrt((station.latitude - lat) ** 2 + (station.longitude - long) ** 2)
+        if distance < min_distance:
+            min_distance = distance
+            nearest_station = station
+    return nearest_station
 
 def find_nearest_grid_indices(
     stations  : list[dict],

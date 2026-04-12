@@ -8,14 +8,17 @@ import HourlyCards from '../components/weather/HourlyCards'
 
 import StationMap from '../components/weather/StationMap'
 
-import useStations from '../hooks/useStations'
+// import useStations from '../hooks/useStations'
 import useStationData from '../hooks/useStationData'
 
 function WeatherViewerPage() {
-    const [selectedStation, setSelectedStation] = useState(null)
-    const { stations, loading: loadingStations } = useStations()
-    const { stationData, loading: loadingData } = useStationData(selectedStation?.id)
-    
+    // const [selectedStation, setSelectedStation] = useState(null)
+    // const { stations, loading: loadingStations } = useStations()
+    // const { stationData, loading: loadingData } = useStationData(selectedStation?.id)
+
+    const [selectedLocation, setSelectedLocation] = useState(null)
+    const { stationData, loading: loadingData } = useStationData(selectedLocation)
+
     // const [selectedStation, setSelectedStation] = useState(mockStations[0])
     // const stationData = mockWeatherByStation[selectedStation?.id]
 
@@ -29,15 +32,17 @@ function WeatherViewerPage() {
                 <div className="grid grid-cols-2 gap-4 mb-6">
                     {/* Map card */}
                     <StationMap
-                        stations={stations}
-                        selectedStation={selectedStation}
-                        onStationClick={setSelectedStation}
+                        selectedLocation={selectedLocation}
+                        onLocationClick={setSelectedLocation}
+                    // stations={stations}
+                    // selectedStation={selectedStation}
+                    // onStationClick={setSelectedStation}
                     />
 
                     {/* Station current conditions summary */}
                     {stationData ? (
                         <StationSummary
-                            station={selectedStation}
+                            station_info={stationData.station_info}
                             conditions={stationData.conditions}
                         />
                     ) : (

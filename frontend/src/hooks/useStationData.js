@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react'
 import api from '../api/axiosInstance'
 
-function useStationData(stationId) {
+function useStationData(location) {
   const [stationData, setStationData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (!stationId) return
+    if (!location) return
 
     setLoading(true)
     setStationData(null)
 
-    api.get(`/station-current-forecast/${stationId}`)
+    api.get(`/station-current-forecast?lat=${location.lat}&lng=${location.lng}`)
       .then(res => {
         setStationData(res.data)
         setLoading(false)
@@ -21,7 +21,7 @@ function useStationData(stationId) {
         setError(err.message)
         setLoading(false)
       })
-  }, [stationId])
+  }, [location])
 
   return { stationData, loading, error }
 }

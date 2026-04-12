@@ -1,7 +1,7 @@
 
 import logging
 from src.config.config import Config
-from src.data.models import ObservationListeStationsRecords, BaseRecord
+from src.data.models import BaseRecord
 from src.data.db import DatabaseConnection
 
 logger = logging.getLogger(__name__)
