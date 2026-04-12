@@ -53,7 +53,7 @@ function WeatherViewerPage() {
                 {stationData && (
                     <>
                         <TemperatureChart forecast={stationData.forecast} />
-                        <HourlyCards forecast={stationData.forecast} />
+                        <HourlyCards forecast={stationData.forecast} location={selectedLocation} />
                     </>
                 )}
 

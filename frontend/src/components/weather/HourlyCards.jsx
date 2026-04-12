@@ -1,9 +1,33 @@
 import ValueWithUnit from "../common/ValueWithUnit";
+import SunCalc from "suncalc";
 
-function getWeatherIcon(precipitation) {
-    if (precipitation > 0.5) return '🌧'
-    if (precipitation > 0.1) return '🌦'
-    return '🌤'
+// function getWeatherIcon(precipitation,) {
+//     if (precipitation > 0.5) return '🌧'
+//     if (precipitation > 0.1) return '🌦'
+//     return '🌤'
+// }
+
+function getWeatherIcon(entry, location) {
+    const night = isNight(entry.time_step_fr, location.lat, location.lng)
+
+    if (entry.precipitation_mm > 0.5) return night ? '🌧🌙' : '🌧'
+    if (entry.precipitation_mm > 0.1) return night ? '🌧️🌙' : '🌦'
+
+    return night ? '🌙☁️' : '🌤'
+}
+
+function isNight(timeString, lat, lng) {
+    console.log("RAW STRING:", timeString)
+    const date = new Date(timeString)
+
+    date.setHours(date.getHours() - 2) // Quick fix to handle the +00:00 timezone issue, need to fix it in the backend
+
+    const sunTimes = SunCalc.getTimes(date, lat, lng)
+
+    const sunrise = sunTimes.sunrise
+    const sunset = sunTimes.sunset
+    
+    return date < sunrise || date > sunset
 }
 
 // function formatHour(timeString) {
@@ -17,7 +41,7 @@ function formatHour(timeString) {
     return `${date.getUTCHours()}:00`
 }
 
-function HourlyCards({ forecast }) {
+function HourlyCards({ forecast, location }) {
     return (
         <div>
             <p className="text-xs text-gray-400 mb-3">Hourly forecast</p>
@@ -33,7 +57,8 @@ function HourlyCards({ forecast }) {
                         key={index}
                         className="min-w-20 border border-gray-100 rounded-xl p-3 text-center flex-shrink-0">
                         <p className="text-xs text-gray-400 mb-2">{formatHour(entry.time_step_fr)}</p>
-                        <p className="text-base mb-2">{getWeatherIcon(entry.precipitation_mm)}</p>
+                        {/* <p className="text-base mb-2">{getWeatherIcon(entry.precipitation_mm)}</p> */}
+                        <p className="text-base mb-2">{getWeatherIcon(entry, location)}</p>
                         <p className="text-sm font-medium text-gray-900 mb-1">
                             <ValueWithUnit
                                 value={entry.temperature_celsius}
