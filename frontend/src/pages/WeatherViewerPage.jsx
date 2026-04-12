@@ -34,9 +34,6 @@ function WeatherViewerPage() {
                     <StationMap
                         selectedLocation={selectedLocation}
                         onLocationClick={setSelectedLocation}
-                    // stations={stations}
-                    // selectedStation={selectedStation}
-                    // onStationClick={setSelectedStation}
                     />
 
                     {/* Station current conditions summary */}
@@ -47,22 +44,22 @@ function WeatherViewerPage() {
                         />
                     ) : (
                         <div className="border border-gray-100 rounded-xl h-64 flex items-center justify-center">
-                            <p className="text-sm text-gray-400">No data available for this station yet</p>
+                            <p className="text-sm text-gray-400">
+                                {loadingData ? 'Loading...' : 'Click anywhere on the map'}
+                            </p>
                         </div>
                     )}
                 </div>
-
-                {stationData ? (
+                {stationData && (
                     <>
-                        {/* Chart and hourly cards coming next */}
                         <TemperatureChart forecast={stationData.forecast} />
-
-                        {/* Hourly forecast cards */}
                         <HourlyCards forecast={stationData.forecast} />
                     </>
-                ) : (
+                )}
+
+                {loadingData && (
                     <div className="text-center py-16 text-gray-400 text-sm">
-                        No data available for this station yet.
+                        Loading station data...
                     </div>
                 )}
 
