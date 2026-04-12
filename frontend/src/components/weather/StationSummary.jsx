@@ -1,20 +1,4 @@
-
-function ValueWithUnit({ value, unit, format }) {
-  if (value === null || value === undefined) {
-    return (
-      <span className="text-sm text-gray-400 italic">
-        No data provided
-      </span>
-    );
-  }
-
-  return (
-    <>
-      {format(value)}
-      {unit}
-    </>
-  );
-}
+import ValueWithUnit from "../common/ValueWithUnit";
 
 function StationSummary({ station_info, conditions }) {
   return (
@@ -29,7 +13,7 @@ function StationSummary({ station_info, conditions }) {
             <ValueWithUnit
               value={conditions.temperature_celsius}
               unit="°C"
-              format={(v) => Math.floor(v)}
+              format={(v) => Math.round(v)}
             />
           </p>
         </div>
@@ -39,7 +23,7 @@ function StationSummary({ station_info, conditions }) {
             <ValueWithUnit
               value={conditions.humidity_percentage}
               unit="%"
-              format={(v) => Math.floor(v)}
+              format={(v) => Math.round(v)}
             />
           </p>
         </div>

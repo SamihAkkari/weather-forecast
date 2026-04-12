@@ -1,3 +1,5 @@
+import ValueWithUnit from "../common/ValueWithUnit";
+
 function getWeatherIcon(precipitation) {
     if (precipitation > 0.5) return '🌧'
     if (precipitation > 0.1) return '🌦'
@@ -13,7 +15,7 @@ function getWeatherIcon(precipitation) {
 function formatHour(timeString) {
     const date = new Date(timeString)
     return `${date.getUTCHours()}:00`
-} 
+}
 
 function HourlyCards({ forecast }) {
     return (
@@ -32,8 +34,20 @@ function HourlyCards({ forecast }) {
                         className="min-w-20 border border-gray-100 rounded-xl p-3 text-center flex-shrink-0">
                         <p className="text-xs text-gray-400 mb-2">{formatHour(entry.time_step_fr)}</p>
                         <p className="text-base mb-2">{getWeatherIcon(entry.precipitation_mm)}</p>
-                        <p className="text-sm font-medium text-gray-900 mb-1">{entry.temperature_celsius}°</p>
-                        <p className="text-xs text-gray-400">{entry.precipitation_mm}mm</p>
+                        <p className="text-sm font-medium text-gray-900 mb-1">
+                            <ValueWithUnit
+                                value={entry.temperature_celsius}
+                                unit="°C"
+                                format={(v) => Math.round(v)}
+                            />
+                        </p>
+                        <p className="text-xs text-gray-400">
+                            <ValueWithUnit
+                                value={entry.precipitation_mm}
+                                unit=" mm"
+                                format={(v) => v.toFixed(2)}
+                            />
+                        </p>
                     </div>
                 ))}
             </div>

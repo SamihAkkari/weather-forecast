@@ -35,9 +35,6 @@ def get_frontend_formatted_data_for_basicV(lat: float, lng: float):
     # Get current time 
     time = TimeManager.current_france_time_iso(time_truncation="hour")
     
-    # Get longitude and latitude of selected location
-    # ...
-
     # Get elevatino of the selected location
     # ...
 
