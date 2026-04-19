@@ -105,7 +105,7 @@ class ObservationHoraireRecord(BaseRecord):
 
 
 @dataclass
-class ForecastAromeRecord(BaseRecord):
+class SP1ForecastAromeRecord(BaseRecord):
     station_id     : int
     run_time       : datetime # Time when the forecast model was run (e.g. 2026-03-05T12:00:00Z)
     valid_time     : datetime # Time for which the forecast is valid (e.g. 2026-03-05T15:00:00Z)
@@ -138,7 +138,25 @@ class ForecastAromeRecord(BaseRecord):
 
 
 @dataclass
-class AllForecastAromeRecords(BaseRecord):
+class SP2ForecastAromeRecord(BaseRecord):
+    station_id     : int
+    run_time       : datetime # Time when the forecast model was run (e.g. 2026-03-05T12:00:00Z)
+    valid_time     : datetime # Time for which the forecast is valid (e.g. 2026-03-05T15:00:00Z)
+    lcc: float  # low cloud cover (%)
+    mcc: float  # medium cloud cover (%)
+    hcc: float  # high cloud cover (%)
+    CAPE_INS: float  # Convective Available Potential Energy instantaneous (m2/s2)
+    ingestion_time : datetime # Time when the forecast was ingested into the database
+
+    _METADATA_FIELDS = {'station_id', 'run_time', 'valid_time', 'ingestion_time'}
+
+    @classmethod
+    def forecast_variables(cls) -> set[str]:
+        return {f.name for f in dc_fields(cls) if f.name not in cls._METADATA_FIELDS}
+
+
+@dataclass
+class AllSP1ForecastAromeRecords(BaseRecord):
     u10: float  # 10 metre u wind component (Eastward wind component)
     v10: float  # 10 metre v wind component (Northward wind component)
     si10: float  # 10 metre wind speed (m/s)
@@ -150,9 +168,24 @@ class AllForecastAromeRecords(BaseRecord):
     r2: float  # Relative humidity
     prmsl: float  # Mean sea level pressure (Pa)
     ssrd: float  # Surface short-wave (solar) radiation downwards (J/m²)
-    tp: float  # Total precipitation (mm)
+    tp: float  # Total precipitation (mm). This is accumulated not instant for the timestep
     tgrp: float  # Graupel (snow pellets) precipitation (mm)
     tsnowp: float  # Total snow precipitation (mm)
+
+@dataclass
+class AllSP2ForecastAromeRecords(BaseRecord):
+    d2m: float  # 2 metre dewpoint temperature
+    sh2: float  # 2 metre specific humidity (kg/kg)
+    mx2t: float # 2 metre maximum temperature (K) since ...
+    mn2t: float # 2 metre minimum temperature (K) since ...
+    t: float  # surface air temperature (K)
+    sp: float  # surface pressure (Pa)
+    blh: float  # boundary layer height (m)
+    lcc: float  # low cloud cover (%)
+    mcc: float  # medium cloud cover (%)
+    hcc: float  # high cloud cover (%)
+    tirf: float  # time integral of rain flux (kg/m²) (equivelant to preciptation: 1 mm = 1 kg/m²) It is accumelated not instant
+    CAPE_INS: float  # Convective Available Potential Energy instantaneous (m2/s2)
 
 
 

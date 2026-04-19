@@ -53,8 +53,11 @@ class Config:
     
     STATIONS_TABLE_NAME = 'stations'
     OBSERVATIONS_TABLE_NAME_6m = 'observations_6m'
-    FORECAST_TABLE_NAME = 'forecast'
     OBSERVATIONS_TABLE_NAME_HOURLY = 'observations_hourly'
+
+    BRONZE_SP1_FORECAST_TABLE_NAME = 'forecast_sp1_arome'
+    BRONZE_SP2_FORECAST_TABLE_NAME = 'forecast_sp2_arome'
+    SILVER_FORECAST_AROME_TABLE_NAME = 'forecast_arome'
 
     API_FORMAT = 'json' 
 

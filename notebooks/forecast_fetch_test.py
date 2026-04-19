@@ -28,8 +28,6 @@ params = {
 response = data_client.fetch_data(params = params)  # your API method
 
 grib_processor = GribProcessor(response, params.get("referencetime"))
-grib_processor.load()
-
 records = grib_processor.get_ready_to_ingest_records(data_client.api.record_class)
 
 

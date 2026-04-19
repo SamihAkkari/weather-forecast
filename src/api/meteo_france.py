@@ -151,8 +151,8 @@ class MeteoFranceForecastArome(MeteoFranceBase):
             required_params=["referencetime", "time", "format"],
             return_response=lambda x: x.content,
             update_frequency=10800,
-            bronze_table=Config.FORECAST_TABLE_NAME,
-            record_class= data_models.ForecastAromeRecord
+            bronze_table=Config.BRONZE_SP1_FORECAST_TABLE_NAME,
+            record_class= data_models.SP1ForecastAromeRecord
         ),
         "0025SP1_available_data": EndpointConfig(
             path=Config.FORECAST_AROME_PACKAGE_0025SP1_AVAILABLE_DATA_ENDPOINT,
@@ -165,8 +165,8 @@ class MeteoFranceForecastArome(MeteoFranceBase):
             required_params=["referencetime", "time", "format"],
             return_response=lambda x: x.content,
             update_frequency=10800,
-            bronze_table=Config.FORECAST_TABLE_NAME,
-            record_class= data_models.ForecastAromeRecord
+            bronze_table=Config.BRONZE_SP2_FORECAST_TABLE_NAME,
+            record_class= data_models.SP2ForecastAromeRecord
         ),
         "0025SP2_available_data": EndpointConfig(
             path=Config.FORECAST_AROME_PACKAGE_0025SP2_AVAILABLE_DATA_ENDPOINT,

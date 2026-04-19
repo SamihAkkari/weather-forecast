@@ -17,8 +17,7 @@ import logging
 
 class BaseIngestor(ABC):
     
-    def __init__(self, api_client):
-        self.api_client = api_client
+    def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
 
     @abstractmethod
@@ -72,8 +71,9 @@ class ObservationsIngestor(BaseIngestor):
     """Continuously ingest real-time weather observations"""
 
     def __init__(self, api_client):
-        super().__init__(api_client)
+        super().__init__()
         # self.repository = repository
+        self.api_client = api_client
         self.retry_frequency = api_client.api.retry_frequency_seconds
         self.steps_back = api_client.api.steps_back
         self.time_steps_seconds = api_client.api.time_step_seconds
@@ -161,7 +161,7 @@ class ForecastIngestor(BaseIngestor):
     """
 
     def __init__(self, data_api_client, description_api_client):
-        super().__init__(data_api_client)
+        super().__init__()
         self.data_api_client = data_api_client
         self.description_api_client = description_api_client
         self.update_frequency = data_api_client.api.update_frequency_seconds
