@@ -36,6 +36,8 @@ class Config:
     
     FORECAST_AROME_PACKAGE_0025SP1_ENDPOINT = 'previnum/DPPaquetAROME/v1/models/AROME/grids/0.025/packages/SP1/productARO' #SP1 data with 0.025° resolution (2.5km resolution)
     FORECAST_AROME_PACKAGE_0025SP1_AVAILABLE_DATA_ENDPOINT = 'previnum/DPPaquetAROME/v1/models/AROME/grids/0.025/packages/SP1'
+    FORECAST_AROME_PACKAGE_0025SP2_ENDPOINT = 'previnum/DPPaquetAROME/v1/models/AROME/grids/0.025/packages/SP2/productARO' #SP2 data with 0.025° resolution (2.5km resolution)
+    FORECAST_AROME_PACKAGE_0025SP2_AVAILABLE_DATA_ENDPOINT = 'previnum/DPPaquetAROME/v1/models/AROME/grids/0.025/packages/SP2'
     # RADAR_ENDPOINT = 'DPRadar/v1/radars'
 
     

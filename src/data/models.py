@@ -137,12 +137,22 @@ class ForecastAromeRecord(BaseRecord):
     #     return {f.name for f in fields(cls) if f.name in {'ssrd', 'tp'}}
 
 
-
-
-
-
-
-
+@dataclass
+class AllForecastAromeRecords(BaseRecord):
+    u10: float  # 10 metre u wind component (Eastward wind component)
+    v10: float  # 10 metre v wind component (Northward wind component)
+    si10: float  # 10 metre wind speed (m/s)
+    fg10: float  # Time-maximum 10 metre wind gust (m/s)
+    efg10: float  # Time-maximum 10 metre eastward wind gust (m/s)
+    nfg10: float  # Time-maximum 10 metre northward wind gust (m/s)
+    wdir10: float  # 10 metre wind direction (degrees)
+    t2m: float  # 2 metre temperature
+    r2: float  # Relative humidity
+    prmsl: float  # Mean sea level pressure (Pa)
+    ssrd: float  # Surface short-wave (solar) radiation downwards (J/m²)
+    tp: float  # Total precipitation (mm)
+    tgrp: float  # Graupel (snow pellets) precipitation (mm)
+    tsnowp: float  # Total snow precipitation (mm)
 
 
 

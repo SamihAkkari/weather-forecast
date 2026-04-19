@@ -160,6 +160,20 @@ class MeteoFranceForecastArome(MeteoFranceBase):
             return_response=lambda x: x.json(),
             record_class= None 
         ),
+        "0025SP2": EndpointConfig(
+            path=Config.FORECAST_AROME_PACKAGE_0025SP2_ENDPOINT,
+            required_params=["referencetime", "time", "format"],
+            return_response=lambda x: x.content,
+            update_frequency=10800,
+            bronze_table=Config.FORECAST_TABLE_NAME,
+            record_class= data_models.ForecastAromeRecord
+        ),
+        "0025SP2_available_data": EndpointConfig(
+            path=Config.FORECAST_AROME_PACKAGE_0025SP2_AVAILABLE_DATA_ENDPOINT,
+            update_frequency=10800,
+            return_response=lambda x: x.json(),
+            record_class= None 
+        ),
     }   
     
     def __init__(self,
