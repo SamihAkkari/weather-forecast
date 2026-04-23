@@ -8,12 +8,53 @@ import SunCalc from "suncalc";
 // }
 
 function getWeatherIcon(entry, location) {
-    const night = isNight(entry.time_step_fr, location.lat, location.lng)
+    const isDay = !isNight(entry.time_step_fr, location.lat, location.lng)
 
-    if (entry.precipitation_mm > 0.5) return night ? '🌧🌙' : '🌧'
-    if (entry.precipitation_mm > 0.1) return night ? '🌧️🌙' : '🌦'
+    const {
+        cape = 0,
+        precipitation_mm: precip = 0,
+        snow_mm: snow = 0,
+        total_cloud_cover: tcc = 0
+    } = entry
 
-    return night ? '🌙☁️' : '🌤'
+    // --- 1. Precipitation first (highest priority)
+    if (cape > 500 && precip > 0.5) {
+        return "⛈️"
+    }
+
+    if (snow > 0.1) {
+        return "🌨️"
+    }
+
+    if (precip > 2.0) {
+        return "🌧️"
+    }
+
+    if (precip > 0.1) {
+        if (tcc < 70) {
+            return isDay ? "🌦️" : "🌧️🌙"
+            }
+        return  "🌧️"
+    }
+
+    // --- 2. Sky conditions (no precipitation)
+    if (tcc < 12) {
+        return isDay
+            ? "☀️" 
+            : "🌙" 
+    }
+
+    if (tcc < 37) {
+        return isDay
+            ? "🌤️" 
+            : "🌙✨" 
+    }
+
+    if (tcc < 62) {
+        return isDay ? "⛅" : "☁️🌙"
+    }
+
+    return "☁️"
 }
 
 function isNight(timeString, lat, lng) {
@@ -26,7 +67,7 @@ function isNight(timeString, lat, lng) {
 
     const sunrise = sunTimes.sunrise
     const sunset = sunTimes.sunset
-    
+
     return date < sunrise || date > sunset
 }
 

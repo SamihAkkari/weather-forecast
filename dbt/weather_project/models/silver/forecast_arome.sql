@@ -4,99 +4,82 @@
 ) }}
 
 WITH 
--- OBJECTIVE:
---	1. Select the data rows that exist in bronze but not in silver
---	2. If a certain row is duplicated in bronze it selects only the one ingected at the end
+-- 1. Combine both bronze tables on keys and filter for new data
 base AS (
-    SELECT *
-    FROM (
-        SELECT
-            b.station_id,
-            b.run_time,
-            b.valid_time,
-            b.t2m,
-            b.r2,
-            b.wdir10,
-            b.si10,
-            b.tp,
-            b.ssrd,
-            ROW_NUMBER() OVER (
-                PARTITION BY b.station_id, b.run_time, b.valid_time
-                ORDER BY ingestion_time DESC
-            ) AS rn
-        FROM bronze.forecast b
-        WHERE b.run_time IS NOT NULL
-        AND NOT EXISTS (
-            SELECT 1
-            FROM silver.forecast_arome s
-            WHERE s.station_id::INT = b.station_id
-              AND s.run_time = b.run_time::timestamptz AT TIME ZONE 'Europe/Paris'
-              AND s.time_step_fr = b.valid_time::timestamptz AT TIME ZONE 'Europe/Paris'
-        )
-    ) t
-    WHERE t.rn = 1
+    SELECT 
+        COALESCE(b1.station_id, b2.station_id) as station_id,
+        COALESCE(b1.run_time, b2.run_time) as run_time,
+        COALESCE(b1.valid_time, b2.valid_time) as valid_time,
+        b1.t2m, b1.r2, b1.wdir10, b1.si10, b1.tp, b1.ssrd,
+        b2.lcc, b2.mcc, b2.hcc, b2.CAPE_INS,
+        ROW_NUMBER() OVER (
+            PARTITION BY COALESCE(b1.station_id, b2.station_id), COALESCE(b1.run_time, b2.run_time), COALESCE(b1.valid_time, b2.valid_time)
+            ORDER BY GREATEST(b1.ingestion_time, b2.ingestion_time) DESC
+        ) AS rn
+    FROM bronze.forecast_sp1_arome b1
+    INNER JOIN bronze.forecast_sp2_arome b2 
+        ON b1.station_id = b2.station_id 
+        AND b1.run_time = b2.run_time 
+        AND b1.valid_time = b2.valid_time
+    WHERE b1.run_time IS NOT NULL
+    
+    {% if is_incremental() %}
+    -- Only look at records that don't exist in Silver yet
+    AND NOT EXISTS (
+        SELECT 1
+        FROM {{ this }} s
+        WHERE s.station_id = LPAD(b1.station_id::TEXT, 8, '0')
+          AND s.run_time = b1.run_time::timestamptz AT TIME ZONE 'Europe/Paris'
+          AND s.time_step_fr = b1.valid_time::timestamptz AT TIME ZONE 'Europe/Paris'
+    )
+    {% endif %}
 ),
 
--- OBJECTIVE:
--- 	1. Contructs a time grid table of run_time/valid_time 
---	2. Only consider run_time/valid_time combos that actually appear in base
-relevant_time_grids AS (
-    SELECT DISTINCT run_time, valid_time
-    FROM base
+-- 2. Clean base to keep only the latest ingestion
+deduped_base AS (
+    SELECT * FROM base WHERE rn = 1
 ),
 
--- OBJECTIVE:
--- 	1. Contructs a time grid table of station_id/run_time/valid_time if a certain station is missing from bronze
+-- 3. Logic for stations that should have had data but were missing in Bronze
 missing AS (
     SELECT
         s.station_id,
         tg.run_time,
         tg.valid_time
-    FROM (
-        SELECT DISTINCT station_id FROM bronze.stations  -- or your source macro
-    ) s
-    JOIN relevant_time_grids tg ON TRUE
-    -- Only keep station+combo pairs missing from bronze entirely
+    FROM (SELECT DISTINCT station_id FROM bronze.stations) s
+    CROSS JOIN (SELECT DISTINCT run_time, valid_time FROM deduped_base) tg
     WHERE NOT EXISTS (
         SELECT 1
-        FROM bronze.forecast b
+        FROM deduped_base b
         WHERE b.station_id::TEXT = s.station_id::TEXT
           AND b.run_time = tg.run_time
           AND b.valid_time = tg.valid_time
     )
 ),
 
-final AS (
+final_union AS (
     SELECT
-        station_id, 
-		run_time, 
-		valid_time,
-        t2m,
-        r2,
-        wdir10,
-        si10,
-        tp,
-        ssrd   
-    FROM base
+        station_id, run_time, valid_time,
+        t2m, r2, wdir10, si10, tp, ssrd, lcc, mcc, hcc, CAPE_INS 
+    FROM deduped_base
     UNION ALL
     SELECT
         station_id, run_time, valid_time,
-        NULL, NULL, NULL, NULL, NULL, NULL
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
     FROM missing
 )
 
 SELECT
-    CASE 
-        WHEN LENGTH(station_id::TEXT) < 8 THEN '0' || station_id::TEXT
-        ELSE station_id::TEXT
-    END AS station_id,
+    LPAD(station_id::TEXT, 8, '0') AS station_id,
     run_time::timestamptz AT TIME ZONE 'Europe/Paris'       AS run_time,
     valid_time::timestamptz AT TIME ZONE 'Europe/Paris'     AS time_step_fr,
-	t2m - 273.15  AS temperature_celsius,
- 	r2   AS humidity_percentage,
-	wdir10 AS wind_direction_degree,
-	si10   AS wind_speed_m_per_s,
-	tp     AS precipitation_mm,
-	ssrd   AS global_radiation_J_m2,
+    t2m - 273.15  AS temperature_celsius,
+    r2   AS humidity_percentage,
+    wdir10 AS wind_direction_degree,
+    si10   AS wind_speed_m_per_s,
+    tp     AS precipitation_mm,
+    ssrd   AS global_radiation_J_m2,
+    1 - (1 - lcc) * (1 - mcc) * (1 - hcc) AS total_cloud_cover,
+    CAPE_INS as cape_m2_s2,
     DATE_TRUNC('minute', NOW() AT TIME ZONE 'Europe/Paris') AS transfer_time_fr
-FROM final
+FROM final_union

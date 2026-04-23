@@ -75,7 +75,7 @@ class DatabaseGetter:
             current_observation = [0] #quick fix
             logger.warning("Current observation for a station should be exactly one record in the data, however, no records were found, now I force a zero value")
         
-        forecasts = DatabaseGetter.get_formatted_forecasts(station_id = station.station_id, fromm = Config.FORECAST_TABLE_NAME, time = time, exactly_at_time = False)
+        forecasts = DatabaseGetter.get_formatted_forecasts(station_id = station.station_id, fromm = Config.SILVER_FORECAST_AROME_TABLE_NAME, time = time, exactly_at_time = False)
         data = {
             "station_info" : station.__dict__,
             "conditions" : current_observation[0],

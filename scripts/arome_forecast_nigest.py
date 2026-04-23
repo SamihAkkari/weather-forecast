@@ -30,23 +30,20 @@ logging.basicConfig(
     force = True
 )
 
-data_api= APIFactory.create("meteofrance_forecast_arome", "0025SP1")
-data_client = ForecastAromeClient(data_api)
-
 description_api= APIFactory.create("meteofrance_forecast_arome", "0025SP1_available_data")
 description_client = ForecastAromeClient(description_api)
 
-ingestor = ForecastIngestor(data_client, description_client)
-ingestor.run_once()
-ingestor.run_loop()
+data_api_SP1 = APIFactory.create("meteofrance_forecast_arome", "0025SP1")
+data_client_SP1 = ForecastAromeClient(data_api_SP1)
 
-data_api= APIFactory.create("meteofrance_forecast_arome", "0025SP2")
-data_client = ForecastAromeClient(data_api)
+data_api_SP2 = APIFactory.create("meteofrance_forecast_arome", "0025SP2")
+data_client_SP2 = ForecastAromeClient(data_api_SP2)
 
+data_clients = [data_client_SP1, data_client_SP2]
 
-description_api= APIFactory.create("meteofrance_forecast_arome", "0025SP2_available_data")
-description_client = ForecastAromeClient(description_api)
+# description_api= APIFactory.create("meteofrance_forecast_arome", "0025SP2_available_data")
+# description_client = ForecastAromeClient(description_api)
 
-ingestor = ForecastIngestor(data_client, description_client)
+ingestor = ForecastIngestor(data_clients, description_client)
 ingestor.run_once()
 ingestor.run_loop()

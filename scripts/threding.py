@@ -8,8 +8,12 @@ from src.client.clients import ObservationsClient
 from src.ingestion.ingestor import ObservationsIngestor
 import logging
 import threading
+import glob
 
 
+# delete old logs
+for f in glob.glob("logs/app.log*"):
+    os.remove(f)
 
 handler = RotatingFileHandler(
     "logs/app.log",
@@ -33,11 +37,15 @@ obs_client = ObservationsClient(obs_api)
 obs_ingestor = ObservationsIngestor(obs_client)
 
 
-fore_api= APIFactory.create("meteofrance_forecast_arome", "0025SP1")
-fore_client = ForecastAromeClient(fore_api)
 description_api= APIFactory.create("meteofrance_forecast_arome", "0025SP1_available_data")
 description_client = ForecastAromeClient(description_api)
-fore_ingestor = ForecastIngestor(fore_client, description_client)
+fore_api_SP1= APIFactory.create("meteofrance_forecast_arome", "0025SP1")
+fore_client_SP1 = ForecastAromeClient(fore_api_SP1)
+fore_api_SP2= APIFactory.create("meteofrance_forecast_arome", "0025SP2")
+fore_client_SP2 = ForecastAromeClient(fore_api_SP1)
+fore_clients = [fore_client_SP1, fore_client_SP2]
+
+fore_ingestor = ForecastIngestor(fore_clients, description_client)
 
 
 t1 = threading.Thread(target=obs_ingestor.run_loop, name="ObservationsThread")
