@@ -1,12 +1,6 @@
 import ValueWithUnit from "../common/ValueWithUnit";
 import SunCalc from "suncalc";
 
-// function getWeatherIcon(precipitation,) {
-//     if (precipitation > 0.5) return '🌧'
-//     if (precipitation > 0.1) return '🌦'
-//     return '🌤'
-// }
-
 function getWeatherIcon(entry, location) {
     const isDay = !isNight(entry.time_step_fr, location.lat, location.lng)
 

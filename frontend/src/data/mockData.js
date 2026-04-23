@@ -1,95 +1,68 @@
-// export const mockStation = {
-//   id: "75114001",
-//   name: "Paris-Montsouris",
-//   latitude: 48.8215,
-//   longitude: 2.3378,
-// }
-
-// export const mockCurrentConditions = {
-//   temperature: 14,
-//   humidity: 72,
-//   windSpeed: 12,
-//   precipitation: 0.2,
-// }
-
-// export const mockForecast = [
-//   { time: "2026-04-07T12:00:00", temperature: 13, precipitation: 0.0, windSpeed: 10, humidity: 68 },
-//   { time: "2026-04-07T13:00:00", temperature: 14, precipitation: 0.0, windSpeed: 11, humidity: 67 },
-//   { time: "2026-04-07T14:00:00", temperature: 15, precipitation: 0.0, windSpeed: 12, humidity: 65 },
-//   { time: "2026-04-07T15:00:00", temperature: 16, precipitation: 0.1, windSpeed: 13, humidity: 64 },
-//   { time: "2026-04-07T16:00:00", temperature: 15, precipitation: 0.2, windSpeed: 14, humidity: 66 },
-//   { time: "2026-04-07T17:00:00", temperature: 14, precipitation: 0.5, windSpeed: 13, humidity: 70 },
-//   { time: "2026-04-07T18:00:00", temperature: 13, precipitation: 0.3, windSpeed: 11, humidity: 74 },
-//   { time: "2026-04-07T19:00:00", temperature: 12, precipitation: 0.0, windSpeed: 10, humidity: 75 },
-//   { time: "2026-04-07T20:00:00", temperature: 11, precipitation: 0.0, windSpeed: 9,  humidity: 76 },
-//   { time: "2026-04-07T21:00:00", temperature: 10, precipitation: 0.0, windSpeed: 8,  humidity: 78 },
-//   { time: "2026-04-07T22:00:00", temperature: 10, precipitation: 0.0, windSpeed: 8,  humidity: 79 },
-//   { time: "2026-04-07T23:00:00", temperature: 9,  precipitation: 0.0, windSpeed: 7,  humidity: 80 },
-//   { time: "2026-04-08T00:00:00", temperature: 9,  precipitation: 0.0, windSpeed: 7,  humidity: 81 },
-//   { time: "2026-04-08T01:00:00", temperature: 8,  precipitation: 0.0, windSpeed: 6,  humidity: 82 },
-//   { time: "2026-04-08T02:00:00", temperature: 8,  precipitation: 0.0, windSpeed: 6,  humidity: 83 },
-//   { time: "2026-04-08T03:00:00", temperature: 7,  precipitation: 0.1, windSpeed: 6,  humidity: 84 },
-//   { time: "2026-04-08T04:00:00", temperature: 7,  precipitation: 0.0, windSpeed: 5,  humidity: 84 },
-//   { time: "2026-04-08T05:00:00", temperature: 7,  precipitation: 0.0, windSpeed: 5,  humidity: 85 },
-//   { time: "2026-04-08T06:00:00", temperature: 8,  precipitation: 0.0, windSpeed: 6,  humidity: 83 },
-//   { time: "2026-04-08T07:00:00", temperature: 9,  precipitation: 0.0, windSpeed: 7,  humidity: 80 },
-//   { time: "2026-04-08T08:00:00", temperature: 11, precipitation: 0.0, windSpeed: 8,  humidity: 76 },
-//   { time: "2026-04-08T09:00:00", temperature: 13, precipitation: 0.0, windSpeed: 9,  humidity: 72 },
-//   { time: "2026-04-08T10:00:00", temperature: 14, precipitation: 0.0, windSpeed: 10, humidity: 69 },
-//   { time: "2026-04-08T11:00:00", temperature: 15, precipitation: 0.0, windSpeed: 11, humidity: 67 },
-//   { time: "2026-04-08T12:00:00", temperature: 16, precipitation: 0.0, windSpeed: 12, humidity: 65 },
-// ]
-
-export const mockWeatherByStation = {
-  "75114001": {
-    conditions: { temperature: 14, humidity: 72, windSpeed: 12, precipitation: 0.2 },
-    forecast: [
-      { time: "2026-04-07T12:00:00", temperature: 13, precipitation: 0.0, windSpeed: 10, humidity: 68 },
-      { time: "2026-04-07T13:00:00", temperature: 14, precipitation: 0.0, windSpeed: 11, humidity: 67 },
-      { time: "2026-04-07T14:00:00", temperature: 15, precipitation: 0.0, windSpeed: 12, humidity: 65 },
-      { time: "2026-04-07T15:00:00", temperature: 16, precipitation: 0.1, windSpeed: 13, humidity: 64 },
-      { time: "2026-04-07T16:00:00", temperature: 15, precipitation: 0.2, windSpeed: 14, humidity: 66 },
-      { time: "2026-04-07T17:00:00", temperature: 14, precipitation: 0.5, windSpeed: 13, humidity: 70 },
-      { time: "2026-04-07T18:00:00", temperature: 13, precipitation: 0.3, windSpeed: 11, humidity: 74 },
-      { time: "2026-04-07T19:00:00", temperature: 12, precipitation: 0.0, windSpeed: 10, humidity: 75 },
-      { time: "2026-04-07T20:00:00", temperature: 11, precipitation: 0.0, windSpeed: 9,  humidity: 76 },
-    ]
+export const mockAnalysis = {
+  station_name: "Paris-Montsouris",
+  temperature: {
+    comparison: [
+      { time: "2026-04-21T00:00:00", forecast: 10.2, observed: 9.8 },
+      { time: "2026-04-21T01:00:00", forecast: 9.8,  observed: 9.2 },
+      { time: "2026-04-21T02:00:00", forecast: 9.4,  observed: 8.9 },
+      { time: "2026-04-21T03:00:00", forecast: 9.1,  observed: 8.5 },
+      { time: "2026-04-21T04:00:00", forecast: 8.9,  observed: 8.2 },
+      { time: "2026-04-21T05:00:00", forecast: 8.8,  observed: 8.0 },
+      { time: "2026-04-21T06:00:00", forecast: 9.2,  observed: 8.6 },
+      { time: "2026-04-21T07:00:00", forecast: 10.5, observed: 10.1 },
+      { time: "2026-04-21T08:00:00", forecast: 12.1, observed: 11.8 },
+      { time: "2026-04-21T09:00:00", forecast: 13.8, observed: 13.2 },
+      { time: "2026-04-21T10:00:00", forecast: 15.2, observed: 14.5 },
+      { time: "2026-04-21T11:00:00", forecast: 16.1, observed: 15.3 },
+      { time: "2026-04-21T12:00:00", forecast: 16.8, observed: 15.9 },
+      { time: "2026-04-21T13:00:00", forecast: 17.2, observed: 16.4 },
+      { time: "2026-04-21T14:00:00", forecast: 17.0, observed: 16.5 },
+      { time: "2026-04-21T15:00:00", forecast: 16.5, observed: 16.1 },
+      { time: "2026-04-21T16:00:00", forecast: 15.8, observed: 15.6 },
+      { time: "2026-04-21T17:00:00", forecast: 14.9, observed: 14.8 },
+      { time: "2026-04-21T18:00:00", forecast: 13.8, observed: 13.9 },
+      { time: "2026-04-21T19:00:00", forecast: 12.9, observed: 13.1 },
+      { time: "2026-04-21T20:00:00", forecast: 12.1, observed: 12.4 },
+      { time: "2026-04-21T21:00:00", forecast: 11.5, observed: 11.8 },
+      { time: "2026-04-21T22:00:00", forecast: 11.0, observed: 11.3 },
+      { time: "2026-04-21T23:00:00", forecast: 10.6, observed: 10.9 },
+      { time: "2026-04-22T00:00:00", forecast: 10.2, observed: 10.5 },
+      { time: "2026-04-22T01:00:00", forecast: 9.9,  observed: 10.2 },
+      { time: "2026-04-22T02:00:00", forecast: 9.6,  observed: 9.9 },
+      { time: "2026-04-22T03:00:00", forecast: 9.4,  observed: 9.7 },
+      { time: "2026-04-22T04:00:00", forecast: 9.2,  observed: 9.5 },
+      { time: "2026-04-22T05:00:00", forecast: 9.1,  observed: 9.3 },
+      { time: "2026-04-22T06:00:00", forecast: 9.5,  observed: 9.6 },
+      { time: "2026-04-22T07:00:00", forecast: 10.8, observed: 10.8 },
+      { time: "2026-04-22T08:00:00", forecast: 12.4, observed: 12.1 },
+      { time: "2026-04-22T09:00:00", forecast: 14.1, observed: 13.6 },
+      { time: "2026-04-22T10:00:00", forecast: 15.6, observed: 14.9 },
+      { time: "2026-04-22T11:00:00", forecast: 16.5, observed: 15.7 },
+    ],
+    mae: 1.2,
+    rmse: 1.6,
+    bias: 0.4,
+    degradation: [
+      { horizon_h: 1,  mae: 0.6 },
+      { horizon_h: 6,  mae: 0.9 },
+      { horizon_h: 12, mae: 1.2 },
+      { horizon_h: 18, mae: 1.5 },
+      { horizon_h: 24, mae: 1.7 },
+      { horizon_h: 30, mae: 1.9 },
+      { horizon_h: 36, mae: 2.0 },
+      { horizon_h: 42, mae: 2.1 },
+      { horizon_h: 48, mae: 2.1 },
+    ],
+    insight: "The model shows a slight warm bias of +0.4°C on average, more pronounced during nighttime hours."
   },
-  "69123001": {
-    conditions: { temperature: 18, humidity: 55, windSpeed: 8, precipitation: 0.0 },
-    forecast: [
-      { time: "2026-04-07T12:00:00", temperature: 17, precipitation: 0.0, windSpeed: 7, humidity: 57 },
-      { time: "2026-04-07T13:00:00", temperature: 18, precipitation: 0.0, windSpeed: 8, humidity: 55 },
-      { time: "2026-04-07T14:00:00", temperature: 19, precipitation: 0.0, windSpeed: 8, humidity: 53 },
-      { time: "2026-04-07T15:00:00", temperature: 20, precipitation: 0.0, windSpeed: 9, humidity: 51 },
-      { time: "2026-04-07T16:00:00", temperature: 19, precipitation: 0.0, windSpeed: 9, humidity: 52 },
-      { time: "2026-04-07T17:00:00", temperature: 18, precipitation: 0.1, windSpeed: 8, humidity: 55 },
-      { time: "2026-04-07T18:00:00", temperature: 17, precipitation: 0.0, windSpeed: 7, humidity: 57 },
-      { time: "2026-04-07T19:00:00", temperature: 16, precipitation: 0.0, windSpeed: 6, humidity: 60 },
-      { time: "2026-04-07T20:00:00", temperature: 15, precipitation: 0.0, windSpeed: 6, humidity: 62 },
-    ]
+  rain: {
+    tp: 8, fp: 3, fn: 2, tn: 35,
+    precision: 0.73, recall: 0.80, f1: 0.76,
+    insight: "The model correctly caught 8 out of 10 rainy hours but triggered 3 false alarms."
   },
-  "13055001": {
-    conditions: { temperature: 21, humidity: 48, windSpeed: 15, precipitation: 0.0 },
-    forecast: [
-      { time: "2026-04-07T12:00:00", temperature: 20, precipitation: 0.0, windSpeed: 14, humidity: 50 },
-      { time: "2026-04-07T13:00:00", temperature: 21, precipitation: 0.0, windSpeed: 15, humidity: 48 },
-      { time: "2026-04-07T14:00:00", temperature: 22, precipitation: 0.0, windSpeed: 16, humidity: 46 },
-      { time: "2026-04-07T15:00:00", temperature: 23, precipitation: 0.0, windSpeed: 16, humidity: 45 },
-      { time: "2026-04-07T16:00:00", temperature: 22, precipitation: 0.0, windSpeed: 15, humidity: 46 },
-      { time: "2026-04-07T17:00:00", temperature: 21, precipitation: 0.0, windSpeed: 14, humidity: 48 },
-      { time: "2026-04-07T18:00:00", temperature: 20, precipitation: 0.0, windSpeed: 13, humidity: 50 },
-      { time: "2026-04-07T19:00:00", temperature: 19, precipitation: 0.0, windSpeed: 12, humidity: 52 },
-      { time: "2026-04-07T20:00:00", temperature: 18, precipitation: 0.0, windSpeed: 11, humidity: 54 },
-    ]
-  },
+  sunshine: {
+    tp: 22, fp: 4, fn: 2, tn: 20,
+    precision: 0.85, recall: 0.92, f1: 0.88,
+    insight: "Sunshine is well captured — the model rarely misses a sunny hour."
+  }
 }
-
-export const mockStations = [
-  { id: "75114001", name: "Paris-Montsouris", latitude: 48.8215, longitude: 2.3378 },
-  { id: "69123001", name: "Lyon-Bron", latitude: 45.7267, longitude: 4.9422 },
-  { id: "13055001", name: "Marseille-Marignane", latitude: 43.4367, longitude: 5.2150 },
-  { id: "33063001", name: "Bordeaux-Mérignac", latitude: 44.8283, longitude: -0.6928 },
-  { id: "31069001", name: "Toulouse-Blagnac", latitude: 43.6297, longitude: 1.3674 },
-  { id: "06088001", name: "Nice-Côte d'Azur", latitude: 43.6653, longitude: 7.2150 },
-]
