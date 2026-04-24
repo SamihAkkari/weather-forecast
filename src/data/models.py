@@ -188,6 +188,20 @@ class AllSP2ForecastAromeRecords(BaseRecord):
     CAPE_INS: float  # Convective Available Potential Energy instantaneous (m2/s2)
 
 
+@dataclass
+class SilverForecastAromeRecords(BaseRecord):
+    station_id:     str
+    run_time:  datetime
+    time_step_fr:  datetime
+    temperature_celsius:       float
+    humidity_percentage:      float
+    wind_direction_degree:       float
+    wind_speed_m_per_s:  float
+    precipitation_mm:   float
+    global_radiation_j_m2: float
+    total_cloud_cover: float
+    cape_m2_s2: float
+    transfer_time_fr: datetime
 
 
 

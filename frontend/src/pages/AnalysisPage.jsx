@@ -3,6 +3,8 @@ import Navbar from '../components/common/Navbar'
 import StationMap from '../components/weather/StationMap'
 import { mockAnalysis } from '../data/mockData'
 import TemperatureAnalysis from '../components/analysis/TemperatureAnalysis'
+import DetectionAnalysis from '../components/analysis/DetectionAnalysis'
+import { exportAnalysisCsv } from '../utils/exportCsv'
 
 function AnalysisPage() {
     const [location, setLocation] = useState(null)
@@ -67,6 +69,7 @@ function AnalysisPage() {
                     </button>
 
                     <button
+                        onClick={() => exportAnalysisCsv(analysisData, runTime)}
                         disabled={!analysisData}
                         className="px-4 py-2 border border-gray-100 rounded-lg text-sm text-gray-500 hover:border-gray-300 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
@@ -103,7 +106,22 @@ function AnalysisPage() {
                             Nearest station: <span className="font-medium text-gray-900">{analysisData.station_name}</span>
                         </p>
                         <TemperatureAnalysis data={analysisData.temperature} />
-                        {/* Analysis components will be added here one by one */}
+
+                        {/*
+                        Both use the same DetectionAnalysis component.
+                        The only difference is the title prop and which data object we pass.
+                        rain and sunshine have identical shapes so the component handles both perfectly.
+                        */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <DetectionAnalysis
+                                title="Rain detection"
+                                data={analysisData.rain}
+                            />
+                            <DetectionAnalysis
+                                title="Sunshine detection"
+                                data={analysisData.sunshine}
+                            />
+                        </div>
                     </div>
                 )}
 

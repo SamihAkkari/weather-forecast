@@ -19,8 +19,8 @@ time = TimeManager.utc_now_truncated(to="hour")
 time = TimeManager.utc_to_france(time)
 time = TimeManager.convert_to_iso(time)
 
-fromm = Config.FORECAST_TABLE_NAME
-fromm = Config.OBSERVATIONS_TABLE_NAME_HOURLY
+fromm = Config.SILVER_FORECAST_AROME_TABLE_NAME
+# fromm = Config.OBSERVATIONS_TABLE_NAME_HOURLY
 
 data = DatabaseGetter.get_formatted_observations(station_id, fromm, time)
 
@@ -35,3 +35,25 @@ data = DatabaseGetter.get_frontend_formatted_data_for_basicV(station_id, time = 
 stations= DatabaseGetter.get_stations()
 
 stations = DatabaseGetter.get_stations_to_show_on_map_in_basicV()
+
+
+run_time = '2026-04-22 20:00:00+00'
+data = DatabaseGetter.get_forecast_run("01014002", Config.SILVER_FORECAST_AROME_TABLE_NAME, run_time)
+
+
+
+# Step 1 - Get forecast data
+forecast_data = DatabaseGetter.get_forecast_run("01014002", Config.SILVER_FORECAST_AROME_TABLE_NAME, run_time)
+time_range = (forecast_data[0].time_step_fr, forecast_data[-1].time_step_fr)
+
+# Step 2 — fetch observations for the same time window
+observations_data, cur = DatabaseGetter.get_observations(
+    "01014002", Config.OBSERVATIONS_TABLE_NAME_HOURLY, time_range
+)
+
+from src.processing import analysis_processor as analysis
+analysis.compute_analysis(
+    DatabaseGetter.transform_list_of_objects_to_list_of_dict(forecast_data),
+    DatabaseGetter.transform_data_to_list_of_dict(observations_data, cur),
+    "123"
+    )

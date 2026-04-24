@@ -45,3 +45,22 @@ def get_frontend_formatted_data_for_basicV(lat: float, lng: float):
     # Get data for the nearest station and the current time    
     data = DatabaseGetter.get_frontend_formatted_data_for_basicV(nearest_station, time = time)
     return data
+
+
+@app.get("/analysis")
+def get_analysis(lat: float, lng: float, run_time: str):
+    """
+    lat, lng: coordinates the user clicked or searched
+    run_time: ISO string like "2026-04-21T00:00" from the datetime picker
+    """
+
+    # Step 1 - Get nearest station of the selected location
+    stations = DatabaseGetter.get_stations()
+    nearest_station = spatial.find_nearest_station(stations, lat, lng)
+
+    # Step 2 — Get data for the nearest station and the current time  
+    data = DatabaseGetter.get_frontend_formatted_data_for_analysis(nearest_station, run_time)
+
+    results = compute_analysis(forecast, observations)
+
+    return results
