@@ -26,3 +26,11 @@ def sleep_until_next_hour():
 time = TimeManager.utc_now_truncated(to="hour")
 time = TimeManager.utc_to_france(time)
 time = TimeManager.convert_to_iso(time)
+
+
+now_utc = TimeManager.utc_now_truncated(to="hour")
+now_france = TimeManager.utc_to_france(now_utc)
+fr_time_before_specified_days = now_france - timedelta(days=5)
+
+
+

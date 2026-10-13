@@ -92,6 +92,8 @@ class ObservationsIngestor(BaseIngestor):
         """Fetch data from API"""
         try:
             response = self.api_client.fetch_data(params = params)  # your API method
+            import pdb
+            pdb.set_trace()
             observation_processor = ObservationProcessor(response)
             records = observation_processor.get_ready_to_ingest_records(self.records_class)
             self._log_fetch("observations", len(records))

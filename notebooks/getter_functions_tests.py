@@ -10,7 +10,7 @@ os.chdir('c:\\Users\\sakkari\\Code\\weather-forecast')
 from src.config.config import Config
 from src.data.db import DatabaseConnection
 from src.data.getter import DatabaseGetter
-
+from src.processing import spatial
 from src.ingestion.time_manager import TimeManager
 
 station_id =  "01014002"
@@ -30,6 +30,7 @@ data = DatabaseGetter.get_formatted_forecasts(station_id, fromm, time = time, ex
 
 data = DatabaseGetter.get_frontend_formatted_data_for_basicV(station_id, time = time)
 
+DatabaseGetter.get_observations(station_id, fromm, time = time)
 
 
 stations= DatabaseGetter.get_stations()
@@ -57,3 +58,16 @@ analysis.compute_analysis(
     DatabaseGetter.transform_data_to_list_of_dict(observations_data, cur),
     "123"
     )
+
+
+
+data, cur = DatabaseGetter.get_model_run_times(Config.SILVER_FORECAST_AROME_TABLE_NAME, 5)
+
+
+# Step 1 - Get nearest station of the selected location
+stations = DatabaseGetter.get_stations()
+nearest_station = spatial.find_nearest_station(stations, 45, 2)
+
+DatabaseGetter.get_frontend_formatted_data_for_analysis(nearest_station , days=5)
+
+

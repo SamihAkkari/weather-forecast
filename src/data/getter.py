@@ -5,7 +5,8 @@ from src.data.models import SilverObservationListeStationsRecords, SilverForecas
 import logging
 from typing import Tuple, List
 from datetime import datetime
-import src.processing.analysis_processor as analysis
+import src.processing.analysis_processor as analyser
+from src.ingestion.time_manager import TimeManager
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +115,7 @@ class DatabaseGetter:
                                 WHERE
                                     station_id = %s and time_step_fr > %s and time_step_fr < %s
                                 """, (station_id,time[0],time[1]))
-                    elif isinstance(time, datetime):
+                    elif isinstance(time, datetime) or isinstance(time, str):
                         cur.execute(f"""
                                 SELECT * 
                                 FROM {Config.SILVER_SCHEMA}.{fromm}
@@ -123,7 +124,7 @@ class DatabaseGetter:
                                 
                                 """, (station_id,time,))
                     else:
-                        logger.error("In get_observations, the time should either be None to get all observations of the station, or a tuple to get a range of time, or datetime to get at specific timestep, other types are not handled")
+                        logger.error("In get_observations, the time should either be None to get all observations of the station, or a tuple to get a range of time, or datetime or iso string to get at specific timestep, other types are not handled")
                         raise ValueError
                 return cur.fetchall(), cur
 
@@ -206,20 +207,42 @@ class DatabaseGetter:
         return stations
     
     @staticmethod
-    def get_frontend_formatted_data_for_analysis(station, run_time):
-        # Step 1 - Get forecast data
-        forecast_data = DatabaseGetter.get_forecast_run(station.station_id, Config.SILVER_FORECAST_AROME_TABLE_NAME, run_time)
-        time_range = (forecast_data[0].time_step_fr, forecast_data[-1].time_step_fr)
-        
-        # Step 2 — fetch observations for the same time window
-        observations_data, cur = DatabaseGetter.get_observations(
-            station.station_id, Config.OBSERVATIONS_TABLE_NAME_HOURLY, time_range
-        )
+    def get_model_run_times(fromm, days):
+        time_before_specified_days = TimeManager.get_time_before(days)
+        with DatabaseConnection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(f"""
+                        SELECT DISTINCT ON (run_time) run_time
+                        FROM {Config.SILVER_SCHEMA}.{fromm}
+                        where
+                            run_time >= %s
+                            """, (time_before_specified_days,))
+                return cur.fetchall()
 
-        analysis.compute(
-            DatabaseGetter.transform_list_of_objects_to_list_of_dict(forecast_data),
-            DatabaseGetter.transform_data_to_list_of_dict(observations_data, cur)
+
+    @staticmethod
+    def get_frontend_formatted_data_for_analysis(station, days):
+        # Step 1 - get list of run_times based on the days requested
+        per_run_analysis = []
+        run_times = DatabaseGetter.get_model_run_times(Config.SILVER_FORECAST_AROME_TABLE_NAME, days)
+
+        for run_time in run_times:
+            # Step 1 - Get forecast data
+            forecast_data = DatabaseGetter.get_forecast_run(station.station_id, Config.SILVER_FORECAST_AROME_TABLE_NAME, run_time)
+            time_range = (forecast_data[0].time_step_fr, forecast_data[-1].time_step_fr)
+            
+            # Step 2 — fetch observations for the same time window
+            observations_data, cur = DatabaseGetter.get_observations(
+                station.station_id, Config.OBSERVATIONS_TABLE_NAME_HOURLY, time_range
             )
+            analysis = analyser.analyse(
+                DatabaseGetter.transform_list_of_objects_to_list_of_dict(forecast_data),
+                DatabaseGetter.transform_data_to_list_of_dict(observations_data, cur)
+            )
+
+            per_run_analysis.append(analysis)
+        aggregated_analysis = analyser.aggregate(per_run_analysis)
+        return aggregated_analysis
         
         
         

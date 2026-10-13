@@ -67,37 +67,20 @@ function downloadCsv(content, filename) {
   stationName and runTime are included in the filename so the user
   knows exactly which analysis the file corresponds to.
 */
-export function exportAnalysisCsv(analysisData, runTime) {
-  const station = analysisData.station_name.replace(/\s+/g, '_')
-  const run = runTime.replace(/[:\-T]/g, '').slice(0, 12)
+export function exportAnalysisCsv(analysisData, label) {
+  const station = analysisData.station_name?.replace(/\s+/g, '_') ?? 'station'
 
-  // Temperature comparison
-  const tempCsv = arrayToCsv(analysisData.temperature.comparison)
-  downloadCsv(tempCsv, `temperature_${station}_${run}.csv`)
+  // Temperature degradation
+  const tempRows = Object.entries(analysisData.temperature.degradation)
+    .map(([horizon, mae]) => ({ horizon_h: horizon, mae }))
+    .sort((a, b) => a.horizon_h - b.horizon_h)
+  downloadCsv(arrayToCsv(tempRows), `temperature_degradation_${station}_${label}.csv`)
 
-  // Rain confusion data as a single summary row
-  const rainRows = [{
-    metric: 'rain',
-    tp: analysisData.rain.tp,
-    fp: analysisData.rain.fp,
-    fn: analysisData.rain.fn,
-    tn: analysisData.rain.tn,
-    precision: analysisData.rain.precision,
-    recall: analysisData.rain.recall,
-    f1: analysisData.rain.f1,
-  }]
-  downloadCsv(arrayToCsv(rainRows), `rain_${station}_${run}.csv`)
+  // Rain
+  const rainRows = [{ metric: 'rain', ...analysisData.rain }]
+  downloadCsv(arrayToCsv(rainRows), `rain_${station}_${label}.csv`)
 
-  // Sunshine confusion data
-  const sunshineRows = [{
-    metric: 'sunshine',
-    tp: analysisData.sunshine.tp,
-    fp: analysisData.sunshine.fp,
-    fn: analysisData.sunshine.fn,
-    tn: analysisData.sunshine.tn,
-    precision: analysisData.sunshine.precision,
-    recall: analysisData.sunshine.recall,
-    f1: analysisData.sunshine.f1,
-  }]
-  downloadCsv(arrayToCsv(sunshineRows), `sunshine_${station}_${run}.csv`)
+  // Sunshine
+  const sunshineRows = [{ metric: 'sunshine', ...analysisData.sunshine }]
+  downloadCsv(arrayToCsv(sunshineRows), `sunshine_${station}_${label}.csv`)
 }

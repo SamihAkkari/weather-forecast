@@ -104,6 +104,15 @@ class TimeManager:
         time = TimeManager.convert_to_iso(time)
         return time
 
+    @staticmethod
+    def get_time_before(days):
+        now_utc = TimeManager.utc_now_truncated(to="hour")
+        now_france = TimeManager.utc_to_france(now_utc)
+        fr_time_before_specified_days = now_france - timedelta(days=days)
+        return fr_time_before_specified_days 
+
+
+
 
     # def last_arome_forecast_run_time():
     #     now = TimeManager.utc_now()

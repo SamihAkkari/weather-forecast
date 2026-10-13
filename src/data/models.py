@@ -202,18 +202,3 @@ class SilverForecastAromeRecords(BaseRecord):
     total_cloud_cover: float
     cape_m2_s2: float
     transfer_time_fr: datetime
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
