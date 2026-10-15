@@ -115,6 +115,7 @@ class SP1ForecastAromeRecord(BaseRecord):
     wdir10         : float  # 10 metre wind direction
     ssrd           : float  # Surface solar radiation downwards
     tp             : float  # Total precipitation
+    prmsl: float  # Mean sea level pressure (Pa)
     ingestion_time : datetime # Time when the forecast was ingested into the database
 
 
@@ -201,4 +202,5 @@ class SilverForecastAromeRecords(BaseRecord):
     global_radiation_j_m2: float
     total_cloud_cover: float
     cape_m2_s2: float
+    mean_sea_level_pressure: float
     transfer_time_fr: datetime

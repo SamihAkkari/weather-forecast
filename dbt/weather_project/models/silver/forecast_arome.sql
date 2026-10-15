@@ -60,7 +60,7 @@ missing AS (
 final_union AS (
     SELECT
         station_id, run_time, valid_time,
-        t2m, r2, wdir10, si10, tp, ssrd, lcc, mcc, hcc, CAPE_INS 
+        t2m, r2, wdir10, si10, tp, ssrd, lcc, mcc, hcc, CAPE_INS, prmsl
     FROM deduped_base
     UNION ALL
     SELECT
@@ -81,5 +81,6 @@ SELECT
     ssrd   AS global_radiation_J_m2,
     1 - (1 - lcc) * (1 - mcc) * (1 - hcc) AS total_cloud_cover,
     CAPE_INS as cape_m2_s2,
+    prmsl AS mean_sea_level_pressure,
     DATE_TRUNC('minute', NOW() AT TIME ZONE 'Europe/Paris') AS transfer_time_fr
 FROM final_union

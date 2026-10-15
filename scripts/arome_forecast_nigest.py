@@ -45,5 +45,5 @@ data_clients = [data_client_SP1, data_client_SP2]
 # description_client = ForecastAromeClient(description_api)
 
 ingestor = ForecastIngestor(data_clients, description_client)
-ingestor.run_once()
+# ingestor.run_once()
 ingestor.run_loop()

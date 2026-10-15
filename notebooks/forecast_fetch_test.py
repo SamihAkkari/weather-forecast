@@ -12,7 +12,7 @@ from src.client.clients import ForecastAromeClient
 from src.processing.arome_forecast_processor import GribProcessor
 
 
-data_api= APIFactory.create("meteofrance_forecast_arome", "0025SP2")
+data_api= APIFactory.create("meteofrance_forecast_arome", "0025SP1")
 data_client = ForecastAromeClient(data_api)
 
 # description_api= APIFactory.create("meteofrance_forecast_arome", "0025SP1_available_data")
@@ -20,7 +20,7 @@ data_client = ForecastAromeClient(data_api)
 
 
 params = {
-    "referencetime" : "2026-04-18T03:00:00Z",
+    "referencetime" : "2026-10-15T15:00:00Z",
     "time": ["07H12H"],
     "format": "grib2"
 }
