@@ -12,6 +12,25 @@ from src.data.db import DatabaseConnection
 from src.data.getter import DatabaseGetter
 from src.processing import spatial
 from src.ingestion.time_manager import TimeManager
+from src.processing.spatial import find_nearest_station
+
+from src.processing.viewer_service import get_viewer_data
+
+stations = DatabaseGetter.get_stations()
+
+lat = 48.8215
+lng = 2.3378
+nearest_station = find_nearest_station(stations, lat, lng)
+
+current_time = TimeManager.current_france_time_iso(time_truncation="hour")
+
+raw_data = DatabaseGetter.get_frontend_formatted_data_for_basicV(
+        station=nearest_station,
+        time=current_time
+    )
+
+D = get_viewer_data(lat, lng)
+
 
 station_id =  "01014002"
 time = "2026-04-09 18:00:00+00"

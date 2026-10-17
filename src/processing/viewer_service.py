@@ -22,6 +22,8 @@ It does NOT know about:
 - SQL queries (that's DatabaseGetter)
 """
 
+
+
 def get_viewer_data(lat: float, lng: float) -> dict:
     """
     Main entry point called by the API layer.
@@ -38,17 +40,22 @@ def get_viewer_data(lat: float, lng: float) -> dict:
     # This is used to fetch the current observation and forecast from now onward
     current_time = TimeManager.current_france_time_iso(time_truncation="hour")
 
-    # Step 3 — fetch raw data from the database
-    raw_data = DatabaseGetter.get_frontend_formatted_data_for_basicV(
-        station=nearest_station,
-        time=current_time
+    # Fetch only forecast — no observation call
+    forecast_raw, cur = DatabaseGetter.get_forecasts_at_time_step(
+        station_id=nearest_station.station_id,
+        fromm=Config.SILVER_FORECAST_AROME_TABLE_NAME,
+        time=current_time,
+        exactly_at_time=False
     )
+    forecast = DatabaseGetter.transform_data_to_list_of_dict(forecast_raw, cur)
 
-    # Step 4 — build and return the full structured response
-    return _build_response(raw_data)
+    station_info = nearest_station.__dict__
+
+    return _build_response(station_info, forecast)
 
 
-def _build_response(raw_data: dict) -> dict:
+
+def _build_response(station_info: dict, forecast: list[dict]) -> dict:
     """
     Takes the raw data dict from DatabaseGetter and transforms it
     into the exact shape the frontend expects.
@@ -56,25 +63,22 @@ def _build_response(raw_data: dict) -> dict:
     raw_data shape coming in:
     {
         "station_info": {...},
-        "conditions": {...} or 0 if no observation found,
         "forecast": [{...}, ...]
     }
 
     Response shape going out matches mockWeatherDetails + mockForecast
     structure on the frontend.
     """
-
-    station_info = raw_data.get("station_info", {})
-    conditions   = raw_data.get("conditions", {})
-    forecast     = raw_data.get("forecast", [])
+    # The first forecast entry represents current/next conditions
+    current = forecast[0] if forecast else {}
 
     return {
         "station":    _build_station(station_info),
-        "conditions": _build_conditions(conditions),
+        # "conditions": _build_conditions(current),
         "forecast":   _build_hourly_forecast(forecast),
         "daily":      _build_daily_forecast(forecast),
-        "widgets":    _build_widgets(conditions, forecast),
-        "lifestyle":  _build_lifestyle(conditions, forecast),
+        "widgets":    _build_widgets(current, forecast),
+        "lifestyle":  _build_lifestyle(current, forecast),
     }
 
 
@@ -86,25 +90,17 @@ def _build_station(station_info: dict) -> dict:
     }
 
 
-def _build_conditions(conditions) -> dict:
-    """
-    conditions is either a dict from the DB or 0 (the quick fix in DatabaseGetter).
-    We handle both cases safely here.
-    """
-    if not conditions or conditions == 0:
-        return {
-            "temperature_celsius":  None,
-            "humidity_percentage":  None,
-            "wind_speed_m_per_s":   None,
-            "precipitation_mm":     None,
-        }
-    return {
-        "temperature_celsius": conditions.get("temperature_celsius"),
-        "humidity_percentage": conditions.get("humidity_percentage"),
-        "wind_speed_m_per_s":  conditions.get("wind_speed_m_per_s"),
-        "precipitation_mm":    conditions.get("precipitation_mm"),
-    }
-
+# def _build_conditions(current: dict) -> dict:
+#     """
+#     Now reads from the first forecast timestep instead of observations.
+#     Keys match what silver.forecast exposes after the dbt transformation.
+#     """
+#     return {
+#         "temperature_celsius": current.get("temperature_celsius"),
+#         "humidity_percentage": current.get("humidity_percentage"),
+#         "wind_speed_m_per_s":  current.get("wind_speed_m_per_s"),
+#         "precipitation_mm":    current.get("precipitation_mm"),
+#     }
 
 def _build_hourly_forecast(forecast: list[dict]) -> list[dict]:
     """
@@ -116,8 +112,9 @@ def _build_hourly_forecast(forecast: list[dict]) -> list[dict]:
             "time":          entry.get("time_step_fr"),
             "temperature":   entry.get("temperature_celsius"),
             "precipitation": entry.get("precipitation_mm"),
-            "windSpeed":     entry.get("wind_speed_m_per_s"),
-            "humidity":      entry.get("humidity_percentage"),
+            "icon": _pick_icon(entry.get("precipitation_mm"), entry.get("global_radiation_j_m2")),
+            # "windSpeed":     entry.get("wind_speed_m_per_s"),
+            # "humidity":      entry.get("humidity_percentage"),
         }
         for entry in forecast[:48]
     ]
@@ -187,17 +184,21 @@ def _pick_day_icon(entries: list[dict]) -> str:
         for e in entries
     ) / max(len(entries), 1)
 
-    if total_precip > 5:
+    return _pick_icon(total_precip, avg_radiation)
+
+
+def _pick_icon(precip, radiation):
+    if precip > 5:
         return "rainy"
-    elif total_precip > 1:
+    elif precip > 1:
         return "partly_cloudy"
-    elif avg_radiation > 432000:
+    elif radiation > 432000:
         return "sunny"
     else:
         return "cloudy"
 
 
-def _build_widgets(conditions, forecast: list[dict]) -> dict:
+def _build_widgets(current, forecast: list[dict]) -> dict:
     """
     Builds the weather widgets data.
     Most values come from current conditions (observations).
@@ -208,11 +209,13 @@ def _build_widgets(conditions, forecast: list[dict]) -> dict:
     derived fields as placeholders — you can enrich these
     as your data model grows.
     """
-    temp    = conditions.get("temperature_celsius") if conditions and conditions != 0 else None
-    feels   = _compute_feels_like(conditions, forecast)
-    wind    = conditions.get("wind_speed_m_per_s") if conditions and conditions != 0 else None
-    humidity = conditions.get("humidity_percentage") if conditions and conditions != 0 else None
-    precip  = conditions.get("precipitation_mm") if conditions and conditions != 0 else None
+    temp    = current.get("temperature_celsius") if current and current != 0 else None
+    feels   = _compute_feels_like(current, forecast)
+    wind    = current.get("wind_speed_m_per_s") if current and current != 0 else None
+    wind_dir_degree = current.get("wind_direction_degree") if current and current != 0 else None
+    humidity = current.get("humidity_percentage") if current and current != 0 else None
+    pressure = current.get("mean_sea_level_pressure") if current and current != 0 else None
+    precip  = current.get("precipitation_mm") if current and current != 0 else None
 
     return {
         "humidity": {
@@ -228,7 +231,7 @@ def _build_widgets(conditions, forecast: list[dict]) -> dict:
         "wind": {
             "value":     round(wind, 1) if wind is not None else None,
             "unit":      "m/s",
-            "direction": "N",  # TODO: add wind direction when available in DB
+            "direction": _wind_direction(wind_dir_degree),
             "message":   _wind_message(wind),
         },
         "sunrise": {
@@ -237,39 +240,39 @@ def _build_widgets(conditions, forecast: list[dict]) -> dict:
             "message": "Sunrise data coming soon",
         },
         "uv_index": {
-            "value":   3,       # TODO: add UV index when available in DB
+            "value":   "N/A",       # TODO: add UV index when available in DB
             "unit":    "",
-            "message": "Moderate — no protection needed",
+            "message": "uv_index data coming soon",
         },
         "visibility": {
-            "value":   10,      # TODO: add visibility when available in DB
-            "unit":    "km",
-            "message": "Clear conditions",
+            "value":   "N/A",      # TODO: add visibility when available in DB
+            "unit":    "",
+            "message": "visibility data coming soon",
         },
         "pressure": {
-            "value":   round(conditions.get("pres") / 100, 1)
-                       if conditions and conditions != 0 and conditions.get("pres")
+            "value":   round(pressure/100, 1)
+                       if current and current != 0 and pressure
                        else None,
             "unit":    "hPa",
             "message": _pressure_message(
-                conditions.get("pres") / 100
-                if conditions and conditions != 0 and conditions.get("pres")
+                current.get("pres") / 100
+                if current and current != 0 and current.get("pres")
                 else None
             ),
         },
     }
 
 
-def _build_lifestyle(conditions, forecast: list[dict]) -> dict:
+def _build_lifestyle(current, forecast: list[dict]) -> dict:
     """
     Builds the lifestyle widget data.
-    Each activity is evaluated based on current conditions and forecast.
+    Each activity is evaluated based on current current and forecast.
     Returns the same shape as mockLifestyle on the frontend.
     """
-    temp    = conditions.get("temperature_celsius") if conditions and conditions != 0 else None
-    wind    = conditions.get("wind_speed_m_per_s")  if conditions and conditions != 0 else None
-    precip  = conditions.get("precipitation_mm")    if conditions and conditions != 0 else None
-    humidity = conditions.get("humidity_percentage") if conditions and conditions != 0 else None
+    temp    = current.get("temperature_celsius") if current and current != 0 else None
+    wind    = current.get("wind_speed_m_per_s")  if current and current != 0 else None
+    precip  = current.get("precipitation_mm")    if current and current != 0 else None
+    humidity = current.get("humidity_percentage") if current and current != 0 else None
 
     # Total rain in next 6 hours
     rain_next_6h = sum(
@@ -373,16 +376,24 @@ def _build_lifestyle(conditions, forecast: list[dict]) -> dict:
 # Each helper returns a short human-readable sentence based on the value.
 # These are pure functions — easy to test and extend.
 
-def _compute_feels_like(conditions, forecast):
+import math
+
+def _wind_direction(degrees):
+    directions = ["N", "NE", "E", "SE",
+                  "S", "SW", "W", "NW"]
+    k = math.floor((degrees % 360 + 22.5) / 45) % 8
+    return directions[k]
+
+def _compute_feels_like(current, forecast):
     """
     Simplified feels-like using wind chill formula for cold weather
     and heat index approximation for warm weather.
     Returns rounded value or None.
     """
-    if not conditions or conditions == 0:
+    if not current or current == 0:
         return None
-    temp = conditions.get("temperature_celsius")
-    wind = conditions.get("wind_speed_m_per_s")
+    temp = current.get("temperature_celsius")
+    wind = current.get("wind_speed_m_per_s")
     if temp is None:
         return None
     if wind and temp < 10:

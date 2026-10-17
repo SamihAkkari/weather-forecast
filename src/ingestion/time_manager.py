@@ -25,7 +25,9 @@ class TimeManager:
     
     @staticmethod
     def utc_truncated(_time, to="minute"):
-        if to == "hour":
+        if to == "day":
+            return _time.replace(hour=0, minute=0, second=0, microsecond=0)
+        elif to == "hour":
             return _time.replace(minute=0, second=0, microsecond=0)
         elif to == "minute":
             return _time.replace(second=0, microsecond=0)
@@ -46,7 +48,9 @@ class TimeManager:
 
     def utc_now_truncated(to="minute"):
         now = datetime.now(timezone.utc)
-        if to == "hour":
+        if to == "day":
+            return TimeManager.utc_truncated(now, to="day")
+        elif to == "hour":
             return TimeManager.utc_truncated(now, to="hour")
         elif to == "minute":
             return TimeManager.utc_truncated(now, to="minute")
