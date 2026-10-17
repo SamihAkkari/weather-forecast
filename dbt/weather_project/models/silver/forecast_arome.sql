@@ -10,7 +10,7 @@ base AS (
         COALESCE(b1.station_id, b2.station_id) as station_id,
         COALESCE(b1.run_time, b2.run_time) as run_time,
         COALESCE(b1.valid_time, b2.valid_time) as valid_time,
-        b1.t2m, b1.r2, b1.wdir10, b1.si10, b1.tp, b1.ssrd,
+        b1.t2m, b1.r2, b1.wdir10, b1.si10, b1.tp, b1.ssrd, b1.prmsl,
         b2.lcc, b2.mcc, b2.hcc, b2.CAPE_INS,
         ROW_NUMBER() OVER (
             PARTITION BY COALESCE(b1.station_id, b2.station_id), COALESCE(b1.run_time, b2.run_time), COALESCE(b1.valid_time, b2.valid_time)
@@ -65,7 +65,7 @@ final_union AS (
     UNION ALL
     SELECT
         station_id, run_time, valid_time,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
     FROM missing
 )
 
