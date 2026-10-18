@@ -5,51 +5,54 @@ function getWeatherIcon(entry, location) {
     // console.log(location)
     const isDay = !isNight(entry.time_step_fr, location.lat, location.lng)
 
-    const {
-        cape = 0,
-        precipitation_mm: precip = 0,
-        snow_mm: snow = 0,
-        total_cloud_cover: tcc = 0
-    } = entry
+    const icons = {
+        0:  isDay ? "clear-day" : "clear-night",
+        1:  isDay ? "mostly-clear-day" : "mostly-clear-night",
+        2:  isDay ? "partly-cloudy-day" : "partly-cloudy-night",
+        3:  "overcast",
 
-    // --- 1. Precipitation first (highest priority)
-    if (cape > 500 && precip > 0.5) {
-        return "⛈️"
-    }
+        45: isDay ? "fog-day" : "fog-night",
+        48: isDay ? "fog-day" : "fog-night",
 
-    if (snow > 0.1) {
-        return "🌨️"
-    }
+        51: "drizzle",
+        53: "drizzle",
+        55: "drizzle",
+        56: "sleet",
+        57: "sleet",
 
-    if (precip > 2.0) {
-        return "🌧️"
-    }
+        61: "rain",
+        63: "rain",
+        65: "extreme-rain",
+        66: "sleet",
+        67: "sleet",
 
-    if (precip > 0.1) {
-        if (tcc < 70) {
-            return isDay ? "🌦️" : "🌧️🌙"
-            }
-        return  "🌧️"
-    }
+        71: "snow",
+        73: "snow",
+        75: "extreme-snow",
+        77: "snow",
 
-    // --- 2. Sky conditions (no precipitation)
-    if (tcc < 12) {
-        return isDay
-            ? "☀️" 
-            : "🌙" 
-    }
+        80: "rain",
+        81: "rain",
+        82: "extreme-rain",
 
-    if (tcc < 37) {
-        return isDay
-            ? "🌤️" 
-            : "🌙✨" 
-    }
+        85: "snow",
+        86: "extreme-snow",
 
-    if (tcc < 62) {
-        return isDay ? "⛅" : "☁️🌙"
-    }
+        95: isDay ? "thunderstorms-day" : "thunderstorms-night",
+        96: "thunderstorms-snow",
+        97: isDay ? "thunderstorms-day" : "thunderstorms-night",
+        99: "thunderstorms-snow"
+    };
 
-    return "☁️"
+    const icon_name = icons[Number(entry.weather_code)] ?? "not-available";
+
+    return (
+        <img
+            src={`https://cdn.meteocons.com/3.0.0-next.10/svg/fill/${icon_name}.svg`}
+            alt={`Weather code ${entry.weather_code}`}
+            className="w-10 h-10 mx-auto"
+        />
+    );
 }
 
 function isNight(timeString, lat, lng) {
@@ -94,7 +97,7 @@ function HourlyCards({ forecast, location }) {
                         className="min-w-20 border border-gray-100 rounded-xl p-3 text-center flex-shrink-0">
                         <p className="text-xs text-gray-400 mb-2">{formatHour(entry.time_step_fr)}</p>
                         {/* <p className="text-base mb-2">{getWeatherIcon(entry.precipitation_mm)}</p> */}
-                        <p className="text-base mb-2">{getWeatherIcon(entry, location)}</p>
+                        <p className="mb-2">{getWeatherIcon(entry, location)}</p>
                         <p className="text-sm font-medium text-gray-900 mb-1">
                             <ValueWithUnit
                                 value={entry.temperature_celsius}

@@ -7,13 +7,36 @@
 */
 
 const ICONS = {
-  sunny:         '☀️',
-  partly_cloudy: '🌤',
-  cloudy:        '⛅',
-  rainy:         '🌧',
-  stormy:        '⛈',
-  snowy:         '❄️',
-}
+  0: "clear-day",
+  1: "clear-day",
+  2: "partly-cloudy-day",
+  3: "overcast",
+  45: "fog",
+  48: "fog",
+  51: "drizzle",
+  53: "drizzle",
+  55: "drizzle",
+  56: "sleet",
+  57: "sleet",
+  61: "rain",
+  63: "rain",
+  65: "extreme-rain",
+  66: "sleet",
+  67: "sleet",
+  71: "snow",
+  73: "snow",
+  75: "extreme-snow",
+  77: "snow",
+  80: "rain",
+  81: "rain",
+  82: "extreme-rain",
+  85: "snow",
+  86: "extreme-snow",
+  95: "thunderstorms",
+  96: "hail",
+  97: "thunderstorms",
+  99: "hail",
+};
 
 /*
   mapValue takes a value in one range and maps it to another range.
@@ -180,14 +203,24 @@ function DailyForecast({ daily }) {
               </text>
 
               {/* Weather icon */}
-              <text
+              {/* <text
                 x={xPositions[i]}
                 y={HEIGHT - 18}
                 textAnchor="middle"
                 fontSize="14"
               >
                 {ICONS[d.icon] ?? '🌤'}
-              </text>
+              </text> */}
+
+              {/* Weather icon */}
+              <image
+                href={`https://cdn.meteocons.com/3.0.0-next.10/svg/fill/${ICONS[d.weather_code] ?? "clear-day"}.svg`}
+                x={xPositions[i] - 16}
+                y={HEIGHT - 48}
+                width="32"
+                height="32"
+                preserveAspectRatio="xMidYMid meet"
+              />
 
               {/* Day name */}
               <text
