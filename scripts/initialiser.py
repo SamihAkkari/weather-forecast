@@ -282,6 +282,8 @@ def make_bronze_sp1_arome_forecast_table_without_data(SCHEMA, TABLE):
         ssrd Double precision,
         tp Double precision,
         prmsl Double precision,
+        fg10 Double precision,
+        tsnowp Double precision,
         ingestion_time timestamptz
     );
     """
@@ -358,6 +360,8 @@ def make_silver_forecast_arome_table_without_data(SCHEMA, TABLE):
         total_cloud_cover Double precision,
         cape_m2_s2 Double precision,
         mean_sea_level_pressure Double precision,
+        snow_precipitation_mm Double precision,
+        wind_gust_m_per_s Double precision,
         transfer_time_fr timestamptz
     );
     """

@@ -48,6 +48,10 @@ function buildCurvePath(points) {
 }
 
 function DailyForecast({ daily }) {
+  
+    // Guard — if no data return nothing
+  if (!daily || daily.length === 0) return null
+  
   /*
     SVG dimensions and layout constants.
     We define these once here so they're easy to adjust.

@@ -2,6 +2,7 @@ import ValueWithUnit from "../common/ValueWithUnit";
 import SunCalc from "suncalc";
 
 function getWeatherIcon(entry, location) {
+    // console.log(location)
     const isDay = !isNight(entry.time_step_fr, location.lat, location.lng)
 
     const {

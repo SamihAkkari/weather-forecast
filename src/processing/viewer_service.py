@@ -3,6 +3,7 @@ from src.data.getter import DatabaseGetter
 from src.processing.spatial import find_nearest_station
 from src.ingestion.time_manager import TimeManager
 from src.config.config import Config
+from src.processing.weather_code import compute_hourly_code, compute_daily_code
 
 logger = logging.getLogger(__name__)
 
@@ -85,8 +86,8 @@ def _build_response(station_info: dict, forecast: list[dict]) -> dict:
 def _build_station(station_info: dict) -> dict:
     return {
         "location_name": station_info.get("location_name", "Unknown"),
-        "latitude":      station_info.get("latitude"),
-        "longitude":     station_info.get("longitude"),
+        "lat":      station_info.get("latitude"),
+        "lng":     station_info.get("longitude"),
     }
 
 
@@ -109,10 +110,10 @@ def _build_hourly_forecast(forecast: list[dict]) -> list[dict]:
     """
     return [
         {
-            "time":          entry.get("time_step_fr"),
-            "temperature":   entry.get("temperature_celsius"),
-            "precipitation": entry.get("precipitation_mm"),
-            "icon": _pick_icon(entry.get("precipitation_mm"), entry.get("global_radiation_j_m2")),
+            "time_step_fr":          entry.get("time_step_fr"),
+            "temperature_celsius":   entry.get("temperature_celsius"),
+            "precipitation_mm": entry.get("precipitation_mm"),
+            "weather_code": compute_hourly_code(entry),
             # "windSpeed":     entry.get("wind_speed_m_per_s"),
             # "humidity":      entry.get("humidity_percentage"),
         }
@@ -163,39 +164,65 @@ def _build_daily_forecast(forecast: list[dict]) -> list[dict]:
             "day":  label,
             "min":  round(min(temps), 1),
             "max":  round(max(temps), 1),
-            "icon": _pick_day_icon(entries),
+            "weather_code": compute_daily_code(entries),
         })
 
     return daily
 
 
-def _pick_day_icon(entries: list[dict]) -> str:
-    """
-    Picks the most representative weather icon for a day
-    based on precipitation and radiation values.
-    Returns a string key that matches the ICONS dict in DailyForecast.jsx.
-    """
-    total_precip = sum(
-        e.get("precipitation_mm") or 0
-        for e in entries
-    )
-    avg_radiation = sum(
-        e.get("global_radiation_j_m2") or 0
-        for e in entries
-    ) / max(len(entries), 1)
+# def _pick_daily_icon(entries: list[dict]) -> str:
+#     """
+#     Picks a representative daily weather icon using
+#     daily accumulated precipitation and average cloud cover.
+#     Returns a key supported by the frontend ICONS dict.
+#     """
+#     total_precip = sum(
+#         e.get("precipitation_mm") or 0
+#         for e in entries
+#     )
+#     avg_cloud_cover = sum(
+#         e.get("total_cloud_cover") or 0
+#         for e in entries
+#     ) / max(len(entries), 1)
 
-    return _pick_icon(total_precip, avg_radiation)
+#     if total_precip is None:
+#             return "unknown"
+
+#     if total_precip >= 2.0:
+#         return "rainy"
+
+#     if avg_cloud_cover is None:
+#         return "unknown"
+
+#     if avg_cloud_cover <= 20:
+#         return "sunny"
+#     elif avg_cloud_cover <= 70:
+#         return "partly_cloudy"
+#     return "cloudy"
 
 
-def _pick_icon(precip, radiation):
-    if precip > 5:
-        return "rainy"
-    elif precip > 1:
-        return "partly_cloudy"
-    elif radiation > 432000:
-        return "sunny"
-    else:
-        return "cloudy"
+# def _pick_hourly_icon(
+#     precipitation_mm: float | None,
+#     total_cloud_cover: float | None,
+# ) -> str:
+#     # Missing precipitation should not be treated as dry weather.
+#     if precipitation_mm is None:
+#         return "unknown"
+
+#     # Hourly accumulated precipitation: practical starting threshold.
+#     if precipitation_mm >= 0.2:
+#         return "rainy"
+
+#     if total_cloud_cover is None:
+#         return "unknown"
+
+#     if total_cloud_cover <= 20:
+#         return "sunny"
+#     elif total_cloud_cover <= 70:
+#         return "partly_cloudy"
+#     else:
+#         return "cloudy"
+
 
 
 def _build_widgets(current, forecast: list[dict]) -> dict:
@@ -254,11 +281,7 @@ def _build_widgets(current, forecast: list[dict]) -> dict:
                        if current and current != 0 and pressure
                        else None,
             "unit":    "hPa",
-            "message": _pressure_message(
-                current.get("pres") / 100
-                if current and current != 0 and current.get("pres")
-                else None
-            ),
+            "message": None,
         },
     }
 
@@ -384,57 +407,137 @@ def _wind_direction(degrees):
     k = math.floor((degrees % 360 + 22.5) / 45) % 8
     return directions[k]
 
-def _compute_feels_like(current, forecast):
+def _compute_feels_like(current: dict, forecast: list[dict] | None = None) -> float | None:
     """
-    Simplified feels-like using wind chill formula for cold weather
-    and heat index approximation for warm weather.
-    Returns rounded value or None.
+    Calculates apparent temperature using the Bureau of Meteorology
+    Steadman approach.
+
+    Inputs:
+        temperature_celsius: °C
+        humidity_percentage: %
+        wind_speed_m_per_s: m/s
+
+    Assumes outdoor conditions in the shade; direct solar radiation
+    is not included.
     """
-    if not current or current == 0:
+    if not current:
         return None
+
     temp = current.get("temperature_celsius")
+    humidity = current.get("humidity_percentage")
     wind = current.get("wind_speed_m_per_s")
-    if temp is None:
+
+    if temp is None or humidity is None or wind is None:
         return None
-    if wind and temp < 10:
-        # Wind chill (Celsius, wind in m/s converted to km/h)
-        wind_kmh = wind * 3.6
-        feels = (13.12 + 0.6215 * temp
-                 - 11.37 * (wind_kmh ** 0.16)
-                 + 0.3965 * temp * (wind_kmh ** 0.16))
-        return round(feels, 1)
-    return round(temp, 1)
 
-def _humidity_message(humidity):
-    if humidity is None: return "No data"
-    if humidity > 85:    return "Very humid — may feel uncomfortable"
-    if humidity > 70:    return "Quite humid today"
-    if humidity > 50:    return "Comfortable humidity level"
-    return "Dry air today"
+    if not all(math.isfinite(v) for v in (temp, humidity, wind)):
+        return None
 
-def _feels_like_message(temp, feels):
-    if temp is None or feels is None: return "No data"
+    if not 0 <= humidity <= 100 or wind < 0:
+        return None
+
+    # Water vapour pressure (hPa), derived from temperature and RH.
+    vapour_pressure = (
+        (humidity / 100)
+        * 6.105
+        * math.exp((17.27 * temp) / (237.7 + temp))
+    )
+
+    # Steadman apparent temperature (°C); wind speed is in m/s.
+    apparent_temp = (
+        temp
+        + 0.33 * vapour_pressure
+        - 0.70 * wind
+        - 4.0
+    )
+
+    return round(apparent_temp, 1)
+
+
+def _humidity_message(humidity: float | None) -> str:
+    if humidity is None:
+        return "No data"
+
+    if not 0 <= humidity <= 100:
+        return "No data"
+
+    if humidity < 30:
+        return "Low relative humidity"
+    elif humidity <= 60:
+        return "Moderate relative humidity"
+    elif humidity <= 80:
+        return "High relative humidity"
+    return "Very high relative humidity"
+
+
+def _feels_like_message(
+    temp: float | None,
+    feels: float | None,
+) -> str:
+    """Describe the difference between air and apparent temperature."""
+    if temp is None or feels is None:
+        return "No data"
+
+    if not math.isfinite(temp) or not math.isfinite(feels):
+        return "No data"
+
     diff = feels - temp
-    if diff < -3:  return "Feels significantly colder than actual"
-    if diff < -1:  return "Feels a bit colder than actual"
-    if diff > 3:   return "Feels warmer than actual"
-    return "Feels about right"
 
-def _wind_message(wind):
-    if wind is None: return "No data"
-    if wind < 2:     return "Calm, no wind"
-    if wind < 5:     return "Light breeze"
-    if wind < 10:    return "Moderate breeze"
-    if wind < 15:    return "Fresh wind — noticeable"
-    if wind < 20:    return "Strong wind — take care outside"
-    return "Very strong wind — avoid outdoor activities"
+    if diff <= -3:
+        return "Feels significantly colder"
+    elif diff < -1:
+        return "Feels slightly colder"
+    elif diff >= 3:
+        return "Feels significantly warmer"
+    elif diff > 1:
+        return "Feels slightly warmer"
 
-def _pressure_message(pressure):
-    if pressure is None: return "No data"
-    if pressure > 1020:  return "High pressure — stable, clear weather likely"
-    if pressure > 1010:  return "Normal pressure conditions"
-    if pressure > 1000:  return "Slightly low — some cloud cover possible"
-    return "Low pressure — unsettled weather likely"
+    return "Feels similar to the air temperature"
+
+def _wind_message(wind: float | None) -> str:
+    """
+    Describe forecast wind speed in metres per second uisng Beaufort Wind Scale.
+    https://www.weather.gov/mfl/beaufort
+    """
+    if wind is None:
+        return "No data"
+
+    if not math.isfinite(wind) or wind < 0:
+        return "No data"
+
+    if wind < 0.3:
+        return "Calm"
+    elif wind < 1.6:
+        return "Light air"
+    elif wind < 3.4:
+        return "Light breeze"
+    elif wind < 5.5:
+        return "Gentle breeze"
+    elif wind < 8.0:
+        return "Moderate breeze"
+    elif wind < 10.8:
+        return "Fresh breeze"
+    elif wind < 13.9:
+        return "Strong breeze"
+    elif wind < 17.2:
+        return "Near gale"
+    elif wind < 20.8:
+        return "Gale"
+    elif wind < 24.5:
+        return "Strong gale"
+    elif wind < 28.5:
+        return "Storm"
+    elif wind < 32.7:
+        return "Violent storm"
+
+    return "Hurricane-force winds"
+
+# def _pressure_message(pressure):
+#     if pressure is None: return "No data"
+#     if pressure > 1020:  return "High pressure — stable, clear weather likely"
+#     if pressure > 1010:  return "Normal pressure conditions"
+#     if pressure > 1000:  return "Slightly low — some cloud cover possible"
+#     return "Low pressure — unsettled weather likely"
 
 def _running_message(temp, wind, rain):
     if rain > 2:              return "Rainy — not ideal for running"

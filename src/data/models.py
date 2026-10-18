@@ -115,7 +115,9 @@ class SP1ForecastAromeRecord(BaseRecord):
     wdir10         : float  # 10 metre wind direction
     ssrd           : float  # Surface solar radiation downwards
     tp             : float  # Total precipitation
-    prmsl: float  # Mean sea level pressure (Pa)
+    prmsl          : float  # Mean sea level pressure (Pa)
+    fg10           : float  # Time-maximum 10 metre wind gust (m/s) (represents the absolute highest 3-second wind gust that occurred at a height of 10 meters over the hour timestep)
+    tsnowp         : float  # Total snow precipitation (mm)
     ingestion_time : datetime # Time when the forecast was ingested into the database
 
 
@@ -161,7 +163,7 @@ class AllSP1ForecastAromeRecords(BaseRecord):
     u10: float  # 10 metre u wind component (Eastward wind component)
     v10: float  # 10 metre v wind component (Northward wind component)
     si10: float  # 10 metre wind speed (m/s)
-    fg10: float  # Time-maximum 10 metre wind gust (m/s)
+    fg10: float  # Time-maximum 10 metre wind gust (m/s) (represents the absolute highest 3-second wind gust that occurred at a height of 10 meters over the hour timestep)
     efg10: float  # Time-maximum 10 metre eastward wind gust (m/s)
     nfg10: float  # Time-maximum 10 metre northward wind gust (m/s)
     wdir10: float  # 10 metre wind direction (degrees)
@@ -203,4 +205,6 @@ class SilverForecastAromeRecords(BaseRecord):
     total_cloud_cover: float
     cape_m2_s2: float
     mean_sea_level_pressure: float
+    snow_precipitation_mm: float
+    wind_gust_m_per_s: float
     transfer_time_fr: datetime

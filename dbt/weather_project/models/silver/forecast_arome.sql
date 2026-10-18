@@ -10,7 +10,7 @@ base AS (
         COALESCE(b1.station_id, b2.station_id) as station_id,
         COALESCE(b1.run_time, b2.run_time) as run_time,
         COALESCE(b1.valid_time, b2.valid_time) as valid_time,
-        b1.t2m, b1.r2, b1.wdir10, b1.si10, b1.tp, b1.ssrd, b1.prmsl,
+        b1.t2m, b1.r2, b1.wdir10, b1.si10, b1.tp, b1.ssrd, b1.prmsl, b1.fg10, b1.tsnowp,
         b2.lcc, b2.mcc, b2.hcc, b2.CAPE_INS,
         ROW_NUMBER() OVER (
             PARTITION BY COALESCE(b1.station_id, b2.station_id), COALESCE(b1.run_time, b2.run_time), COALESCE(b1.valid_time, b2.valid_time)
@@ -60,12 +60,12 @@ missing AS (
 final_union AS (
     SELECT
         station_id, run_time, valid_time,
-        t2m, r2, wdir10, si10, tp, ssrd, lcc, mcc, hcc, CAPE_INS, prmsl
+        t2m, r2, wdir10, si10, tp, ssrd, lcc, mcc, hcc, CAPE_INS, prmsl, fg10, tsnowp
     FROM deduped_base
     UNION ALL
     SELECT
         station_id, run_time, valid_time,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
     FROM missing
 )
 
@@ -82,5 +82,7 @@ SELECT
     1 - (1 - lcc) * (1 - mcc) * (1 - hcc) AS total_cloud_cover,
     CAPE_INS as cape_m2_s2,
     prmsl AS mean_sea_level_pressure,
+    fg10 AS wind_gust_m_per_s,
+    tsnowp AS snow_precipitation_mm,
     DATE_TRUNC('minute', NOW() AT TIME ZONE 'Europe/Paris') AS transfer_time_fr
 FROM final_union
