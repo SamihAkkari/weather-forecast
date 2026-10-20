@@ -4,7 +4,7 @@ import api from '../api/axiosInstance'
 import { USE_MOCK_DATA } from '../config'
 import {
   mockStation,
-  mockCurrentConditions,
+  // mockCurrentConditions,
   mockForecast,
   mockWeatherDetails,
   // mockLifestyle,
@@ -13,11 +13,11 @@ import {
 
 const MOCK_RESPONSE = {
   station:    mockStation,
-  conditions: mockCurrentConditions,
+  // conditions: mockCurrentConditions,
   forecast:   mockForecast,
   daily:      mockWeatherDetails.daily,
   widgets:    mockWeatherDetails.widgets,
-  lifestyle:  mockActivities,
+  activities:  mockActivities,
 }
 
 function useStationData(location) {
@@ -34,6 +34,7 @@ function useStationData(location) {
 
     if (USE_MOCK_DATA) {
       setTimeout(() => {
+        console.log('🟡 [MOCK] stationData:', MOCK_RESPONSE)
         setStationData(MOCK_RESPONSE)
         setLoading(false)
       }, 400)
@@ -42,15 +43,17 @@ function useStationData(location) {
 
     api.get(`/station-current-forecast?lat=${location.lat}&lng=${location.lng}`)
       .then(res => {
+        console.log('🟢 [API] stationData:', res.data)
         setStationData(res.data)
         setLoading(false)
       })
       .catch(err => {
+        console.log('🔴 [API] error:', err)
         setError(err.message)
         setLoading(false)
       })
   }, [location])
-
+    
   return { stationData, loading, error }
 }
 

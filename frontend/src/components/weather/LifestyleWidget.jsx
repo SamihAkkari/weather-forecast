@@ -38,9 +38,9 @@ function LifestyleWidget({ activities }) {
                     {activity.label}
                   </span>
                 </div>
-                <p className="text-xs text-gray-400 leading-relaxed">
+                {/* <p className="text-xs text-gray-400 leading-relaxed">
                   {activity.message}
-                </p>
+                </p> */}
               </div>
             </div>
           )

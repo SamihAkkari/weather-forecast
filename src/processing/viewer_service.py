@@ -420,15 +420,15 @@ def _build_lifestyle(current, forecast: list[dict]) -> dict:
     time = current.get("time_step_fr") if current and current != 0 else None
     
     cycling_current_recomm = recommend("cycling", {"temperature": temp, "wind": wind, "rain": precip, "snow": snow_precip}, time)
-    cycling_hourly_recomm = [recommend("cycling", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm"), "snow": i.get("snow_precipitation_mm")}, i.get("time_step_fr")) for i in forecast[1:48]]
+    cycling_hourly_recomm = [recommend("cycling", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm"), "snow": i.get("snow_precipitation_mm")}, i.get("time_step_fr")) for i in forecast[1:24]]
     cycling_best_window = get_best_windows(cycling_hourly_recomm)
 
     fishing_current_recomm = recommend("fishing", {"temperature": temp, "wind": wind, "rain": precip}, time)
-    fishing_hourly_recomm = [recommend("fishing", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm")}, i.get("time_step_fr")) for i in forecast[1:48]]
+    fishing_hourly_recomm = [recommend("fishing", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm")}, i.get("time_step_fr")) for i in forecast[1:24]]
     fishing_best_window = get_best_windows(fishing_hourly_recomm)
 
     picnic_current_recomm = recommend("picnic", {"temperature": temp, "wind": wind, "rain": precip, "wind_gust": wind_gust, "cloud_cover": cloud_cover}, time)
-    picnic_hourly_recomm = [recommend("picnic", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm"), "wind_gust": i.get("wind_gust_m_per_s"), "cloud_cover": i.get("total_cloud_cover")}, i.get("time_step_fr")) for i in forecast[1:48]]
+    picnic_hourly_recomm = [recommend("picnic", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm"), "wind_gust": i.get("wind_gust_m_per_s"), "cloud_cover": i.get("total_cloud_cover")}, i.get("time_step_fr")) for i in forecast[1:24]]
     picnic_best_window = get_best_windows(picnic_hourly_recomm)
 
     return [
@@ -436,6 +436,7 @@ def _build_lifestyle(current, forecast: list[dict]) -> dict:
                 "id":      "cycling",
                 "icon":    "🚴",
                 "label":   "Cycling",
+                "status": cycling_current_recomm ["status"],
                 "current_status": cycling_current_recomm,
                 "hourly": cycling_hourly_recomm,
                 "best_window": cycling_best_window 
@@ -444,6 +445,7 @@ def _build_lifestyle(current, forecast: list[dict]) -> dict:
                 "id":      "fishing",
                 "icon":    "🎣",
                 "label":   "Fishing",
+                "status": fishing_current_recomm ["status"],
                 "current_status": fishing_current_recomm,
                 "hourly": fishing_hourly_recomm,
                 "best_window": fishing_best_window 
@@ -452,6 +454,7 @@ def _build_lifestyle(current, forecast: list[dict]) -> dict:
                 "id":      "picnic",
                 "icon":    "🧺",
                 "label":   "Picnic",
+                "status": picnic_current_recomm ["status"],
                 "current_status": picnic_current_recomm,
                 "hourly": picnic_hourly_recomm,
                 "best_window": picnic_best_window 

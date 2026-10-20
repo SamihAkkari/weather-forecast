@@ -48,7 +48,7 @@ function ActivityPage() {
         {activityData && !loading && (
           <>
             <CurrentStatus current_status={activityData.current_status} />
-            <BestWindows best_windows={activityData.best_windows} />
+            <BestWindows best_window={activityData.best_window} />
             <HourlyTimeline hourly={activityData.hourly} />
           </>
         )}

@@ -71,7 +71,7 @@ function WeatherViewerPage() {
             <WeatherWidgets widgets={stationData.widgets} />
 
             {/* Lifestyle widget */}
-            <LifestyleWidget activities={stationData.lifestyle} />
+            <LifestyleWidget activities={stationData.activities} />
 
           </div>
         )}
