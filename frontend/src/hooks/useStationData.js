@@ -7,7 +7,8 @@ import {
   mockCurrentConditions,
   mockForecast,
   mockWeatherDetails,
-  mockLifestyle
+  // mockLifestyle,
+  mockActivities
 } from '../data/mockData'
 
 const MOCK_RESPONSE = {
@@ -16,7 +17,7 @@ const MOCK_RESPONSE = {
   forecast:   mockForecast,
   daily:      mockWeatherDetails.daily,
   widgets:    mockWeatherDetails.widgets,
-  lifestyle:  mockLifestyle,
+  lifestyle:  mockActivities,
 }
 
 function useStationData(location) {

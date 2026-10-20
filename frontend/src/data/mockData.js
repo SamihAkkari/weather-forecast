@@ -83,15 +83,275 @@ export const mockForecast = [
   { time_step_fr: "2026-04-22T09:00:00", temperature_celsius: 10, precipitation_mm: 0.0, wind_speed_m_per_s: 7,  humidity_percentage: 80, weather_code: 51 },
 ]
 
-export const mockLifestyle = {
-  activities: [
-    { id: "running",      icon: "🏃", label: "Running",      status: "good",   message: "Good conditions for a run" },
-    { id: "cycling",      icon: "🚴", label: "Cycling",      status: "fair",   message: "Light wind, manageable" },
-    { id: "fishing",      icon: "🎣", label: "Fishing",      status: "poor",   message: "Poor fishing conditions" },
-    { id: "stargazing",   icon: "🔭", label: "Stargazing",   status: "fair",   message: "Fair visibility tonight" },
-    { id: "picnic",       icon: "🧺", label: "Picnic",       status: "good",   message: "Great day to be outside" },
-    { id: "jacket",       icon: "🧥", label: "Clothing",     status: "fair",   message: "Light jacket recommended" },
-    { id: "photography",  icon: "📷", label: "Photography",  status: "good",   message: "Soft light, ideal for photos" },
-    { id: "gardening",    icon: "🌱", label: "Gardening",    status: "good",   message: "Good day to water plants" },
-  ]
-}
+// export const mockLifestyle = {
+//   activities: [
+//     { id: "running",      icon: "🏃", label: "Running",      status: "good",   message: "Good conditions for a run" },
+//     { id: "cycling",      icon: "🚴", label: "Cycling",      status: "fair",   message: "Light wind, manageable" },
+//     { id: "fishing",      icon: "🎣", label: "Fishing",      status: "poor",   message: "Poor fishing conditions" },
+//     { id: "stargazing",   icon: "🔭", label: "Stargazing",   status: "fair",   message: "Fair visibility tonight" },
+//     { id: "picnic",       icon: "🧺", label: "Picnic",       status: "good",   message: "Great day to be outside" },
+//     { id: "jacket",       icon: "🧥", label: "Clothing",     status: "fair",   message: "Light jacket recommended" },
+//     { id: "photography",  icon: "📷", label: "Photography",  status: "good",   message: "Soft light, ideal for photos" },
+//     { id: "gardening",    icon: "🌱", label: "Gardening",    status: "good",   message: "Good day to water plants" },
+//   ]
+// }
+
+export const mockActivities = [
+  {
+    id:    "cycling",
+    icon:  "🚴",
+    label: "Cycling",
+    // Summary fields for LifestyleWidget — derived from current_status
+    status:  "green",
+    message: "Good conditions right now",
+    current_status: {
+      time:   "2026-10-20T02:00:00+00:00",
+      status: "green",
+      score:  0.9,
+      parameters: {
+        temperature: { score: 0.9, status: "green",  description: "Comfortable cycling temperature" },
+        wind:        { score: 0.9, status: "green",  description: "Light wind: good cycling conditions" },
+        rain:        { score: 0.9, status: "green",  description: "Dry conditions" },
+        snow:        { score: 0.9, status: "green",  description: "No significant snowfall" },
+      }
+    },
+    best_window: [
+      {
+        from:   "2026-10-20T03:00:00+00:00",
+        to:     "2026-10-20T04:00:00+00:00",
+        reason: "Calm wind · Dry · Mild temperature"
+      }
+    ],
+    hourly: [
+      {
+        time:   "2026-10-20T03:00:00+00:00",
+        status: "green",
+        score:  0.9,
+        parameters: {
+          temperature: { score: 0.9, status: "green", description: "Comfortable cycling temperature" },
+          wind:        { score: 0.9, status: "green", description: "Light wind: good cycling conditions" },
+          rain:        { score: 0.9, status: "green", description: "Dry conditions" },
+          snow:        { score: 0.9, status: "green", description: "No significant snowfall" },
+        }
+      },
+      {
+        time:   "2026-10-20T04:00:00+00:00",
+        status: "green",
+        score:  0.8,
+        parameters: {
+          temperature: { score: 0.9, status: "green", description: "Comfortable cycling temperature" },
+          wind:        { score: 0.9, status: "green", description: "Light wind: good cycling conditions" },
+          rain:        { score: 0.8, status: "green", description: "Dry conditions or negligible rainfall" },
+          snow:        { score: 0.9, status: "green", description: "No significant snowfall" },
+        }
+      },
+      {
+        time:   "2026-10-20T05:00:00+00:00",
+        status: "yellow",
+        score:  0.4,
+        parameters: {
+          temperature: { score: 0.9, status: "green",  description: "Comfortable cycling temperature" },
+          wind:        { score: 0.9, status: "green",  description: "Light wind: good cycling conditions" },
+          rain:        { score: 0.4, status: "yellow", description: "Rain: reduced grip and longer braking distances" },
+          snow:        { score: 0.9, status: "green",  description: "No significant snowfall" },
+        }
+      },
+      {
+        time:   "2026-10-20T06:00:00+00:00",
+        status: "yellow",
+        score:  0.4,
+        parameters: {
+          temperature: { score: 0.9, status: "green",  description: "Comfortable cycling temperature" },
+          wind:        { score: 0.9, status: "green",  description: "Light wind: good cycling conditions" },
+          rain:        { score: 0.4, status: "yellow", description: "Rain: reduced grip and longer braking distances" },
+          snow:        { score: 0.9, status: "green",  description: "No significant snowfall" },
+        }
+      },
+      {
+        time:   "2026-10-20T07:00:00+00:00",
+        status: "yellow",
+        score:  0.4,
+        parameters: {
+          temperature: { score: 0.9, status: "green",  description: "Comfortable cycling temperature" },
+          wind:        { score: 0.9, status: "green",  description: "Light wind: good cycling conditions" },
+          rain:        { score: 0.4, status: "yellow", description: "Rain: reduced grip and longer braking distances" },
+          snow:        { score: 0.9, status: "green",  description: "No significant snowfall" },
+        }
+      },
+    ]
+  },
+  {
+    id:    "running",
+    icon:  "🏃",
+    label: "Running",
+    status:  "green",
+    message: "Perfect conditions for a run",
+    current_status: {
+      time:   "2026-10-20T02:00:00+00:00",
+      status: "green",
+      score:  0.9,
+      parameters: {
+        temperature: { score: 0.9, status: "green", description: "Cool and comfortable for running" },
+        wind:        { score: 0.9, status: "green", description: "Light wind" },
+        rain:        { score: 0.9, status: "green", description: "Dry conditions" },
+      }
+    },
+    best_window: [
+      { from: "2026-10-20T07:00:00+00:00", to: "2026-10-20T09:00:00+00:00", reason: "Cool and dry — ideal for running" }
+    ],
+    hourly: [
+      { time: "2026-10-20T07:00:00+00:00", status: "green",  score: 1.0, parameters: { temperature: { score: 1.0, status: "green",  description: "Perfect running temperature" }, wind: { score: 0.9, status: "green", description: "Light wind" }, rain: { score: 1.0, status: "green", description: "Dry" } } },
+      { time: "2026-10-20T08:00:00+00:00", status: "green",  score: 0.9, parameters: { temperature: { score: 0.9, status: "green",  description: "Good temperature" },            wind: { score: 0.9, status: "green", description: "Light wind" }, rain: { score: 1.0, status: "green", description: "Dry" } } },
+      { time: "2026-10-20T13:00:00+00:00", status: "yellow", score: 0.6, parameters: { temperature: { score: 0.6, status: "yellow", description: "Getting warm for running" },      wind: { score: 0.9, status: "green", description: "Light wind" }, rain: { score: 1.0, status: "green", description: "Dry" } } },
+      { time: "2026-10-20T15:00:00+00:00", status: "yellow", score: 0.4, parameters: { temperature: { score: 0.9, status: "green",  description: "Good temperature" },            wind: { score: 0.9, status: "green", description: "Light wind" }, rain: { score: 0.4, status: "yellow", description: "Light rain" } } },
+    ]
+  },
+  {
+    id:    "fishing",
+    icon:  "🎣",
+    label: "Fishing",
+    status:  "yellow",
+    message: "Moderate wind — check conditions",
+    current_status: {
+      time:   "2026-10-20T02:00:00+00:00",
+      status: "yellow",
+      score:  0.6,
+      parameters: {
+        wind: { score: 0.6, status: "yellow", description: "Moderate wind — fishing possible but not ideal" },
+        rain: { score: 0.8, status: "green",  description: "Light rain — fish may be active" },
+      }
+    },
+    best_window: [
+      { from: "2026-10-20T06:00:00+00:00", to: "2026-10-20T09:00:00+00:00", reason: "Calm morning · Overcast — fish feed well" }
+    ],
+    hourly: [
+      { time: "2026-10-20T06:00:00+00:00", status: "green",  score: 0.9, parameters: { wind: { score: 0.9, status: "green",  description: "Calm — ideal fishing conditions" }, rain: { score: 0.9, status: "green", description: "Dry" } } },
+      { time: "2026-10-20T10:00:00+00:00", status: "yellow", score: 0.5, parameters: { wind: { score: 0.5, status: "yellow", description: "Moderate wind picking up" },          rain: { score: 0.9, status: "green", description: "Dry" } } },
+      { time: "2026-10-20T14:00:00+00:00", status: "red",    score: 0.2, parameters: { wind: { score: 0.2, status: "red",    description: "Too windy for fishing" },             rain: { score: 0.4, status: "yellow", description: "Rain making conditions worse" } } },
+    ]
+  },
+  {
+    id:    "stargazing",
+    icon:  "🔭",
+    label: "Stargazing",
+    status:  "red",
+    message: "Heavy cloud cover tonight",
+    current_status: {
+      time:   "2026-10-20T02:00:00+00:00",
+      status: "red",
+      score:  0.2,
+      parameters: {
+        cloud:    { score: 0.2, status: "red",   description: "Heavy overcast — no visibility" },
+        humidity: { score: 0.5, status: "yellow", description: "High humidity reduces clarity" },
+      }
+    },
+    best_window: [],
+    hourly: [
+      { time: "2026-10-20T21:00:00+00:00", status: "red",    score: 0.2, parameters: { cloud: { score: 0.2, status: "red",   description: "Overcast" },         humidity: { score: 0.5, status: "yellow", description: "High humidity" } } },
+      { time: "2026-10-20T22:00:00+00:00", status: "red",    score: 0.2, parameters: { cloud: { score: 0.2, status: "red",   description: "Overcast" },         humidity: { score: 0.5, status: "yellow", description: "High humidity" } } },
+      { time: "2026-10-20T23:00:00+00:00", status: "yellow", score: 0.5, parameters: { cloud: { score: 0.5, status: "yellow", description: "Partial clearing" }, humidity: { score: 0.6, status: "yellow", description: "Humidity dropping" } } },
+      { time: "2026-10-21T00:00:00+00:00", status: "green",  score: 0.8, parameters: { cloud: { score: 0.8, status: "green", description: "Mostly clear" },      humidity: { score: 0.8, status: "green",  description: "Good visibility" } } },
+    ]
+  },
+  {
+    id:    "picnic",
+    icon:  "🧺",
+    label: "Picnic",
+    status:  "green",
+    message: "Great weather for a picnic",
+    current_status: {
+      time:   "2026-10-20T02:00:00+00:00",
+      status: "green",
+      score:  0.9,
+      parameters: {
+        temperature: { score: 0.9, status: "green", description: "Warm and pleasant" },
+        wind:        { score: 0.9, status: "green", description: "Light breeze" },
+        rain:        { score: 1.0, status: "green", description: "No rain expected" },
+      }
+    },
+    best_window: [
+      { from: "2026-10-20T11:00:00+00:00", to: "2026-10-20T15:00:00+00:00", reason: "Warm and sunny — perfect picnic window" }
+    ],
+    hourly: [
+      { time: "2026-10-20T11:00:00+00:00", status: "green",  score: 1.0, parameters: { temperature: { score: 1.0, status: "green", description: "Perfect picnic temperature" }, wind: { score: 0.9, status: "green", description: "Light breeze" }, rain: { score: 1.0, status: "green", description: "Dry" } } },
+      { time: "2026-10-20T14:00:00+00:00", status: "green",  score: 0.9, parameters: { temperature: { score: 0.9, status: "green", description: "Still warm" },                wind: { score: 0.9, status: "green", description: "Light breeze" }, rain: { score: 1.0, status: "green", description: "Dry" } } },
+      { time: "2026-10-20T16:00:00+00:00", status: "yellow", score: 0.5, parameters: { temperature: { score: 0.9, status: "green", description: "Cooling down" },               wind: { score: 0.9, status: "green", description: "Light breeze" }, rain: { score: 0.5, status: "yellow", description: "Light rain risk" } } },
+    ]
+  },
+  {
+    id:    "jacket",
+    icon:  "🧥",
+    label: "Clothing",
+    status:  "yellow",
+    message: "Light jacket recommended",
+    current_status: {
+      time:   "2026-10-20T02:00:00+00:00",
+      status: "yellow",
+      score:  0.6,
+      parameters: {
+        temperature: { score: 0.6, status: "yellow", description: "14°C — jacket recommended" },
+        wind:        { score: 0.8, status: "green",  description: "Light wind" },
+        rain:        { score: 0.9, status: "green",  description: "Dry" },
+      }
+    },
+    best_window: [],
+    hourly: [
+      { time: "2026-10-20T09:00:00+00:00", status: "green",  score: 0.9, parameters: { temperature: { score: 0.9, status: "green",  description: "Comfortable — no jacket needed" }, wind: { score: 0.9, status: "green", description: "Calm" } } },
+      { time: "2026-10-20T14:00:00+00:00", status: "green",  score: 1.0, parameters: { temperature: { score: 1.0, status: "green",  description: "Warm — T-shirt weather" },          wind: { score: 0.9, status: "green", description: "Calm" } } },
+      { time: "2026-10-20T18:00:00+00:00", status: "yellow", score: 0.6, parameters: { temperature: { score: 0.6, status: "yellow", description: "Cooling — light jacket useful" },    wind: { score: 0.7, status: "green", description: "Light wind" } } },
+      { time: "2026-10-20T21:00:00+00:00", status: "red",    score: 0.3, parameters: { temperature: { score: 0.3, status: "red",    description: "Cold — warm jacket needed" },         wind: { score: 0.5, status: "yellow", description: "Cool wind" } } },
+    ]
+  },
+  {
+    id:    "photography",
+    icon:  "📷",
+    label: "Photography",
+    status:  "green",
+    message: "Soft light — ideal for photos",
+    current_status: {
+      time:   "2026-10-20T02:00:00+00:00",
+      status: "green",
+      score:  0.9,
+      parameters: {
+        cloud: { score: 0.8, status: "green", description: "Overcast — soft diffused light" },
+        rain:  { score: 1.0, status: "green", description: "No rain — equipment safe" },
+      }
+    },
+    best_window: [
+      { from: "2026-10-20T07:00:00+00:00", to: "2026-10-20T09:00:00+00:00", reason: "Golden hour · Low angle warm light" },
+      { from: "2026-10-20T18:00:00+00:00", to: "2026-10-20T20:00:00+00:00", reason: "Golden hour evening" }
+    ],
+    hourly: [
+      { time: "2026-10-20T07:00:00+00:00", status: "green",  score: 1.0, parameters: { cloud: { score: 1.0, status: "green", description: "Golden hour" },          rain: { score: 1.0, status: "green", description: "Dry" } } },
+      { time: "2026-10-20T12:00:00+00:00", status: "yellow", score: 0.6, parameters: { cloud: { score: 0.6, status: "yellow", description: "Harsh midday light" },  rain: { score: 1.0, status: "green", description: "Dry" } } },
+      { time: "2026-10-20T15:00:00+00:00", status: "red",    score: 0.2, parameters: { cloud: { score: 0.9, status: "green",  description: "Soft light" },          rain: { score: 0.2, status: "red",   description: "Rain — equipment risk" } } },
+      { time: "2026-10-20T18:00:00+00:00", status: "green",  score: 1.0, parameters: { cloud: { score: 1.0, status: "green",  description: "Golden hour evening" }, rain: { score: 1.0, status: "green", description: "Dry" } } },
+    ]
+  },
+  {
+    id:    "gardening",
+    icon:  "🌱",
+    label: "Gardening",
+    status:  "green",
+    message: "Good day to garden",
+    current_status: {
+      time:   "2026-10-20T02:00:00+00:00",
+      status: "green",
+      score:  0.9,
+      parameters: {
+        temperature: { score: 0.9, status: "green", description: "Mild and comfortable" },
+        rain:        { score: 0.9, status: "green", description: "Dry — good for digging" },
+        wind:        { score: 0.9, status: "green", description: "Light breeze" },
+      }
+    },
+    best_window: [
+      { from: "2026-10-20T09:00:00+00:00", to: "2026-10-20T12:00:00+00:00", reason: "Cool and dry — ideal for gardening" }
+    ],
+    hourly: [
+      { time: "2026-10-20T09:00:00+00:00", status: "green",  score: 1.0, parameters: { temperature: { score: 1.0, status: "green", description: "Perfect gardening temperature" }, rain: { score: 1.0, status: "green", description: "Dry" }, wind: { score: 0.9, status: "green", description: "Calm" } } },
+      { time: "2026-10-20T14:00:00+00:00", status: "yellow", score: 0.6, parameters: { temperature: { score: 0.6, status: "yellow", description: "Getting warm" },                  rain: { score: 1.0, status: "green", description: "Dry" }, wind: { score: 0.9, status: "green", description: "Calm" } } },
+      { time: "2026-10-20T16:00:00+00:00", status: "red",    score: 0.2, parameters: { temperature: { score: 0.9, status: "green",  description: "Good temperature" },               rain: { score: 0.2, status: "red",   description: "Heavy rain" }, wind: { score: 0.9, status: "green", description: "Calm" } } },
+      { time: "2026-10-20T18:00:00+00:00", status: "green",  score: 0.9, parameters: { temperature: { score: 0.9, status: "green",  description: "Mild evening" },                   rain: { score: 1.0, status: "green", description: "Rain stopped" }, wind: { score: 0.9, status: "green", description: "Calm" } } },
+    ]
+  },
+]
