@@ -21,6 +21,7 @@ It knows about:
 
 """
 
+# !!! These thresholds need to be better calibrated !!!
 RULES = {
     "cycling": {
         "temperature": [
@@ -49,21 +50,84 @@ RULES = {
         # Snowfall precipitation in mm/h, expressed as water equivalent
         "snow": [
             (0.1, 0.9, "green", "No significant snowfall"),
-            (0.5, 0.4, "yellow", "Light snow: watch for slippery surfaces"),
+            (0.5, 0.2, "red", "Light snow: slippery surfaces"),
             (float("inf"), 0.1, "red", "Snowfall: increased risk of poor visibility and icy roads"),
         ],
     },
-    # "running": {
-    #     "temperature": [
-    #         (0,   0, "red", "Too cold"),
-    #         (30,  2, "green", "Suitable temperature"),
-    #         (float("inf"), 0, "red", "Too hot"),
-    #     ],
-    #     "wind": [],
-    #     "rain": [],
-    #     "snow": [],
-    # },
+
+    "fishing": {
+        "temperature": [
+            (0, 0.1, "red", "Freezing: cold exposure and possible icy access"),
+            (8, 0.4, "yellow", "Cold: dress warmly and prepare for prolonged exposure"),
+            (24, 0.9, "green", "Comfortable air temperature for a fishing session"),
+            (30, 0.5, "yellow", "Warm: bring water, shade, and sun protection"),
+            (float("inf"), 0.1, "red", "Extreme heat: increased risk of heat stress"),
+        ],
+
+        # Wind speed in km/h
+        "wind": [
+            (2.7, 0.7, "green", "Light wind: comfortable casting conditions"),
+            (6.1, 0.9, "green", "Moderate wind: surface chop may favor feeding activity"),
+            (9.7, 0.4, "yellow", "Strong wind: difficult casting and reduced control"),
+            (float("inf"), 0.1, "red", "Very strong wind: potentially dangerous fishing conditions"),
+        ],
+
+        # Precipitation intensity in mm/h
+        "rain": [
+            (0.1, 0.7, "green", "Dry conditions or negligible rainfall"),
+            (1.0, 0.9, "green", "Light rain: potentially favorable low-light conditions"),
+            (3.0, 0.5, "yellow", "Moderate rain: reduced comfort and visibility"),
+            (float("inf"), 0.1, "red", "Heavy rain: poor visibility and potentially hazardous conditions"),
+        ],
+    },
+
+    "picnic": {
+        # Currenlty we use the air temeptaure and not the apparent one
+        "temperature": [
+            (10, 0.1, "red", "Too cold: uncomfortable for an outdoor picnic"),
+            (14, 0.4, "yellow", "Cool: warm clothing and blankets recommended"),
+            (18, 0.7, "green", "Mild: generally pleasant picnic conditions"),
+            (24, 0.9, "green", "Ideal temperature: comfortable outdoor conditions"),
+            (29, 0.5, "yellow", "Warm: seek shade and keep food properly chilled"),
+            (34, 0.2, "red", "Very hot: risk of heat discomfort and food spoilage"),
+            (float("inf"), 0.1, "red", "Extreme heat: outdoor picnic not recommended"),
+        ],
+
+        # Wind speed in km/h
+        "wind": [
+            (3.3, 0.9, "green", "Light wind: comfortable conditions for a picnic"),
+            (4.1, 0.7, "green", "Gentle breeze: generally pleasant outdoors"),
+            (7, 0.4, "yellow", "Strong breeze: napkins and lightweight items may blow away"),
+            (8.3, 0.2, "red", "Very windy: difficult to keep food and picnic items in place"),
+            (float("inf"), 0.1, "red", "Dangerous wind: outdoor picnic not recommended"),
+        ],
+
+        # Wind gust speed in km/h
+        "wind_gust": [
+            (7, 0.9, "green", "Light gusts: picnic items should remain manageable"),
+            (11, 0.4, "yellow", "Strong gusts: secure belongings and lightweight equipment"),
+            (float("inf"), 0.1, "red", "Dangerous gusts: outdoor picnic not recommended"),
+        ],
+
+        # Precipitation intensity in mm/h
+        "rain": [
+            (0.01, 0.9, "green", "Dry conditions: ideal for keeping food and belongings dry"),
+            (0.1, 0.7, "green", "Negligible precipitation: generally suitable conditions"),
+            (0.2, 0.5, "yellow", "Light drizzle: bring shelter and protect food"),
+            (0.5, 0.3, "yellow", "Persistent drizzle: reduced comfort and damp belongings"),
+            (float("inf"), 0.1, "red", "Heavy rain: picnic outdoors not recommended"),
+        ],
+
+        # Total cloud cover as a fraction from 0 to 1
+        "cloud_cover": [
+            (20, 0.5, "yellow", "Mostly clear: limited natural shade on sunny days"),
+            (60, 0.9, "green", "Partial cloud cover: pleasant balance of light and shade"),
+            (80, 0.7, "green", "Mostly cloudy: comfortable shade, though conditions may feel cooler"),
+            (100, 0.5, "yellow", "Overcast: check temperature and the likelihood of rain"),
+        ],
+    },
 }
+
 
 
 def get_viewer_data(lat: float, lng: float) -> dict:
@@ -260,7 +324,7 @@ def _build_widgets(current, forecast: list[dict]) -> dict:
 
 def evaluate(value, rules):
     for limit, score, status, description in rules:
-        if value < limit:
+        if value <= limit:
             return {
                 "score": score,
                 "status": status,
@@ -276,6 +340,11 @@ def recommend(activity, conditions, time):
     results = {}
     for name, rules in RULES[activity].items():
         if conditions.get(name) is not None and rules:
+            # print(name)
+            # print(activity)
+            # print(conditions[name])
+            # print(rules)
+            # print(evaluate(conditions[name], rules))
             sub_dict = evaluate(conditions[name], rules)
             results[name]= sub_dict 
             statuses.append(sub_dict["status"])
@@ -343,17 +412,26 @@ def _build_lifestyle(current, forecast: list[dict]) -> dict:
     """
     temp    = current.get("temperature_celsius") if current and current != 0 else None
     wind    = current.get("wind_speed_m_per_s")  if current and current != 0 else None
+    wind_gust    = current.get("wind_gust_m_per_s")  if current and current != 0 else None
     precip  = current.get("precipitation_mm")    if current and current != 0 else None
     snow_precip = current.get("snow_precipitation_mm")    if current and current != 0 else None
     humidity = current.get("humidity_percentage") if current and current != 0 else None
+    cloud_cover = current.get("total_cloud_cover") if current and current != 0 else None
     time = current.get("time_step_fr") if current and current != 0 else None
     
     cycling_current_recomm = recommend("cycling", {"temperature": temp, "wind": wind, "rain": precip, "snow": snow_precip}, time)
     cycling_hourly_recomm = [recommend("cycling", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm"), "snow": i.get("snow_precipitation_mm")}, i.get("time_step_fr")) for i in forecast[1:48]]
     cycling_best_window = get_best_windows(cycling_hourly_recomm)
-    
-    return [
 
+    fishing_current_recomm = recommend("fishing", {"temperature": temp, "wind": wind, "rain": precip}, time)
+    fishing_hourly_recomm = [recommend("fishing", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm")}, i.get("time_step_fr")) for i in forecast[1:48]]
+    fishing_best_window = get_best_windows(fishing_hourly_recomm)
+
+    picnic_current_recomm = recommend("picnic", {"temperature": temp, "wind": wind, "rain": precip, "wind_gust": wind_gust, "cloud_cover": cloud_cover}, time)
+    picnic_hourly_recomm = [recommend("picnic", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm"), "wind_gust": i.get("wind_gust_m_per_s"), "cloud_cover": i.get("total_cloud_cover")}, i.get("time_step_fr")) for i in forecast[1:48]]
+    picnic_best_window = get_best_windows(picnic_hourly_recomm)
+
+    return [
             {
                 "id":      "cycling",
                 "icon":    "🚴",
@@ -361,8 +439,22 @@ def _build_lifestyle(current, forecast: list[dict]) -> dict:
                 "current_status": cycling_current_recomm,
                 "hourly": cycling_hourly_recomm,
                 "best_window": cycling_best_window 
-
-
+            },
+            {
+                "id":      "fishing",
+                "icon":    "🎣",
+                "label":   "Fishing",
+                "current_status": fishing_current_recomm,
+                "hourly": fishing_hourly_recomm,
+                "best_window": fishing_best_window 
+            },
+            {
+                "id":      "picnic",
+                "icon":    "🧺",
+                "label":   "Picnic",
+                "current_status": picnic_current_recomm,
+                "hourly": picnic_hourly_recomm,
+                "best_window": picnic_best_window 
             }
         ]
 
@@ -504,126 +596,11 @@ def _wind_message(wind: float | None) -> str:
     return "Hurricane-force winds"
 
 
-
-
-
-
-# def _running_message(temp, wind, rain):
-#     if rain > 2:              return "Rainy — not ideal for running"
-#     if wind and wind > 15:    return "Too windy for a comfortable run"
-#     if temp and temp < 5:     return "Very cold — dress in layers"
-#     if temp and 10 <= temp <= 20: return "Perfect conditions for a run"
-#     return "Acceptable conditions for running"
-
-# def _cycling_message(wind, rain):
-#     if rain > 1:           return "Rain expected — slippery roads"
-#     if wind and wind > 12: return "Strong headwind likely"
-#     return "Manageable conditions for cycling"
-
-# def _fishing_message(wind, rain):
-#     if wind and wind > 15: return "Too windy for fishing"
-#     if rain > 3:           return "Heavy rain — poor fishing conditions"
-#     return "Calm conditions — decent for fishing"
-
-# def _stargazing_message(rain, humidity):
-#     if rain > 0.5:            return "Cloudy or rainy — poor visibility"
-#     if humidity and humidity > 85: return "High humidity may obscure the sky"
-#     return "Fair stargazing conditions tonight"
-
-# def _picnic_message(temp, rain):
-#     if rain > 1:           return "Rain expected — not ideal for a picnic"
-#     if temp and temp < 10: return "Too cold for a comfortable picnic"
-#     if temp and temp > 15: return "Great weather for a picnic"
-#     return "Acceptable conditions for a picnic"
-
-# def _clothing_message(temp, rain, wind):
-#     if temp is None: return "No data"
-#     if rain > 1:           return "Bring a raincoat"
-#     if temp < 5:           return "Heavy coat needed"
-#     if temp < 12:          return "Warm jacket recommended"
-#     if temp < 18:          return "Light jacket recommended"
-#     if wind and wind > 10: return "Windbreaker would help"
-#     return "No jacket needed — comfortable outside"
-
-# def _photography_message(rain):
-#     if rain > 2:   return "Rain will affect your shots"
-#     if rain > 0.5: return "Overcast light — soft shadows"
-#     return "Good light conditions for photography"
-
-# def _gardening_message(temp, rain):
-#     if rain > 3:           return "Too much rain — wait for it to pass"
-#     if temp and temp < 5:  return "Too cold for gardening"
-#     if rain > 0.5:         return "Light rain — natural watering happening"
-#     return "Good day for gardening"
-
-
-#  {
-#                 "id":      "running",
-#                 "icon":    "🏃",
-#                 "label":   "Running",
-#                 "status":  status(
-#                     good_cond = temp and 8 <= temp <= 20 and (wind or 0) < 10 and rain_next_6h < 0.5,
-#                     poor_cond = (wind or 0) > 15 or rain_next_6h > 2
-#                 ),
-#                 "message": _running_message(temp, wind, rain_next_6h),
-#             },
-#             {
-#                 "id":      "fishing",
-#                 "icon":    "🎣",
-#                 "label":   "Fishing",
-#                 "status":  status(
-#                     good_cond = rain_next_6h < 0.5 and (wind or 0) < 8,
-#                     poor_cond = (wind or 0) > 15 or rain_next_6h > 3
-#                 ),
-#                 "message": _fishing_message(wind, rain_next_6h),
-#             },
-#             {
-#                 "id":      "stargazing",
-#                 "icon":    "🔭",
-#                 "label":   "Stargazing",
-#                 "status":  status(
-#                     good_cond = rain_next_6h == 0 and (humidity or 100) < 70,
-#                     poor_cond = rain_next_6h > 0.5 or (humidity or 0) > 85
-#                 ),
-#                 "message": _stargazing_message(rain_next_6h, humidity),
-#             },
-#             {
-#                 "id":      "picnic",
-#                 "icon":    "🧺",
-#                 "label":   "Picnic",
-#                 "status":  status(
-#                     good_cond = temp and temp > 15 and rain_next_6h < 0.5 and (wind or 0) < 10,
-#                     poor_cond = rain_next_6h > 1 or (temp and temp < 10)
-#                 ),
-#                 "message": _picnic_message(temp, rain_next_6h),
-#             },
-#             {
-#                 "id":      "jacket",
-#                 "icon":    "🧥",
-#                 "label":   "Clothing",
-#                 "status":  status(
-#                     good_cond = temp and temp > 18,
-#                     poor_cond = temp and temp < 8
-#                 ),
-#                 "message": _clothing_message(temp, rain_next_6h, wind),
-#             },
-#             {
-#                 "id":      "photography",
-#                 "icon":    "📷",
-#                 "label":   "Photography",
-#                 "status":  status(
-#                     good_cond = rain_next_6h < 0.5,
-#                     poor_cond = rain_next_6h > 2
-#                 ),
-#                 "message": _photography_message(rain_next_6h),
-#             },
-#             {
-#                 "id":      "gardening",
-#                 "icon":    "🌱",
-#                 "label":   "Gardening",
-#                 "status":  status(
-#                     good_cond = temp and 10 <= temp <= 25 and rain_next_6h < 1,
-#                     poor_cond = rain_next_6h > 3 or (temp and temp < 5)
-#                 ),
-#                 "message": _gardening_message(temp, rain_next_6h),
-#             },
+# "id":      "stargazing",
+# "icon":    "🔭",
+# "id":      "jacket",
+# "icon":    "🧥",
+# "id":      "photography",
+# "icon":    "📷",
+# "id":      "gardening",
+# "icon":    "🌱",

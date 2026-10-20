@@ -17,6 +17,8 @@ class ObservationsClient(BaseClient):
             params['format'] = 'json'
         elif params['format'] != 'json':
             raise ValueError ("The format requested is not available for get_json method")
+        # import pdb
+        # pdb.set_trace()
         response = self.request(params)
         response.raise_for_status()
         return self.api.parse_response(response)

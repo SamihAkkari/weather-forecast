@@ -79,7 +79,7 @@ SELECT
     si10   AS wind_speed_m_per_s,
     tp     AS precipitation_mm,
     ssrd   AS global_radiation_J_m2,
-    1 - (1 - lcc) * (1 - mcc) * (1 - hcc) AS total_cloud_cover,
+    ROUND((100 - ((100 - ROUND(lcc::numeric, 2)) *(100 - ROUND(mcc::numeric, 2)) *(100 - ROUND(hcc::numeric, 2))) / 10000.0)::numeric, 2) AS total_cloud_cover,
     CAPE_INS as cape_m2_s2,
     prmsl AS mean_sea_level_pressure,
     fg10 AS wind_gust_m_per_s,
