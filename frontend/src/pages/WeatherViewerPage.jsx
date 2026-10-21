@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import Navbar from '../components/common/Navbar'
 import StationMap from '../components/weather/StationMap'
 import HourlyCards from '../components/weather/HourlyCards'
@@ -10,8 +9,7 @@ import LifestyleWidget from '../components/weather/LifestyleWidget'
 // import { mockCurrentConditions, mockStation, mockForecast, mockWeatherDetails } from '../data/mockData'
 // import { mockLifestyle } from '../data/mockData'
 
-function WeatherViewerPage() {
-  const [selectedLocation, setSelectedLocation] = useState(null)
+function WeatherViewerPage({ selectedLocation, onLocationChange }) {
   const { stationData, loading, error } = useStationData(selectedLocation)
 
   return (
@@ -23,7 +21,7 @@ function WeatherViewerPage() {
         <div className="mb-6">
           <StationMap
             selectedLocation={selectedLocation}
-            onLocationClick={setSelectedLocation}
+            onLocationClick={onLocationChange}
           />
         </div>
 
