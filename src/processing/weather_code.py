@@ -19,12 +19,6 @@ Variables NOT available from meteofrance that open-meteo uses (skipped in this i
     convectiveInhibition     → thunderstorm probability degraded
     pblHeight                → thunderstorm probability degraded
     convectivePrecipitation  → we use cape >= 800 as proxy instead
-
-Snow detection:
-    tsnowp is in mm water equivalent.
-    open-meteo uses snowfall in centimeters of snow depth.
-    Conversion: 1 mm water equivalent ≈ 1 cm snow depth (density ~100 kg/m³)
-    This is an approximation — fresh snow density varies.
 """
 
 from __future__ import annotations

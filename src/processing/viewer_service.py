@@ -6,6 +6,8 @@ from src.config.config import Config
 from src.processing.weather_code import compute_hourly_code, compute_daily_code
 from datetime import datetime, timedelta
 
+from src.processing import utils 
+
 logger = logging.getLogger(__name__)
 
 """
@@ -403,63 +405,82 @@ def get_best_windows(hourly_data):
     )
     return best_windows[:2]
 
-
-def _build_lifestyle(current, forecast: list[dict]) -> dict:
+def _build_lifestyle(current: dict, forecast: list[dict]) -> list:
     """
-    Builds the lifestyle widget data.
-    Each activity is evaluated based on current current and forecast.
-    Returns the same shape as mockLifestyle on the frontend.
+    Builds all activities. Each activity builder receives current conditions
+    for the summary card and the full forecast for hourly timeline and
+    best window computation.
     """
-    temp    = current.get("temperature_celsius") if current and current != 0 else None
-    wind    = current.get("wind_speed_m_per_s")  if current and current != 0 else None
-    wind_gust    = current.get("wind_gust_m_per_s")  if current and current != 0 else None
-    precip  = current.get("precipitation_mm")    if current and current != 0 else None
-    snow_precip = current.get("snow_precipitation_mm")    if current and current != 0 else None
-    humidity = current.get("humidity_percentage") if current and current != 0 else None
-    cloud_cover = current.get("total_cloud_cover") if current and current != 0 else None
-    time = current.get("time_step_fr") if current and current != 0 else None
-    
-    cycling_current_recomm = recommend("cycling", {"temperature": temp, "wind": wind, "rain": precip, "snow": snow_precip}, time)
-    cycling_hourly_recomm = [recommend("cycling", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm"), "snow": i.get("snow_precipitation_mm")}, i.get("time_step_fr")) for i in forecast[1:24]]
-    cycling_best_window = get_best_windows(cycling_hourly_recomm)
-
-    fishing_current_recomm = recommend("fishing", {"temperature": temp, "wind": wind, "rain": precip}, time)
-    fishing_hourly_recomm = [recommend("fishing", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm")}, i.get("time_step_fr")) for i in forecast[1:24]]
-    fishing_best_window = get_best_windows(fishing_hourly_recomm)
-
-    picnic_current_recomm = recommend("picnic", {"temperature": temp, "wind": wind, "rain": precip, "wind_gust": wind_gust, "cloud_cover": cloud_cover}, time)
-    picnic_hourly_recomm = [recommend("picnic", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm"), "wind_gust": i.get("wind_gust_m_per_s"), "cloud_cover": i.get("total_cloud_cover")}, i.get("time_step_fr")) for i in forecast[1:24]]
-    picnic_best_window = get_best_windows(picnic_hourly_recomm)
-
     return [
-            {
-                "id":      "cycling",
-                "icon":    "🚴",
-                "label":   "Cycling",
-                "status": cycling_current_recomm ["status"],
-                "current_status": cycling_current_recomm,
-                "hourly": cycling_hourly_recomm,
-                "best_window": cycling_best_window 
-            },
-            {
-                "id":      "fishing",
-                "icon":    "🎣",
-                "label":   "Fishing",
-                "status": fishing_current_recomm ["status"],
-                "current_status": fishing_current_recomm,
-                "hourly": fishing_hourly_recomm,
-                "best_window": fishing_best_window 
-            },
-            {
-                "id":      "picnic",
-                "icon":    "🧺",
-                "label":   "Picnic",
-                "status": picnic_current_recomm ["status"],
-                "current_status": picnic_current_recomm,
-                "hourly": picnic_hourly_recomm,
-                "best_window": picnic_best_window 
-            }
-        ]
+        utils._build_cycling(current, forecast),
+        utils._build_running(current, forecast),
+        utils._build_hiking(current, forecast),
+        utils._build_picnic(current, forecast),
+        utils._build_fishing(current, forecast),
+        utils._build_photography(current, forecast),
+        utils._build_stargazing(current, forecast),
+        utils._build_gardening(current, forecast),
+        utils._build_clothing(current, forecast),
+        utils._build_driving(current, forecast),
+        utils._build_dog_walking(current, forecast),
+    ]
+
+# def _build_lifestyle(current, forecast: list[dict]) -> dict:
+#     """
+#     Builds the lifestyle widget data.
+#     Each activity is evaluated based on current current and forecast.
+#     Returns the same shape as mockLifestyle on the frontend.
+#     """
+#     temp    = current.get("temperature_celsius") if current and current != 0 else None
+#     wind    = current.get("wind_speed_m_per_s")  if current and current != 0 else None
+#     wind_gust    = current.get("wind_gust_m_per_s")  if current and current != 0 else None
+#     precip  = current.get("precipitation_mm")    if current and current != 0 else None
+#     snow_precip = current.get("snow_precipitation_mm")    if current and current != 0 else None
+#     humidity = current.get("humidity_percentage") if current and current != 0 else None
+#     cloud_cover = current.get("total_cloud_cover") if current and current != 0 else None
+#     time = current.get("time_step_fr") if current and current != 0 else None
+    
+#     cycling_current_recomm = recommend("cycling", {"temperature": temp, "wind": wind, "rain": precip, "snow": snow_precip}, time)
+#     cycling_hourly_recomm = [recommend("cycling", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm"), "snow": i.get("snow_precipitation_mm")}, i.get("time_step_fr")) for i in forecast[1:24]]
+#     cycling_best_window = get_best_windows(cycling_hourly_recomm)
+
+#     fishing_current_recomm = recommend("fishing", {"temperature": temp, "wind": wind, "rain": precip}, time)
+#     fishing_hourly_recomm = [recommend("fishing", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm")}, i.get("time_step_fr")) for i in forecast[1:24]]
+#     fishing_best_window = get_best_windows(fishing_hourly_recomm)
+
+#     picnic_current_recomm = recommend("picnic", {"temperature": temp, "wind": wind, "rain": precip, "wind_gust": wind_gust, "cloud_cover": cloud_cover}, time)
+#     picnic_hourly_recomm = [recommend("picnic", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm"), "wind_gust": i.get("wind_gust_m_per_s"), "cloud_cover": i.get("total_cloud_cover")}, i.get("time_step_fr")) for i in forecast[1:24]]
+#     picnic_best_window = get_best_windows(picnic_hourly_recomm)
+
+#     return [
+#             {
+#                 "id":      "cycling",
+#                 "icon":    "🚴",
+#                 "label":   "Cycling",
+#                 "status": cycling_current_recomm ["status"],
+#                 "current_status": cycling_current_recomm,
+#                 "hourly": cycling_hourly_recomm,
+#                 "best_window": cycling_best_window 
+#             },
+#             {
+#                 "id":      "fishing",
+#                 "icon":    "🎣",
+#                 "label":   "Fishing",
+#                 "status": fishing_current_recomm ["status"],
+#                 "current_status": fishing_current_recomm,
+#                 "hourly": fishing_hourly_recomm,
+#                 "best_window": fishing_best_window 
+#             },
+#             {
+#                 "id":      "picnic",
+#                 "icon":    "🧺",
+#                 "label":   "Picnic",
+#                 "status": picnic_current_recomm ["status"],
+#                 "current_status": picnic_current_recomm,
+#                 "hourly": picnic_hourly_recomm,
+#                 "best_window": picnic_best_window 
+#             }
+#         ]
 
 # ── Insight message helpers ────────────────────────────────────────────────────
 # Each helper returns a short human-readable sentence based on the value.
