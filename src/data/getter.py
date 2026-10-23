@@ -244,6 +244,40 @@ class DatabaseGetter:
         aggregated_analysis = analyser.aggregate(per_run_analysis)
         return aggregated_analysis
         
-        
-        
+    @staticmethod
+    def get_previous_radiation_cumulative(
+        station_id: str,
+        run_time: datetime,
+        current_time: datetime
+    ) -> float:
+        """
+        Fetches the cumulative global_radiation_j_m2 value of the timestep
+        immediately before current_time for a given station and run.
+
+        This is used as the baseline for de-accumulation so that the first
+        entry in our forecast slice is correctly converted to instantaneous W/m².
+
+        Returns 0.0 if no previous entry exists (i.e. current_time is the
+        first timestep of the run).
+        """
+        sql = """
+            SELECT global_radiation_j_m2
+            FROM silver.forecast_arome
+            WHERE station_id = %s
+            AND run_time = %s
+            AND time_step_fr < %s
+            ORDER BY time_step_fr DESC
+            LIMIT 1
+        """
+        try:
+            with DatabaseConnection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(sql, (station_id, run_time, current_time))
+                    row = cur.fetchone()
+                    if row is None:
+                        return 0.0
+                    return float(row[0] or 0.0)
+        except Exception as e:
+            logger.error(f"Error fetching previous radiation: {e}")
+            return 0.0
 

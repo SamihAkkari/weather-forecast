@@ -8,6 +8,10 @@ from src.processing.viewer_service import get_viewer_data
 from src.data.getter import DatabaseGetter
 from fastapi import FastAPI, HTTPException
 
+from src.processing.spatial import find_nearest_station
+from src.config.config import Config
+from src.processing.pv_processor import compute_pv_production
+
 app = FastAPI(title="Weather Forecast API", version="1.0.0")
 
 app.add_middleware(
@@ -41,6 +45,70 @@ def get_viewer_page_data(lat: float, lng: float):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.get("/pv-production")
+def get_pv_production(
+    lat: float,
+    lng: float,
+    system_capacity_kw: float,
+    inverter_capacity_kw: float,
+    tilt: float,
+    azimuth: float,
+    losses_pct: float = 14.0,
+    inverter_efficiency:float = 0.96
+
+):
+    try:
+        stations = DatabaseGetter.get_stations()
+        nearest = find_nearest_station(stations, lat, lng)
+
+        current_time = TimeManager.current_france_time_iso(time_truncation="hour")
+
+        forecast_raw, cur = DatabaseGetter.get_forecasts_at_time_step(
+            station_id=nearest.station_id,
+            fromm=Config.SILVER_FORECAST_AROME_TABLE_NAME,
+            time=current_time,
+            exactly_at_time=False,
+        )
+        forecast = DatabaseGetter.transform_data_to_list_of_dict(forecast_raw, cur)
+
+        if not forecast:
+            raise HTTPException(status_code=404, detail="No forecast data available")
+
+        # Get the run_time of this forecast so we can find the previous entry
+        # run_time comes from the first forecast entry
+        run_time = forecast[0].get("run_time")
+
+        # Fetch the cumulative radiation value just before our slice starts
+        # so the first entry in our slice is correctly de-accumulated
+        previous_cumulative = DatabaseGetter.get_previous_radiation_cumulative(
+            station_id=nearest.station_id,
+            run_time=run_time,
+            current_time=forecast[0].get("time_step_fr"),
+        )
+
+        altitude = float(nearest.altitude or 0)
+
+        result = compute_pv_production(
+            forecast=forecast,
+            lat=lat,
+            lng=lng,
+            altitude=altitude,
+            system_capacity_kw=system_capacity_kw,
+            inverter_capacity_kw = inverter_capacity_kw,
+            tilt=tilt,
+            azimuth=azimuth,
+            losses_pct=losses_pct,
+            inverter_efficiency = inverter_efficiency,
+            previous_cumulative=previous_cumulative,
+        )
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        # logger.error(f"PV production error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # @app.get("/analysis")
 # def get_analysis(lat: float, lng: float, days: str):
