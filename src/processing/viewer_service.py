@@ -276,29 +276,43 @@ def _build_widgets(current, forecast: list[dict]) -> dict:
     as your data model grows.
     """
     temp    = current.get("temperature_celsius") if current and current != 0 else None
-    feels   = _compute_feels_like(current, forecast)
     wind    = current.get("wind_speed_m_per_s") if current and current != 0 else None
     wind_dir_degree = current.get("wind_direction_degree") if current and current != 0 else None
     humidity = current.get("humidity_percentage") if current and current != 0 else None
     pressure = current.get("mean_sea_level_pressure") if current and current != 0 else None
-    precip  = current.get("precipitation_mm") if current and current != 0 else None
+    feels   = _compute_feels_like(temp, humidity, wind)
+    # precip  = current.get("precipitation_mm") if current and current != 0 else None
 
+
+    hourly_humidity = [{"time_step_fr": entry.get("time_step_fr"), "value": entry.get("humidity_percentage")} for entry in forecast[:48]]
+    # hourly_wind_dir = [{"time_step_fr": entry.get("time_step_fr"), "value": _wind_direction(entry.get("wind_direction_degree"))} for entry in forecast[:48]]
+    hourly_wind_speed = [{"time_step_fr": entry.get("time_step_fr"), "value":entry.get("wind_speed_m_per_s")} for entry in forecast[:48]]
+    hourly_pressure = [{"time_step_fr": entry.get("time_step_fr"), "value":round(entry.get("mean_sea_level_pressure")/100, 1)} for entry in forecast[:48]]
+    hourly_feels = [{"time_step_fr": entry.get("time_step_fr"), "value":_compute_feels_like(entry.get("temperature_celsius"), entry.get("humidity_percentage"), entry.get("wind_speed_m_per_s"))} for entry in forecast[:48]]
+    
+   
     return {
         "humidity": {
             "value":   round(humidity, 1) if humidity is not None else None,
             "unit":    "%",
             "message": _humidity_message(humidity),
+            "variable_description": "blablablab",
+            "hourly_values": hourly_humidity 
         },
         "feels_like": {
             "value":   feels,
             "unit":    "°C",
             "message": _feels_like_message(temp, feels),
+            "variable_description": "blablablab",
+            "hourly_values": hourly_feels
         },
         "wind": {
             "value":     round(wind, 1) if wind is not None else None,
             "unit":      "m/s",
             "direction": _wind_direction(wind_dir_degree),
             "message":   _wind_message(wind),
+            "variable_description": "blablablab",
+            "hourly_values": hourly_wind_speed 
         },
         "sunrise": {
             "value":   "N/A",   # TODO: compute from lat/lng using astral library
@@ -320,7 +334,9 @@ def _build_widgets(current, forecast: list[dict]) -> dict:
                        if current and current != 0 and pressure
                        else None,
             "unit":    "hPa",
-            "message": None,
+            "message": "k",
+            "variable_description": "blablablab",
+            "hourly_values": hourly_pressure
         },
     }
 
@@ -494,7 +510,7 @@ def _wind_direction(degrees):
     k = math.floor((degrees % 360 + 22.5) / 45) % 8
     return directions[k]
 
-def _compute_feels_like(current: dict, forecast: list[dict] | None = None) -> float | None:
+def _compute_feels_like(temp, humidity, wind) -> float | None:
     """
     Calculates apparent temperature using the Bureau of Meteorology
     Steadman approach.
@@ -507,12 +523,6 @@ def _compute_feels_like(current: dict, forecast: list[dict] | None = None) -> fl
     Assumes outdoor conditions in the shade; direct solar radiation
     is not included.
     """
-    if not current:
-        return None
-
-    temp = current.get("temperature_celsius")
-    humidity = current.get("humidity_percentage")
-    wind = current.get("wind_speed_m_per_s")
 
     if temp is None or humidity is None or wind is None:
         return None

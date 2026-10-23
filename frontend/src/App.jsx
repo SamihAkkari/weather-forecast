@@ -4,6 +4,7 @@ import HomePage from './pages/HomePage'
 import WeatherViewerPage from './pages/WeatherViewerPage'
 import AnalysisPage from './pages/AnalysisPage'
 import ActivityPage from './pages/ActivityPage'
+import WidgetDetailPage from './pages/WidgetDetailPage'
 
 function App() {
   const [selectedLocation, setSelectedLocation] = useState(null)
@@ -23,6 +24,7 @@ function App() {
         />
         <Route path="/analysis" element={<AnalysisPage />} />
         <Route path="/activity/:id" element={<ActivityPage />} />
+        <Route path="/widget/:id" element={<WidgetDetailPage />} />
       </Routes>
     </BrowserRouter>
   )
