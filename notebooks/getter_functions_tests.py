@@ -17,10 +17,10 @@ from src.processing.spatial import find_nearest_station
 from src.processing.viewer_service import get_viewer_data
 
 
-DatabaseGetter.get_previous_radiation_cumulative(
-        station_id =  "01014002",
-        run_time =  "2026-10-18 20:00:00+00",
-        current_time = "2026-10-18 21:00:00+00")
+# DatabaseGetter.get_previous_radiation_cumulative(
+#         station_id =  "01014002",
+#         run_time =  "2026-10-18 20:00:00+00",
+#         current_time = "2026-10-18 21:00:00+00")
 
 
 

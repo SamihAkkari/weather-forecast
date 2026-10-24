@@ -13,11 +13,13 @@ from src.processing import spatial
 from src.processing.spatial import find_nearest_station
 from src.config.config import Config
 from src.processing.pv_processor import compute_pv_production
+from src.processing import utils
 
-lat = 48.8215
-lng = 2.3378
+lat = 48.8647
+lng = 2.3236
+
 system_capacity_kw = 3.0
-inverter_capacity_kw = 2.0
+inverter_capacity_kw = 2.5
 tilt = 30
 azimuth = 180
 losses_pct = 14.0
@@ -35,18 +37,20 @@ forecast_raw, cur = DatabaseGetter.get_forecasts_at_time_step(
     exactly_at_time=False,
 )
 forecast = DatabaseGetter.transform_data_to_list_of_dict(forecast_raw, cur)
+forecast = utils.unaccumulate(forecast, "global_radiation_j_m2", nearest.station_id)
 
-# Get the run_time of this forecast so we can find the previous entry
-# run_time comes from the first forecast entry
-run_time = forecast[0].get("run_time")
+# # Get the run_time of this forecast so we can find the previous entry
+# # run_time comes from the first forecast entry
+# run_time = forecast[0].get("run_time")
 
-# Fetch the cumulative radiation value just before our slice starts
-# so the first entry in our slice is correctly de-accumulated
-previous_cumulative = DatabaseGetter.get_previous_radiation_cumulative(
-    station_id=nearest.station_id,
-    run_time=run_time,
-    current_time=forecast[0].get("time_step_fr"),
-)
+# # Fetch the cumulative radiation value just before our slice starts
+# # so the first entry in our slice is correctly de-accumulated
+# previous_cumulative = DatabaseGetter.get_previous_cumulative(
+#     station_id=nearest.station_id,
+#     run_time=run_time,
+#     current_time=forecast[0].get("time_step_fr"),
+#     variable_name = "global_radiation_j_m2"
+# )
 
 altitude = float(nearest.altitude or 0)
 
@@ -60,8 +64,7 @@ result = compute_pv_production(
     tilt=tilt,
     azimuth=azimuth,
     losses_pct=losses_pct,
-    inverter_efficiency = inverter_efficiency,
-    previous_cumulative=previous_cumulative,
+    inverter_efficiency = inverter_efficiency
 )
 
 

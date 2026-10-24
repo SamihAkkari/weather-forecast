@@ -245,10 +245,11 @@ class DatabaseGetter:
         return aggregated_analysis
         
     @staticmethod
-    def get_previous_radiation_cumulative(
+    def get_previous_cumulative(
         station_id: str,
         run_time: datetime,
-        current_time: datetime
+        current_time: datetime,
+        variable_name: str
     ) -> float:
         """
         Fetches the cumulative global_radiation_j_m2 value of the timestep
@@ -260,8 +261,8 @@ class DatabaseGetter:
         Returns 0.0 if no previous entry exists (i.e. current_time is the
         first timestep of the run).
         """
-        sql = """
-            SELECT global_radiation_j_m2
+        sql = f"""
+            SELECT {variable_name}
             FROM silver.forecast_arome
             WHERE station_id = %s
             AND run_time = %s

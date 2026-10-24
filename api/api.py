@@ -12,6 +12,8 @@ from src.processing.spatial import find_nearest_station
 from src.config.config import Config
 from src.processing.pv_processor import compute_pv_production
 
+from src.processing import utils 
+
 app = FastAPI(title="Weather Forecast API", version="1.0.0")
 
 app.add_middleware(
@@ -75,17 +77,20 @@ def get_pv_production(
         if not forecast:
             raise HTTPException(status_code=404, detail="No forecast data available")
 
-        # Get the run_time of this forecast so we can find the previous entry
-        # run_time comes from the first forecast entry
-        run_time = forecast[0].get("run_time")
+        forecast = utils.unaccumulate(forecast, "global_radiation_j_m2", nearest.station_id)
 
-        # Fetch the cumulative radiation value just before our slice starts
-        # so the first entry in our slice is correctly de-accumulated
-        previous_cumulative = DatabaseGetter.get_previous_radiation_cumulative(
-            station_id=nearest.station_id,
-            run_time=run_time,
-            current_time=forecast[0].get("time_step_fr"),
-        )
+        # # Get the run_time of this forecast so we can find the previous entry
+        # # run_time comes from the first forecast entry
+        # run_time = forecast[0].get("run_time")
+
+        # # Fetch the cumulative radiation value just before our slice starts
+        # # so the first entry in our slice is correctly de-accumulated
+        # previous_cumulative = DatabaseGetter.get_previous_cumulative(
+        #     station_id=nearest.station_id,
+        #     run_time=run_time,
+        #     current_time=forecast[0].get("time_step_fr"),
+        #     variable_name = "global_radiation_j_m2"
+        # )
 
         altitude = float(nearest.altitude or 0)
 
@@ -99,8 +104,7 @@ def get_pv_production(
             tilt=tilt,
             azimuth=azimuth,
             losses_pct=losses_pct,
-            inverter_efficiency = inverter_efficiency,
-            previous_cumulative=previous_cumulative,
+            inverter_efficiency = inverter_efficiency
         )
         return result
 

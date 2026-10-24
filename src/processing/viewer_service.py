@@ -131,7 +131,6 @@ RULES = {
 }
 
 
-
 def get_viewer_data(lat: float, lng: float) -> dict:
     """
     Main entry point called by the API layer.
@@ -156,6 +155,9 @@ def get_viewer_data(lat: float, lng: float) -> dict:
         exactly_at_time=False
     )
     forecast = DatabaseGetter.transform_data_to_list_of_dict(forecast_raw, cur)
+
+    forecast = utils.unaccumulate(forecast, "precipitation_mm", nearest_station.station_id)
+    forecast = utils.unaccumulate(forecast, "snow_precipitation_mm", nearest_station.station_id)
 
     station_info = nearest_station.__dict__
 

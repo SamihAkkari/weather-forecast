@@ -1,3 +1,41 @@
+from src.data.getter import DatabaseGetter
+
+def unaccumulate(forecast, variable_name, station_id):
+    """
+    The objective of this function is to return the list of dicitonary of forecast with instant values and not cumulative ones.
+    It is dedicated only for the variables that are recorded cumulatively in the database
+    This is temporary solution; in teh future we will direclty convert cumulative to intant in silver layers
+    """
+    
+    # Get the run_time of this forecast so we can find the previous entry
+    # run_time comes from the first forecast entry
+    run_time = forecast[0].get("run_time")
+
+    # Fetch the cumulative radiation value just before our slice starts
+    # so the first entry in our slice is correctly de-accumulated
+    previous = DatabaseGetter.get_previous_cumulative(
+        station_id=station_id,
+        run_time=run_time,
+        current_time=forecast[0].get("time_step_fr"),
+        variable_name = variable_name
+    )
+
+    cumulative = [
+        float(entry.get(variable_name) or 0)
+        for entry in forecast
+    ]
+
+    unaccum = []
+    prev = previous
+
+    for cum in cumulative:
+        instant = (cum - prev)
+        unaccum.append(max(0.0, instant))
+        prev = cum    
+
+    for entry, value in zip (forecast, unaccum):
+        entry[variable_name] = value
+    return forecast
 
 
 # ── Activity helpers ───────────────────────────────────────────────────────────

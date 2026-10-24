@@ -3,6 +3,9 @@
     tags=['forecast_arome']
 ) }}
 
+
+-- Full forecast history, used only to calculate previous values.
+-- This CTE must not have the incremental NOT EXISTS filter.
 WITH 
 -- 1. Combine both bronze tables on keys and filter for new data
 base AS (
@@ -40,6 +43,78 @@ deduped_base AS (
     SELECT * FROM base WHERE rn = 1
 ),
 
+-- full_history_base AS (
+--     SELECT
+--         b1.station_id,
+--         b1.run_time,
+--         b1.valid_time,
+--         b1.tp,
+--         b1.ssrd,
+--         b1.tsnowp,
+
+--         ROW_NUMBER() OVER (
+--             PARTITION BY
+--                 b1.station_id,
+--                 b1.run_time,
+--                 b1.valid_time
+--             ORDER BY GREATEST(
+--                 b1.ingestion_time,
+--                 b2.ingestion_time
+--             ) DESC
+--         ) AS rn
+
+--     FROM bronze.forecast_sp1_arome b1
+
+--     INNER JOIN bronze.forecast_sp2_arome b2
+--         ON b1.station_id = b2.station_id
+--         AND b1.run_time = b2.run_time
+--         AND b1.valid_time = b2.valid_time
+
+--     WHERE b1.run_time IS NOT NULL
+-- ),
+
+-- full_history_deduped AS (
+--     SELECT
+--         station_id,
+--         run_time,
+--         valid_time,
+--         tp,
+--         ssrd,
+--         tsnowp
+--     FROM full_history_base
+--     WHERE rn = 1
+-- ),
+
+-- -- Calculate previous cumulative values across the complete forecast run.
+-- forecast_history AS (
+--     SELECT
+--         station_id,
+--         run_time,
+--         valid_time,
+
+--         ROW_NUMBER() OVER (
+--             PARTITION BY station_id, run_time
+--             ORDER BY valid_time
+--         ) AS forecast_step,
+
+--         LAG(tp) OVER (
+--             PARTITION BY station_id, run_time
+--             ORDER BY valid_time
+--         ) AS previous_tp,
+
+--         LAG(ssrd) OVER (
+--             PARTITION BY station_id, run_time
+--             ORDER BY valid_time
+--         ) AS previous_ssrd,
+
+--         LAG(tsnowp) OVER (
+--             PARTITION BY station_id, run_time
+--             ORDER BY valid_time
+--         ) AS previous_tsnowp
+
+--     FROM full_history_deduped
+-- ),
+
 -- 3. Logic for stations that should have had data but were missing in Bronze
 missing AS (
     SELECT
@@ -67,7 +142,22 @@ final_union AS (
         station_id, run_time, valid_time,
         NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
     FROM missing
-)
+),
+
+-- final_with_history AS (
+--     SELECT
+--         f.*,
+--         h.forecast_step,
+--         h.previous_tp,
+--         h.previous_ssrd,
+--         h.previous_tsnowp
+--     FROM final_union f
+--     LEFT JOIN forecast_history h
+--         ON h.station_id = f.station_id
+--         AND h.run_time = f.run_time
+--         AND h.valid_time = f.valid_time
+-- ),
+
 
 SELECT
     LPAD(station_id::TEXT, 8, '0') AS station_id,

@@ -66,6 +66,16 @@ def deaccumulate_ghi(forecast: list[dict], previous_cumulative: float = 0.0) -> 
 
     return ghi_wm2
 
+def convert_ghi_from_to_instant(forecast: list[dict]) -> list[float]:
+    """
+    Converts GHI (J/m²) to
+    instantaneous GHI (W/m²) for each hourly timestep.
+    """
+    ghi_wm2 = [
+        float(entry.get("global_radiation_j_m2") / 3600 or 0)
+        for entry in forecast
+    ]
+    return ghi_wm2
 
 # ── Step 2 — Build time index ──────────────────────────────────────────────────
 
@@ -77,16 +87,31 @@ def build_time_index(forecast: list[dict]) -> pd.DatetimeIndex:
     time_step_fr is in French local time (Europe/Paris).
     We convert to UTC for pvlib solar position calculations
     since pvlib expects UTC or timezone-aware times.
-    """
-    times = pd.to_datetime([
-        entry["time_step_fr"] for entry in forecast
-    ])
+    """  
+    
+    # import pdb
+    # pdb.set_trace()
+    
+    times = pd.DatetimeIndex(
+    pd.to_datetime([entry["time_step_fr"] for entry in forecast])
+    ).tz_localize(None)
+    
+    ambiguous = [True] * len(times)
+    
+    times = times.tz_localize(
+        "Europe/Paris",
+        ambiguous=ambiguous
+    )
+    
+    # times = pd.to_datetime([
+    #     entry["time_step_fr"] for entry in forecast
+    # ]).tz_localize(None)
 
-    # If timestamps are naive (no timezone), localize to Paris time
-    if times.tz is None:
-        times = times.tz_localize("Europe/Paris")
-    else:
-        times = times.tz_convert("Europe/Paris")
+    # # If timestamps are naive (no timezone), localize to Paris time
+    # if times.tz is None:
+    #     times = times.tz_localize("Europe/Paris")
+    # else:
+    #     times = times.tz_convert("Europe/Paris")
 
     return times
 
@@ -108,7 +133,7 @@ def compute_pv_production(
     azimuth: float,
     losses_pct: float = 14.0,
     inverter_efficiency:float = 0.96,
-    previous_cumulative: float = 0.0,   # ← new parameter
+    albedo: float = 0.25
 ) -> dict:
     """
     Main entry point. Computes hourly PV production from forecast data.
@@ -140,9 +165,11 @@ def compute_pv_production(
         f"Computing PV production: {system_capacity_kw}kWp, "
         f"tilt={tilt}°, azimuth={azimuth}°, losses={losses_pct}%"
     )
-
+    # import pdb
+    # pdb.set_trace()
     # ── 1. De-accumulate GHI ──────────────────────────────────────────────
-    ghi_wm2 = deaccumulate_ghi(forecast, previous_cumulative)
+    # ghi_wm2 = deaccumulate_ghi(forecast, previous_cumulative)
+    ghi_wm2 = convert_ghi_from_to_instant(forecast)
 
     # ── 2. Build time index ───────────────────────────────────────────────
     times = build_time_index(forecast)
@@ -179,17 +206,35 @@ def compute_pv_production(
 
     # ── 7. POA irradiance using Haydavies transposition ───────────────────
     # Converts horizontal irradiance to irradiance on the tilted panel surface
-    poa_result = haydavies(
+    poa_result = pvlib.irradiance.get_total_irradiance(
         surface_tilt=tilt,
         surface_azimuth=azimuth,
-        dhi=dhi,
-        dni=dni,
-        dni_extra=dni_extra,
         solar_zenith=solar_position["apparent_zenith"],
         solar_azimuth=solar_position["azimuth"],
+        dni=dni,
+        ghi=ghi_series,
+        dhi=dhi,
+        dni_extra=dni_extra,
+        albedo=0.25,
+        model="haydavies",
     )
+    
+    # poa_result = haydavies(
+    #     surface_tilt=tilt,
+    #     surface_azimuth=azimuth,
+    #     dhi=dhi,
+    #     dni=dni,
+    #     dni_extra=dni_extra,
+    #     solar_zenith=solar_position["apparent_zenith"],
+    #     solar_azimuth=solar_position["azimuth"],
+    # )
+    
     # poa_result is a Series of total POA irradiance in W/m²
-    poa_global = poa_result.fillna(0).clip(lower=0)
+    poa_global  = poa_result ["poa_global"].fillna(0).clip(lower=0)
+    # poa_direct = poa_result ["poa_direct"].fillna(0).clip(lower=0)
+    # poa_diffuse = poa_result ["poa_diffuse"].fillna(0).clip(lower=0)
+    
+    # poa_global = poa_result.fillna(0).clip(lower=0)
 
     # ── 8. PVWatts DC power model ─────────────────────────────────────────
     # PVWatts DC model: P_dc = capacity * (POA / 1000) * temp_correction

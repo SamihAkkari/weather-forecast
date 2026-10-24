@@ -56,12 +56,18 @@ const WIDGET_CONFIG = {
   "2026-10-22T14:00:00+00:00" → "14:00"
 */
 function formatHour(isoString) {
-  const date = new Date(isoString)
-  return date.toLocaleTimeString('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Europe/Paris',
-  })
+  const match = isoString.match(/[T ](\d{2}):(\d{2})/);
+
+  if (!match) return '';
+
+  return `${match[1]}:${match[2]}`;
+  
+  // const date = new Date(isoString)
+  // return date.toLocaleTimeString('fr-FR', {
+  //   hour: '2-digit',
+  //   minute: '2-digit',
+  //   timeZone: 'Europe/Paris',
+  // })
 }
 
 function WidgetDetailPage() {
