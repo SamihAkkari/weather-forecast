@@ -5,9 +5,36 @@ import DailyForecast from '../components/weather/DailyForecast'
 import WeatherWidgets from '../components/weather/WeatherWidgets'
 import useStationData from '../hooks/useStationData'
 import LifestyleWidget from '../components/weather/LifestyleWidget'
+import { useNavigate } from 'react-router-dom'
 
 // import { mockCurrentConditions, mockStation, mockForecast, mockWeatherDetails } from '../data/mockData'
 // import { mockLifestyle } from '../data/mockData'
+
+function PvEntryCard({ location }) {
+  const navigate = useNavigate()
+
+  return (
+    <div
+      onClick={() => navigate('/pv', { state: { location } })}
+      className="border border-gray-100 rounded-xl p-5 cursor-pointer hover:border-gray-300 transition-colors group"
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs text-gray-400 mb-1">Energy</p>
+          <p className="text-sm font-medium text-gray-900 mb-1">
+            ☀️ Evaluate your potential PV production
+          </p>
+          <p className="text-xs text-gray-400">
+            Estimate hourly solar output for your installation over the forecast period
+          </p>
+        </div>
+        <span className="text-gray-300 group-hover:text-gray-400 transition-colors text-lg ml-4">
+          →
+        </span>
+      </div>
+    </div>
+  )
+}
 
 function WeatherViewerPage({ selectedLocation, onLocationChange }) {
   const { stationData, loading, error } = useStationData(selectedLocation)
@@ -70,6 +97,10 @@ function WeatherViewerPage({ selectedLocation, onLocationChange }) {
 
             {/* Lifestyle widget */}
             <LifestyleWidget activities={stationData.activities} />
+
+            
+            {/* Lifestyle widget */}
+            <PvEntryCard location={selectedLocation} />
 
           </div>
         )}

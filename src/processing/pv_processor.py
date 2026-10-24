@@ -90,6 +90,10 @@ def build_time_index(forecast: list[dict]) -> pd.DatetimeIndex:
 
     return times
 
+def buildInsight():
+    return ""
+
+
 
 # ── Step 3 — Core PV computation ──────────────────────────────────────────────
 
@@ -99,7 +103,7 @@ def compute_pv_production(
     lng: float,
     altitude: float,
     system_capacity_kw: float,
-    inverter_capacity_kw: float,
+    inverter_capacity_kw: float, # AC power limit
     tilt: float,
     azimuth: float,
     losses_pct: float = 14.0,
@@ -238,31 +242,73 @@ def compute_pv_production(
     # losses_pct covers: soiling, shading, wiring, mismatch, inverter etc.
     # PVWatts applies them as a single derate factor
     derate_factor = 1.0 - (losses_pct / 100.0)
-    dc_power_w_after_losses_w= dc_power_w * derate_factor
+    dc_power_w_after_losses_w= (dc_power_w * derate_factor).clip(lower=0)
 
-    inverter_pdc0_w = inverter_capacity_kw * 1000.0
+    inverter_pac0_w = inverter_capacity_kw * 1000
+    inverter_pdc0_w = inverter_pac0_w / inverter_efficiency
     ac_power_w = pvlib.inverter.pvwatts(
         pdc=dc_power_w_after_losses_w,
         pdc0=inverter_pdc0_w,
-        eta_inv_nom=0.96,
+        eta_inv_nom=inverter_efficiency,
     )
+
+    # import pdb
+    # pdb.set_trace()
+    # Hypothetical AC power without the AC clipping limit
+    zeta = dc_power_w_after_losses_w / inverter_pdc0_w
+    
+    eta = (
+        inverter_efficiency / 0.9637
+        * (
+            -0.0162 * zeta
+            - 0.0059 / zeta.where(zeta > 0, 1)
+            + 0.9858
+        )
+    ).clip(lower=0, upper=1)
+    unclipped_ac_power_w = (eta * dc_power_w_after_losses_w).clip(lower=0)
+    
+    # Instantaneous power lost to clipping (W)
+    clipping_perc = (
+        1 - ac_power_w / unclipped_ac_power_w.where(
+            unclipped_ac_power_w > 0
+        )
+    ).mul(100).clip(lower=0).fillna(0)
+    
 
     # ── 10. Build response ────────────────────────────────────────────────
     # Since timestep = 1 hour, power in W == energy in Wh for that hour
     hourly = []
-    for i, (entry, power) in enumerate(zip(forecast, ac_power_w)):
+    for i, (entry, power, clip_perc) in enumerate(zip(forecast, ac_power_w, clipping_perc)):
         hourly.append({
             "time":      str(entry.get("time_step_fr", "")),
             "power_w":   round(float(power), 1),
             "energy_wh": round(float(power), 1),  # 1h timestep: W == Wh
+            "clipping_percentage": round(float(clip_perc)),
             "ghi_wm2":   round(ghi_wm2[i], 1),
             "poa_wm2":   round(float(poa_global.iloc[i]), 1),
         })
 
+
+
     total_energy_wh = sum(h["energy_wh"] for h in hourly)
     total_energy_kwh = total_energy_wh / 1000.0
+ 
+    # Potential AC energy without clipping (kWh)
+    unclipped_energy_kwh = unclipped_ac_power_w.sum() / 1000
+
+    # Percentage of potential AC energy lost
+    clipping_percentage_energy = (
+        100 - round(100 * total_energy_kwh / unclipped_energy_kwh)
+        if unclipped_energy_kwh > 0 else 0
+    )    
+    if clipping_percentage_energy == 0:
+        clipping_message = "✓ No clipping detected"
+    else:
+        clipping_message = "⚠️ Clipping is likely"
 
     peak_entry = max(hourly, key=lambda h: h["power_w"])
+
+    insight = buildInsight()
 
     return {
         "system": {
@@ -273,6 +319,10 @@ def compute_pv_production(
         },
         "hourly":            hourly,
         "total_energy_kwh":  round(total_energy_kwh, 3),
+        "energy_period_message": f"over {len(hourly)} forecast period",
         "peak_power_w":      round(peak_entry["power_w"], 1),
         "peak_hour":         peak_entry["time"],
+        "energy_clipping_percent": round(clipping_percentage_energy),
+        "clipping_message": clipping_message ,
+        "insight_message": insight
     }

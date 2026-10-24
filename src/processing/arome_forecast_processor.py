@@ -47,6 +47,8 @@ class GribProcessor:
 
 
         variables = records_class.forecast_variables()  # all non-metadata fields
+        import pdb
+        pdb.set_trace()
         extracted_data = GribProcessor.extract_forecast_variables_data(self.datasets, variables)
         records = GribProcessor.extract_data_at_stations_records(extracted_data, stations, grid_lats, grid_lons, self.run_time, records_class)
 

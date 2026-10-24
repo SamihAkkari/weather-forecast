@@ -76,11 +76,11 @@ class ObservationHoraireRecord(BaseRecord):
     reference_time: datetime
     insert_time:    datetime
     validity_time:  datetime
-    t:              float | None
-    td:             float | None
-    tx:             float | None
-    tn:             float | None
-    u:              float | None
+    t:              float | None # température sous abri en degrés kelvin
+    td:             float | None # dew point temperature measured for the air at 2 metres (about 6.6 feet) above the ground.
+    tx:             float | None # température maximale de l'air à 2 mètres au-dessus du sol en degrés kelvin
+    tn:             float | None # température minimale de l'air à 2 mètres au-dessus du sol en degrés kelvins
+    u:              float | None # humidité relative horaire en %
     ux:             float | None
     un:             float | None
     dd:             float | None
@@ -117,7 +117,7 @@ class SP1ForecastAromeRecord(BaseRecord):
     tp             : float  # Total precipitation
     prmsl          : float  # Mean sea level pressure (Pa)
     fg10           : float  # Time-maximum 10 metre wind gust (m/s) (represents the absolute highest 3-second wind gust that occurred at a height of 10 meters over the hour timestep)
-    tsnowp         : float  # Total snow precipitation (mm)
+    tsnowp         : float  # Total snow precipitation (kg/m2) accumulated from the first timestep
     ingestion_time : datetime # Time when the forecast was ingested into the database
 
 
@@ -172,8 +172,8 @@ class AllSP1ForecastAromeRecords(BaseRecord):
     prmsl: float  # Mean sea level pressure (Pa)
     ssrd: float  # Surface short-wave (solar) radiation downwards (J/m²)
     tp: float  # Total precipitation (mm). This is accumulated not instant for the timestep
-    tgrp: float  # Graupel (snow pellets) precipitation (mm)
-    tsnowp: float  # Total snow precipitation (mm)
+    tgrp: float  # Graupel (snow pellets) precipitation (kg/m2 equiv to mm). Accumulated from the first timestep
+    tsnowp: float  # Total snow precipitation (kg/m2 equivelant to mm) accumulated from the first timestep
 
 @dataclass
 class AllSP2ForecastAromeRecords(BaseRecord):

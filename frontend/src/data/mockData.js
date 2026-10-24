@@ -446,3 +446,30 @@ export const mockActivities = [
     ]
   },
 ]
+
+
+export const mockPvProduction = {
+  system: {
+    capacity_kw: 3.0,
+    tilt: 30,
+    azimuth: 180,
+    losses_pct: 14.0,
+    inverter_capacity_kw: 2.5,
+    inverter_efficiency: 0.96,
+  },
+  hourly: [
+    { time: '2026-10-22T10:00:00', power_w: 1240.5, energy_wh: 1240.5, ghi_wm2: 380.2, poa_wm2: 420.1 },
+    { time: '2026-10-22T11:00:00', power_w: 1640.0, energy_wh: 1640.0, ghi_wm2: 470.0, poa_wm2: 520.3 },
+    { time: '2026-10-22T12:00:00', power_w: 2050.7, energy_wh: 2050.7, ghi_wm2: 560.4, poa_wm2: 610.8 },
+    { time: '2026-10-22T13:00:00', power_w: 2180.3, energy_wh: 2180.3, ghi_wm2: 590.1, poa_wm2: 645.2 },
+    { time: '2026-10-22T14:00:00', power_w: 1710.2, energy_wh: 1710.2, ghi_wm2: 480.6, poa_wm2: 530.9 },
+  ],
+  total_energy_kwh: 8.82,
+  peak_power_w: 2180.3,
+  peak_hour: '2026-10-22T13:00:00',
+  energy_period_message: "over 5 forecast hours",
+  energy_clipping_percent: 0, 
+  clipping_message: '✓ No clipping detected',
+  insight_message: 'insight'
+
+}
