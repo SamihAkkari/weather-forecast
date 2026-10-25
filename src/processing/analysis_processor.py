@@ -1,333 +1,376 @@
-import math
+"""
+Analysis processor — computes forecast accuracy metrics by joining
+silver.forecast_arome with silver.observations_hourly.
+
+All heavy computation happens in SQL (indexed join + GROUP BY).
+Python only post-processes the rows into the frontend response shape.
+
+"""
+
 import logging
-from collections import defaultdict
-from datetime import datetime
+import math
+from datetime import datetime, timedelta
+from src.data.db import DatabaseConnection
 
 logger = logging.getLogger(__name__)
 
+# Rain detection threshold — standard WMO definition
+RAIN_THRESHOLD_MM = 0.1
+
+        # fw.step,
+        # fw.temp_forecast,
+        # fw.wind_forecast,
+        # fw.rain_forecast,
+        # o.temperature_celsius   AS temp_observed,
+        # o.wind_speed_m_per_s    AS wind_observed,
+        # o.precipitation_mm      AS rain_observed
+
+# ── SQL ────────────────────────────────────────────────────────────────────────
+
+# We added: 'NaN'::double precision since currently in silver it is not well converted later on this should be removed and solved in silver
+_ANALYSIS_SQL = """
+WITH forecast_with_step AS (
+    SELECT
+        f.station_id,
+        f.run_time,
+        f.time_step_fr,
+        f.temperature_celsius   AS temp_forecast,
+        f.wind_speed_m_per_s    AS wind_forecast,
+        f.precipitation_mm      AS rain_forecast,
+        ROW_NUMBER() OVER (
+            PARTITION BY f.station_id, f.run_time
+            ORDER BY f.time_step_fr
+        ) AS step
+    FROM {forecast_table} f
+    WHERE f.run_time >= %(date_from)s
+      AND f.run_time <= %(date_to)s
+      AND (%(station_id)s IS NULL OR f.station_id = %(station_id)s)
+),
+joined AS (
+    SELECT
+    fw.step,
+    NULLIF(fw.temp_forecast, 'NaN'::double precision) AS temp_forecast,
+    NULLIF(fw.wind_forecast, 'NaN'::double precision) AS wind_forecast,
+    NULLIF(fw.rain_forecast, 'NaN'::double precision) AS rain_forecast,
+
+    NULLIF(o.temperature_celsius, 'NaN'::double precision) AS temp_observed,
+    NULLIF(o.wind_speed_m_per_s, 'NaN'::double precision) AS wind_observed,
+    NULLIF(o.precipitation_mm, 'NaN'::double precision) AS rain_observed    
+    
+    FROM forecast_with_step fw
+    JOIN {obs_table} o
+      ON  o.station_id    = fw.station_id
+      AND o.time_step_fr  = fw.time_step_fr
+
+)
+SELECT
+    step,
+    AVG(ABS(temp_forecast - temp_observed))                         AS temp_mae,
+    SQRT(AVG(POWER(temp_forecast - temp_observed, 2)))              AS temp_rmse,
+    AVG(temp_forecast - temp_observed)                              AS temp_bias,
+    COUNT(*) FILTER (WHERE temp_forecast IS NOT NULL
+                     AND temp_observed IS NOT NULL)                 AS n_temp_samples,
+    
+    AVG(ABS(wind_forecast - wind_observed))                         AS wind_mae,
+    SQRT(AVG(POWER(wind_forecast - wind_observed, 2)))              AS wind_rmse,
+    AVG(wind_forecast - wind_observed)                              AS wind_bias,
+    COUNT(*) FILTER (WHERE wind_forecast IS NOT NULL
+                     AND wind_observed IS NOT NULL)                 AS n_wind_samples,    
+    
+    SUM(CASE WHEN rain_forecast > %(rain_thresh)s
+             AND rain_observed  > %(rain_thresh)s THEN 1 ELSE 0 END) AS rain_tp,
+    SUM(CASE WHEN rain_forecast > %(rain_thresh)s
+             AND rain_observed <= %(rain_thresh)s THEN 1 ELSE 0 END) AS rain_fp,
+    SUM(CASE WHEN rain_forecast <= %(rain_thresh)s
+             AND rain_observed  > %(rain_thresh)s THEN 1 ELSE 0 END) AS rain_fn,
+    SUM(CASE WHEN rain_forecast <= %(rain_thresh)s
+             AND rain_observed <= %(rain_thresh)s THEN 1 ELSE 0 END) AS rain_tn,
+    COUNT(*) FILTER (WHERE rain_forecast IS NOT NULL
+                     AND rain_observed IS NOT NULL)                  AS n_rain_samples
+FROM joined
+GROUP BY step
+ORDER BY step
 """
-This module contains all the metric computation logic.
-It receives plain Python lists of dicts (already fetched from the DB)
-and returns a dict shaped exactly like mockAnalysis on the frontend.
 
-Keeping this logic here rather than in the API route means:
-- The route stays thin and readable
-- This logic is easy to test independently
-- You can reuse it later if you add a batch analysis endpoint
-"""
 
-def _mae(errors: list[float]) -> float:
-    """Mean Absolute Error — average of absolute differences."""
-    if not errors:
-        return 0.0
-    return round(sum(abs(e) for e in errors) / len(errors), 2)
+# ── Database query ─────────────────────────────────────────────────────────────
 
-def _rmse(errors: list[float]) -> float:
-    """Root Mean Square Error — penalises large errors more than MAE."""
-    if not errors:
-        return 0.0
-    return round(math.sqrt(sum(e**2 for e in errors) / len(errors)), 2)
-
-def _bias(errors: list[float]) -> float:
+def _fetch_step_metrics(
+    date_from: datetime,
+    date_to: datetime,
+    station_id: str | None,
+    forecast_table: str,
+    obs_table: str,
+) -> list[dict]:
     """
-    Mean signed error (forecast - observed).
-    Positive bias means the model systematically overestimates.
-    Negative bias means it underestimates.
+    Runs the analysis SQL and returns one dict per forecast step.
+    station_id=None means aggregate over all stations.
     """
-    if not errors:
-        return 0.0
-    return round(sum(errors) / len(errors), 2)
+    sql = _ANALYSIS_SQL.format(
+        forecast_table=forecast_table,
+        obs_table=obs_table,
+    )
+    params = {
+        "date_from":    date_from,
+        "date_to":      date_to,
+        "station_id":   station_id,
+        "rain_thresh":  RAIN_THRESHOLD_MM,
+    }
 
-def _precision(tp: int, fp: int) -> float:
-    """Of all the times the model said YES, how often was it right?"""
-    return round(tp / (tp + fp), 2) if (tp + fp) > 0 else 0.0
+    try:
+        with DatabaseConnection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, params)
+                cols = [d[0] for d in cur.description]
+                return [dict(zip(cols, row)) for row in cur.fetchall()]
+    except Exception as e:
+        logger.error(f"Analysis query failed: {e}")
+        raise
 
-def _recall(tp: int, fn: int) -> float:
-    """Of all the times the answer was actually YES, how often did the model catch it?"""
-    return round(tp / (tp + fn), 2) if (tp + fn) > 0 else 0.0
 
-def _f1(precision: float, recall: float) -> float:
-    """Harmonic mean of precision and recall. Balances both metrics into one."""
+# ── Metric helpers ─────────────────────────────────────────────────────────────
+
+def _safe(value, decimals=2):
+    """Rounds a value safely, returns None if None or NaN."""
+    if value is None:
+        return None
+    try:
+        f = float(value)
+        return round(f, decimals) if math.isfinite(f) else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _precision(tp, fp):
+    return round(tp / (tp + fp), 3) if (tp + fp) > 0 else 0.0
+
+def _recall(tp, fn):
+    return round(tp / (tp + fn), 3) if (tp + fn) > 0 else 0.0
+
+def _f1(precision, recall):
     if (precision + recall) == 0:
         return 0.0
-    return round(2 * precision * recall / (precision + recall), 2)
+    return round(2 * precision * recall / (precision + recall), 3)
 
-def _temperature_insight(bias: float, mae: float) -> str:
-    """
-    Generates a human readable sentence based on the actual metric values.
-    The thresholds here (1.0, 0.5) are reasonable for a NWP model over France
-    but you can adjust them as you learn more about your model's behaviour.
-    """
-    if abs(bias) < 0.5:
-        return f"The model is well calibrated with a near-zero bias of {bias:+.1f}°C and a MAE of {mae}°C."
-    elif bias > 1.0:
-        return f"The model consistently overestimates temperature with a warm bias of {bias:+.1f}°C and a MAE of {mae}°C."
-    elif bias < -1.0:
-        return f"The model consistently underestimates temperature with a cold bias of {bias:+.1f}°C and a MAE of {mae}°C."
-    elif bias > 0:
-        return f"The model shows a slight warm bias of {bias:+.1f}°C on average, with a MAE of {mae}°C."
+
+# ── Insight sentence generators ────────────────────────────────────────────────
+
+def _temp_insight(mae, rmse, bias):
+    if mae is None:
+        return "Insufficient data to evaluate temperature accuracy."
+    if mae < 0.8:
+        verdict = "excellent"
+    elif mae < 1.5:
+        verdict = "good"
+    elif mae < 2.5:
+        verdict = "moderate"
     else:
-        return f"The model shows a slight cold bias of {bias:+.1f}°C on average, with a MAE of {mae}°C."
+        verdict = "poor"
 
-def _detection_insight(variable: str, tp: int, fp: int, fn: int, f1: float) -> str:
-    """Generates an insight sentence for binary detection (rain or sunshine)."""
+    bias_str = (
+        f"The model has a warm bias of {abs(bias):.1f}°C." if bias > 0.5
+        else f"The model has a cold bias of {abs(bias):.1f}°C." if bias < -0.5
+        else "The model shows no systematic bias."
+    )
+    return (
+        f"Temperature forecast accuracy is {verdict} "
+        f"with a mean absolute error of {mae:.1f}°C. {bias_str}"
+    )
+
+def _wind_insight(mae, bias):
+    if mae is None:
+        return "Insufficient data to evaluate wind accuracy."
+    if mae < 1.0:
+        verdict = "excellent"
+    elif mae < 2.0:
+        verdict = "good"
+    elif mae < 3.5:
+        verdict = "moderate"
+    else:
+        verdict = "poor"
+
+    bias_str = (
+        f"The model tends to overestimate wind speed by {abs(bias):.1f} m/s."
+        if bias > 0.5
+        else f"The model tends to underestimate wind speed by {abs(bias):.1f} m/s."
+        if bias < -0.5
+        else "No systematic wind bias detected."
+    )
+    return (
+        f"Wind speed accuracy is {verdict} "
+        f"with a mean absolute error of {mae:.1f} m/s. {bias_str}"
+    )
+
+def _rain_insight(tp, fp, fn, f1):
     total_actual = tp + fn
     if total_actual == 0:
-        return f"No {variable} events observed in this period."
-    if f1 >= 0.85:
-        return f"{variable.capitalize()} is well captured — the model correctly identified {tp} out of {total_actual} {variable} hours with only {fp} false alarms."
-    elif f1 >= 0.65:
-        return f"The model correctly caught {tp} out of {total_actual} {variable} hours but triggered {fp} false alarms."
-    else:
-        return f"The model struggles to detect {variable} — it missed {fn} out of {total_actual} {variable} hours and had {fp} false alarms."
+        return "No rain events observed in this period."
+    if f1 >= 0.80:
+        return (
+            f"Rain detection is strong — the model correctly identified "
+            f"{tp} out of {total_actual} rainy hours with only {fp} false alarms."
+        )
+    elif f1 >= 0.55:
+        return (
+            f"Rain detection is moderate — {tp} of {total_actual} rainy hours "
+            f"caught correctly, but {fp} false alarms and {fn} misses."
+        )
+    return (
+        f"Rain detection is poor — the model missed {fn} of {total_actual} "
+        f"rainy hours and produced {fp} false alarms."
+    )
 
-def _is_rainy(precipitation_mm) -> bool:
-    """A timestep is considered rainy if precipitation exceeds 0.1mm."""
-    if precipitation_mm is None:
-        return False
-    return float(precipitation_mm) > 0.1
 
-def _is_sunny(radiation_j_m2) -> bool:
+# ── Response builders ──────────────────────────────────────────────────────────
+
+def _build_temperature(rows: list[dict]) -> dict:
     """
-    A timestep is considered sunny if global radiation exceeds 120 W/m2 equivalent.
-    Our column stores J/m2 per hour, so 120 W/m2 * 3600s = 432000 J/m2.
-    Adjust this threshold based on what makes sense in your data.
+    Builds temperature section from per-step rows.
+    degradation: dict of step → mae for the frontend chart.
+    overall metrics: averaged across all steps weighted by n_samples.
     """
-    if radiation_j_m2 is None:
-        return False
-    return float(radiation_j_m2) > 432000
+    if not rows:
+        return {"degradation": {}, "mae": None, "rmse": None,
+                "bias": None, "insight": "No data available."}
 
-# def analyse(
-#     forecast: list[dict],
-#     observations: list[dict]
-# ) -> dict:
-#     """
-#     Main function. Joins forecast and observations on time_step_fr,
-#     computes all metrics, and returns a dict shaped like mockAnalysis.
-#     """
-#     # import pdb
-#     # pdb.set_trace()
-#     # Index observations by time for fast lookup
-#     obs_by_time = {row['time_step_fr']: row for row in observations}
+    # Weighted averages across steps
+    total_n   = sum(r["n_temp_samples"] for r in rows)
+    w_mae     = sum(float(r["temp_mae"])  * r["n_temp_samples"] for r in rows) / total_n
+    w_rmse    = sum(float(r["temp_rmse"]) * r["n_temp_samples"] for r in rows) / total_n
+    w_bias    = sum(float(r["temp_bias"]) * r["n_temp_samples"] for r in rows) / total_n
 
-#     # Build matched pairs — only keep timesteps present in both
-#     comparison = []
-#     temp_errors = []
-#     rain_tp = rain_fp = rain_fn = rain_tn = 0
-#     sun_tp = sun_fp = sun_fn = sun_tn = 0
+    degradation = {
+        int(r["step"]): _safe(r["temp_mae"])
+        for r in rows
+    }
 
-#     # For degradation: group errors by horizon
-#     # horizon is computed as hours since the first forecast timestep
-#     if forecast:
-#         first_time = forecast[0]['time_step_fr'].isoformat()
+    mae  = _safe(w_mae)
+    rmse = _safe(w_rmse)
+    bias = _safe(w_bias)
 
-#     horizon_errors: dict[int, list[float]] = {}
-
-#     for row in forecast:
-#         time = row['time_step_fr'].isoformat()
-#         obs = obs_by_time.get(time)
-#         if obs is None:
-#             continue  # no matching observation for this timestep, skip
-
-#         f_temp = row['temperature_celsius']
-#         o_temp = obs['temperature_celsius']
-
-#         # Skip if either value is missing
-#         if f_temp is None or o_temp is None:
-#             continue
-
-#         f_temp = float(f_temp)
-#         o_temp = float(o_temp)
-#         error = f_temp - o_temp
-#         temp_errors.append(error)
-
-#         comparison.append({
-#             'time': time,
-#             'forecast': round(f_temp, 1),
-#             'observed': round(o_temp, 1),
-#         })
-
-#         # Degradation: compute horizon in hours from run start
-#         horizon_h = int((datetime.fromisoformat(time)- datetime.fromisoformat(first_time)).total_seconds() / 3600)
-#         if horizon_h not in horizon_errors:
-#             horizon_errors[horizon_h] = []
-#         horizon_errors[horizon_h].append(abs(error))
-
-#         # Rain confusion matrix
-#         f_rain = _is_rainy(row['precipitation_mm'])
-#         o_rain = _is_rainy(obs['precipitation_mm'])
-#         if f_rain and o_rain:     rain_tp += 1
-#         elif f_rain and not o_rain: rain_fp += 1
-#         elif not f_rain and o_rain: rain_fn += 1
-#         else:                       rain_tn += 1
-
-#         # Sunshine confusion matrix
-#         f_sun = _is_sunny(row['global_radiation_j_m2'])
-#         o_sun = _is_sunny(obs['global_radiation_j_m2'])
-#         if f_sun and o_sun:       sun_tp += 1
-#         elif f_sun and not o_sun: sun_fp += 1
-#         elif not f_sun and o_sun: sun_fn += 1
-#         else:                     sun_tn += 1
-
-#     # Compute temperature metrics
-#     mae  = _mae(temp_errors)
-#     rmse = _rmse(temp_errors)
-#     bias = _bias(temp_errors)
-
-#     # Build degradation curve — average MAE per horizon bucket
-#     degradation = [
-#         {'horizon_h': h, 'mae': round(sum(errs) / len(errs), 2)}
-#         for h, errs in sorted(horizon_errors.items())
-#         if errs
-#     ]
-
-#     # Compute detection metrics
-#     rain_prec = _precision(rain_tp, rain_fp)
-#     rain_rec  = _recall(rain_tp, rain_fn)
-#     rain_f1   = _f1(rain_prec, rain_rec)
-
-#     sun_prec = _precision(sun_tp, sun_fp)
-#     sun_rec  = _recall(sun_tp, sun_fn)
-#     sun_f1   = _f1(sun_prec, sun_rec)
-
-#     return {
-#         'station_name': station_name,
-#         'temperature': {
-#             'comparison': comparison,
-#             'mae': mae,
-#             'rmse': rmse,
-#             'bias': bias,
-#             'degradation': degradation,
-#             'insight': _temperature_insight(bias, mae),
-#         },
-#         'rain': {
-#             'tp': rain_tp, 'fp': rain_fp,
-#             'fn': rain_fn, 'tn': rain_tn,
-#             'precision': rain_prec,
-#             'recall': rain_rec,
-#             'f1': rain_f1,
-#             'insight': _detection_insight('rain', rain_tp, rain_fp, rain_fn, rain_f1),
-#         },
-#         'sunshine': {
-#             'tp': sun_tp, 'fp': sun_fp,
-#             'fn': sun_fn, 'tn': sun_tn,
-#             'precision': sun_prec,
-#             'recall': sun_rec,
-#             'f1': sun_f1,
-#             'insight': _detection_insight('sunshine', sun_tp, sun_fp, sun_fn, sun_f1),
-#         }
-#     }
+    return {
+        "degradation": degradation,
+        "mae":         mae,
+        "rmse":        rmse,
+        "bias":        bias,
+        "insight":     _temp_insight(mae, rmse, bias),
+    }
 
 
-def analyse(
-    forecast: list[dict],
-    observations: list[dict]
+def _build_wind(rows: list[dict]) -> dict:
+    if not rows:
+        return {"degradation": {}, "mae": None, "rmse": None,
+                "bias": None, "insight": "No data available."}
+
+    total_n = sum(r["n_wind_samples"] for r in rows)
+    w_mae   = sum(float(r["wind_mae"])  * r["n_wind_samples"] for r in rows) / total_n
+    w_rmse  = sum(float(r["wind_rmse"]) * r["n_wind_samples"] for r in rows) / total_n
+    w_bias  = sum(float(r["wind_bias"]) * r["n_wind_samples"] for r in rows) / total_n
+
+    degradation = {
+        int(r["step"]): _safe(r["wind_mae"])
+        for r in rows
+    }
+
+    mae  = _safe(w_mae)
+    rmse = _safe(w_rmse)
+    bias = _safe(w_bias)
+
+    return {
+        "degradation": degradation,
+        "mae":         mae,
+        "rmse":        rmse,
+        "bias":        bias,
+        "insight":     _wind_insight(mae, bias),
+    }
+
+
+def _build_rain(rows: list[dict]) -> dict:
+    """
+    Rain metrics are summed across all steps — not averaged.
+    We want total confusion matrix counts for the whole period.
+    """
+    if not rows:
+        return {"tp": 0, "fp": 0, "fn": 0, "tn": 0,
+                "precision": 0, "recall": 0, "f1": 0,
+                "insight": "No data available."}
+
+    tp = sum(int(r["rain_tp"]) for r in rows)
+    fp = sum(int(r["rain_fp"]) for r in rows)
+    fn = sum(int(r["rain_fn"]) for r in rows)
+    tn = sum(int(r["rain_tn"]) for r in rows)
+
+    prec   = _precision(tp, fp)
+    rec    = _recall(tp, fn)
+    f1     = _f1(prec, rec)
+
+    return {
+        "tp":        tp,
+        "fp":        fp,
+        "fn":        fn,
+        "tn":        tn,
+        "precision": prec,
+        "recall":    rec,
+        "f1":        f1,
+        "insight":   _rain_insight(tp, fp, fn, f1),
+    }
+
+
+# ── Main entry point ───────────────────────────────────────────────────────────
+
+def compute_analysis(
+    days: int,
+    station_id: str | None,
+    forecast_table: str,
+    obs_table: str,
 ) -> dict:
     """
-    Main function. Joins forecast and observations on time_step_fr,
-    computes all metrics, and returns a dict shaped like mockAnalysis.
+    Main entry point called by the API endpoint.
+
+    Parameters
+    ----------
+    days        : number of past days to include (e.g. 7)
+    station_id  : specific station or None for all stations
+    forecast_table : fully qualified table name e.g. silver.forecast_arome
+    obs_table   : fully qualified table name e.g. silver.observations_hourly
+
+    Returns
+    -------
+    dict shaped for the frontend AnalysisPage
     """
+    date_to   = datetime.utcnow()
+    date_from = date_to - timedelta(days=days)
 
-    # if len(forecast) != len(observations):
-    #     logger.error("forecast and observations should have the same size for the analyser to work")
-    #     raise ValueError
-    
-    if forecast:
-        first_time = forecast[0]['time_step_fr'].isoformat()
+    logger.info(
+        f"Computing analysis: {days} days, "
+        f"station={station_id or 'all'}, "
+        f"{date_from.date()} → {date_to.date()}"
+    )
 
-    # Index observations by time for fast lookup
-    obs_by_time = {row['time_step_fr']: row for row in observations}
-    horizon_errors: dict[int, list[float]] = {}
-    
-    rain_tp = rain_fp = rain_fn = rain_tn = 0
-    sun_tp = sun_fp = sun_fn = sun_tn = 0
+    rows = _fetch_step_metrics(
+        date_from=date_from,
+        date_to=date_to,
+        station_id=station_id,
+        forecast_table=forecast_table,
+        obs_table=obs_table,
+    )
 
-    for ind in range(len(forecast)):
-        time = forecast[ind]['time_step_fr'].isoformat()
-        corresponding_obs = obs_by_time.get(time)
-        if corresponding_obs is None:
-            continue  # no matching observation for this timestep, skip
-
-        forecast_temp = forecast[ind]['temperature_celsius']
-        observations_temp = corresponding_obs['temperature_celsius']
-
-        # Skip if either value is missing
-        if forecast_temp is None or observations_temp is None:
-            continue
-
-        f_temp = float(forecast_temp)
-        o_temp = float(observations_temp)
-        error = f_temp - o_temp
-
-       # Degradation: compute horizon in hours from run start
-        horizon_h = int((datetime.fromisoformat(time)- datetime.fromisoformat(first_time)).total_seconds() / 3600)
-        if horizon_h not in horizon_errors:
-            horizon_errors[horizon_h] = []
-        horizon_errors[horizon_h].append(abs(error))
-
-        # Rain confusion matrix
-        f_rain = _is_rainy(forecast[ind]['precipitation_mm'])
-        o_rain = _is_rainy(corresponding_obs['precipitation_mm'])
-        if f_rain and o_rain:     rain_tp += 1
-        elif f_rain and not o_rain: rain_fp += 1
-        elif not f_rain and o_rain: rain_fn += 1
-        else:                       rain_tn += 1
-
-        # Sunshine confusion matrix
-        f_sun = _is_sunny(forecast[ind]['global_radiation_j_m2'])
-        o_sun = _is_sunny(corresponding_obs['global_radiation_j_m2'])
-        if f_sun and o_sun:       sun_tp += 1
-        elif f_sun and not o_sun: sun_fp += 1
-        elif not f_sun and o_sun: sun_fn += 1
-        else:                     sun_tn += 1
+    if not rows:
+        logger.warning("Analysis query returned no rows")
 
     return {
-        'temperature': {
-            'degradation': horizon_errors
+        "meta": {
+            "days":       days,
+            "station_id": station_id,
+            "date_from":  date_from.isoformat(),
+            "date_to":    date_to.isoformat(),
+            # "n_runs":     len(set(
+            #     # approximate — we don't have run_time in aggregated rows
+            #     # the frontend shows days instead
+            #     []
+            # )),
         },
-        'rain': {
-            'tp': rain_tp, 'fp': rain_fp,
-            'fn': rain_fn, 'tn': rain_tn,
-        },
-        'sunshine': {
-            'tp': sun_tp, 'fp': sun_fp,
-            'fn': sun_fn, 'tn': sun_tn,
-        }
-    }
-
-def aggregate(per_run_analysis):
-    # --- temperature (average) ---
-    temp_sum = defaultdict(float)
-    temp_count = defaultdict(int)
-
-    # --- rain & sunshine (sum) ---
-    rain = defaultdict(int)
-    sunshine = defaultdict(int)
-
-    for run in per_run_analysis:
-        # --- temperature ---
-        for k, v_list in run.get("temperature", {}).get("degradation", {}).items():
-            if v_list:  # safety check
-                temp_sum[k] += v_list[0]
-                temp_count[k] += 1
-
-        # --- rain ---
-        for key, value in run.get("rain", {}).items():
-            rain[key] += value
-
-        # --- sunshine ---
-        for key, value in run.get("sunshine", {}).items():
-            sunshine[key] += value
-
-    # --- compute averages ---
-    temperature_avg = {
-        k: temp_sum[k] / temp_count[k]
-        for k in temp_sum
-        if temp_count[k] > 0
-    }
-
-    return {
-        "temperature": {"degradation": temperature_avg},
-        "rain": dict(rain),
-        "sunshine": dict(sunshine),
+        "temperature": _build_temperature(rows),
+        "wind":        _build_wind(rows),
+        "rain":        _build_rain(rows),
     }

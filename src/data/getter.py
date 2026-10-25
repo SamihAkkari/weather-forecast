@@ -14,6 +14,38 @@ class DatabaseGetter:
 
 
     @staticmethod
+    def get_full_table(schema: str, table_name: str) -> list[dict]:
+        """
+        Read all rows from a table in a specified schema.
+    
+        Returns
+        -------
+        list[dict]
+            Each dictionary represents one row.
+        """
+        # Validate identifiers to avoid SQL injection.
+        import re
+    
+        identifier_pattern = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+    
+        if not identifier_pattern.fullmatch(schema):
+            raise ValueError(f"Invalid schema name: {schema}")
+    
+        if not identifier_pattern.fullmatch(table_name):
+            raise ValueError(f"Invalid table name: {table_name}")
+    
+        with DatabaseConnection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f'SELECT * FROM "{schema}"."{table_name}"'
+                )
+                rows = cur.fetchall()
+                return DatabaseGetter.transform_data_to_list_of_dict(
+                    rows, cur
+                )
+
+
+    @staticmethod
     def transform_list_of_objects_to_list_of_dict(data: List[object]):
         """
         data: is a tuble of list of tuples, where each tuple is a row from the observation table in the database

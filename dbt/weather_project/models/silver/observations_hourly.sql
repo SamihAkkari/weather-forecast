@@ -32,13 +32,36 @@ grid AS (
 clean_obs AS (
     SELECT
         geo_id_insee::TEXT AS station_id,
-        validity_time::timestamptz AT TIME ZONE 'Europe/Paris' AS time_step_fr,
-        t - 273.15 AS temperature_celsius,
-        u AS humidity_percentage,
-        dd AS wind_direction_degree,
-        ff AS wind_speed_m_per_s,
-        rr1 AS precipitation_mm,
-        ray_glo01 AS global_radiation_J_m2
+
+        validity_time::timestamptz
+            AT TIME ZONE 'Europe/Paris' AS time_step_fr,
+
+        NULLIF(t, 'NaN'::double precision) - 273.15
+            AS temperature_celsius,
+
+        NULLIF(u, 'NaN'::double precision)
+            AS humidity_percentage,
+
+        NULLIF(dd, 'NaN'::double precision)
+            AS wind_direction_degree,
+
+        NULLIF(ff, 'NaN'::double precision)
+            AS wind_speed_m_per_s,
+
+        NULLIF(rr1, 'NaN'::double precision)
+            AS precipitation_mm,
+
+        NULLIF(ray_glo01, 'NaN'::double precision)
+            AS global_radiation_J_m2
+
+        -- geo_id_insee::TEXT AS station_id,
+        -- validity_time::timestamptz AT TIME ZONE 'Europe/Paris' AS time_step_fr,
+        -- t - 273.15 AS temperature_celsius,
+        -- u AS humidity_percentage,
+        -- dd AS wind_direction_degree,
+        -- ff AS wind_speed_m_per_s,
+        -- rr1 AS precipitation_mm,
+        -- ray_glo01 AS global_radiation_J_m2
     FROM {{ source('bronze', 'observations_hourly') }} b
     CROSS JOIN last_silver l
     WHERE validity_time::timestamptz AT TIME ZONE 'Europe/Paris' > l.last_time

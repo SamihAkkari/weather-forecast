@@ -158,6 +158,28 @@ final_union AS (
 --         AND h.valid_time = f.valid_time
 -- ),
 
+cleaned AS (
+    SELECT
+        station_id,
+        run_time,
+        valid_time,
+
+        NULLIF(t2m, 'NaN'::double precision) AS t2m,
+        NULLIF(r2, 'NaN'::double precision) AS r2,
+        NULLIF(wdir10, 'NaN'::double precision) AS wdir10,
+        NULLIF(si10, 'NaN'::double precision) AS si10,
+        NULLIF(tp, 'NaN'::double precision) AS tp,
+        NULLIF(ssrd, 'NaN'::double precision) AS ssrd,
+        NULLIF(lcc, 'NaN'::double precision) AS lcc,
+        NULLIF(mcc, 'NaN'::double precision) AS mcc,
+        NULLIF(hcc, 'NaN'::double precision) AS hcc,
+        NULLIF(CAPE_INS, 'NaN'::double precision) AS CAPE_INS,
+        NULLIF(prmsl, 'NaN'::double precision) AS prmsl,
+        NULLIF(fg10, 'NaN'::double precision) AS fg10,
+        NULLIF(tsnowp, 'NaN'::double precision) AS tsnowp
+
+    FROM final_union
+)
 
 SELECT
     LPAD(station_id::TEXT, 8, '0') AS station_id,
@@ -175,4 +197,4 @@ SELECT
     fg10 AS wind_gust_m_per_s,
     tsnowp AS snow_precipitation_mm,
     DATE_TRUNC('minute', NOW() AT TIME ZONE 'Europe/Paris') AS transfer_time_fr
-FROM final_union
+FROM cleaned

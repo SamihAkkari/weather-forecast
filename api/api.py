@@ -3,6 +3,7 @@ from src.data.getter import DatabaseGetter
 from src.ingestion.time_manager import TimeManager
 from fastapi.middleware.cors import CORSMiddleware
 from src.processing import spatial
+from src.processing.analysis_processor import compute_analysis
 
 from src.processing.viewer_service import get_viewer_data
 from src.data.getter import DatabaseGetter
@@ -128,3 +129,39 @@ def get_pv_production(
 #     # Step 2 — Get data for the nearest station and the current time  
 #     data = DatabaseGetter.get_frontend_formatted_data_for_analysis(nearest_station, int(days))
 #     return data
+
+
+@app.get("/analysis")
+def get_analysis(
+    lat: float | None = None,
+    lng: float | None = None,
+    days: int = 7,
+):
+    """
+    lat, lng : optional — if provided, finds nearest station.
+               if omitted, aggregates over all stations.
+    days     : how many past days to include in the analysis.
+    """
+    try:
+        station_id = None
+
+        if lat is not None and lng is not None:
+            stations = DatabaseGetter.get_stations()
+            nearest  = find_nearest_station(stations, lat, lng)
+            station_id = nearest.station_id
+            # logger.info(f"Analysis for station {station_id}")
+        else:
+            pass
+            # logger.info("Analysis for all stations")
+
+        result = compute_analysis(
+            days=days,
+            station_id=station_id,
+            forecast_table=f"{Config.SILVER_SCHEMA}.{Config.SILVER_FORECAST_AROME_TABLE_NAME}",
+            obs_table=f"{Config.SILVER_SCHEMA}.{Config.OBSERVATIONS_TABLE_NAME_HOURLY}",
+        )
+        return result
+
+    except Exception as e:
+        # logger.error(f"Analysis error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
