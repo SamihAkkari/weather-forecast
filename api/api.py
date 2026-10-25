@@ -78,7 +78,7 @@ def get_pv_production(
         if not forecast:
             raise HTTPException(status_code=404, detail="No forecast data available")
 
-        forecast = utils.unaccumulate(forecast, "global_radiation_j_m2", nearest.station_id)
+        # forecast = utils.unaccumulate(forecast, "global_radiation_j_m2", nearest.station_id)
 
         # # Get the run_time of this forecast so we can find the previous entry
         # # run_time comes from the first forecast entry

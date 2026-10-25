@@ -351,18 +351,23 @@ def make_silver_forecast_arome_table_without_data(SCHEMA, TABLE):
     	station_id TEXT,
         run_time timestamptz,
         time_step_fr timestamptz,
+        forecast_step BIGINT,
         temperature_celsius Double precision, 
         humidity_percentage Double precision, 
         wind_direction_degree Double precision, 
         wind_speed_m_per_s Double precision, 
-        precipitation_mm Double precision, 
-        global_radiation_J_m2 Double precision,
+        CUMUL_precipitation_mm Double precision, 
+        CUMUL_global_radiation_J_m2 Double precision,
         total_cloud_cover Double precision,
         cape_m2_s2 Double precision,
         mean_sea_level_pressure Double precision,
-        snow_precipitation_mm Double precision,
+        CUMUL_snow_precipitation_mm Double precision,
         wind_gust_m_per_s Double precision,
-        transfer_time_fr timestamptz
+        transfer_time_fr timestamptz,
+        precipitation_mm Double precision,
+        global_radiation_J_m2 Double precision,
+        snow_precipitation_mm Double precision
+        
     );
     """
 

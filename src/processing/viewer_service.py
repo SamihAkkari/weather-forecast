@@ -156,8 +156,8 @@ def get_viewer_data(lat: float, lng: float) -> dict:
     )
     forecast = DatabaseGetter.transform_data_to_list_of_dict(forecast_raw, cur)
 
-    forecast = utils.unaccumulate(forecast, "precipitation_mm", nearest_station.station_id)
-    forecast = utils.unaccumulate(forecast, "snow_precipitation_mm", nearest_station.station_id)
+    # forecast = utils.unaccumulate(forecast, "precipitation_mm", nearest_station.station_id)
+    # forecast = utils.unaccumulate(forecast, "snow_precipitation_mm", nearest_station.station_id)
 
     station_info = nearest_station.__dict__
 
@@ -292,7 +292,8 @@ def _build_widgets(current, forecast: list[dict]) -> dict:
     hourly_pressure = [{"time_step_fr": entry.get("time_step_fr"), "value":round(entry.get("mean_sea_level_pressure")/100, 1)} for entry in forecast[:48]]
     hourly_feels = [{"time_step_fr": entry.get("time_step_fr"), "value":_compute_feels_like(entry.get("temperature_celsius"), entry.get("humidity_percentage"), entry.get("wind_speed_m_per_s"))} for entry in forecast[:48]]
     
-   
+    # import pdb
+    # pdb.set_trace()
     return {
         "humidity": {
             "value":   round(humidity, 1) if humidity is not None else None,
@@ -507,6 +508,8 @@ def _build_lifestyle(current: dict, forecast: list[dict]) -> list:
 import math
 
 def _wind_direction(degrees):
+    if degrees is None:
+        return None
     directions = ["N", "NE", "E", "SE",
                   "S", "SW", "W", "NW"]
     k = math.floor((degrees % 360 + 22.5) / 45) % 8

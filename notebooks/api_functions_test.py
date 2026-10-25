@@ -15,6 +15,11 @@ from src.config.config import Config
 from src.processing.pv_processor import compute_pv_production
 from src.processing import utils
 
+from src.processing.viewer_service import get_viewer_data
+
+from api.api import get_viewer_page_data
+
+
 lat = 48.8647
 lng = 2.3236
 
@@ -37,20 +42,6 @@ forecast_raw, cur = DatabaseGetter.get_forecasts_at_time_step(
     exactly_at_time=False,
 )
 forecast = DatabaseGetter.transform_data_to_list_of_dict(forecast_raw, cur)
-forecast = utils.unaccumulate(forecast, "global_radiation_j_m2", nearest.station_id)
-
-# # Get the run_time of this forecast so we can find the previous entry
-# # run_time comes from the first forecast entry
-# run_time = forecast[0].get("run_time")
-
-# # Fetch the cumulative radiation value just before our slice starts
-# # so the first entry in our slice is correctly de-accumulated
-# previous_cumulative = DatabaseGetter.get_previous_cumulative(
-#     station_id=nearest.station_id,
-#     run_time=run_time,
-#     current_time=forecast[0].get("time_step_fr"),
-#     variable_name = "global_radiation_j_m2"
-# )
 
 altitude = float(nearest.altitude or 0)
 
@@ -68,43 +59,4 @@ result = compute_pv_production(
 )
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-def get_frontend_formatted_data_for_basicV(location: dict):
-    # Get current time 
-    time = TimeManager.current_france_time_iso(time_truncation="hour")
-    
-    # Get longitude and latitude of selected location
-    ...
-
-    # Get elevatino of the selected location
-    ...
-
-    # Get nearest station of the selected location
-    stations = DatabaseGetter.get_stations()
-    nearest_station = spatial.find_nearest_station(stations, location["lat"], location["lng"])
-
-    # Get data for the nearest station and the current time    
-    data = DatabaseGetter.get_frontend_formatted_data_for_basicV(nearest_station, time = time)
-    return data
-
-
-location = {
-    "lat" : 48,
-    "lng" : 3
-    }
-
-
-# Get nearest station of the selected location
-stations = DatabaseGetter.get_stations()
-nearest_station = spatial.find_nearest_station(stations, location["lat"], location["lng"])
+get_viewer_page_data(lat, lng)
