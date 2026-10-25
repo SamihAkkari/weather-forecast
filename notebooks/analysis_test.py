@@ -12,9 +12,19 @@ from src.data.getter import DatabaseGetter
 import pandas as pd
 import numpy as np
 from src.processing import analysis_processor
+from src.processing.spatial import find_nearest_station
 
 
-analysis_processor.compute_analysis(days= 7, station_id = None, 
+lat = 49.0190
+lng = 3.2533
+
+stations = DatabaseGetter.get_stations()
+nearest  = find_nearest_station(stations, lat, lng)
+station_id = nearest.station_id
+# logger.info(f"Analysis for station {station_id}")
+
+
+analysis_processor.compute_analysis(days= 7, station_id = station_id, 
                                     forecast_table = Config.SILVER_SCHEMA+"."+Config.SILVER_FORECAST_AROME_TABLE_NAME, 
                                     obs_table= Config.SILVER_SCHEMA+"."+Config.OBSERVATIONS_TABLE_NAME_HOURLY)
 

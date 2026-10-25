@@ -1,30 +1,3 @@
-export const mockAnalysis = {
-  temperature: {
-    degradation: {
-      1: 0.31, 2: 0.38, 3: 0.45, 4: 0.52, 5: 0.58,
-      6: 0.63, 7: 0.69, 8: 0.74, 9: 0.79, 10: 0.83,
-      11: 0.87, 12: 0.91, 13: 0.95, 14: 0.99, 15: 1.03,
-      16: 1.07, 17: 1.11, 18: 1.15, 19: 1.18, 20: 1.21,
-      21: 1.24, 22: 1.27, 23: 1.30, 24: 1.33, 25: 1.36,
-      26: 1.38, 27: 1.40, 28: 1.42, 29: 1.44, 30: 1.46,
-      31: 1.48, 32: 1.50, 33: 1.52, 34: 1.54, 35: 1.56,
-      36: 1.57, 37: 1.58, 38: 1.59, 39: 1.60, 40: 1.61,
-      41: 1.62, 42: 1.63, 43: 1.64, 44: 1.65, 45: 1.66,
-      46: 1.67, 47: 1.68, 48: 1.69,
-    }
-  },
-  rain: {
-    tp: 18, fp: 24, fn: 6, tn: 112,
-    precision: 0.43, recall: 0.75, f1: 0.54,
-    insight: "The model tends to over-predict rain — 24 false alarms across the period."
-  },
-  sunshine: {
-    tp: 87, fp: 12, fn: 8, tn: 53,
-    precision: 0.88, recall: 0.92, f1: 0.90,
-    insight: "Sunshine is well captured across the period with strong precision and recall."
-  }
-}
-
 export const mockWeatherDetails = {
   daily: [
     { day: "Today", weather_code: 1,   min: 8,  max: 17 },
@@ -472,4 +445,45 @@ export const mockPvProduction = {
   clipping_message: '✓ No clipping detected',
   insight_message: 'insight'
 
+}
+
+export const mockAnalysis = {
+  meta: {
+    days: 7,
+    station_id: null,
+    date_from: '2026-10-18T00:00:00',
+    date_to: '2026-10-25T00:00:00',
+    n_runs: 0,
+  },
+  temperature: {
+    degradation: {
+      1: 0.52, 2: 0.58, 3: 0.63, 4: 0.69, 5: 0.74,
+      6: 0.78, 7: 0.82, 8: 0.90, 9: 0.91, 10: 0.89,
+      12: 0.95, 15: 1.02, 18: 1.08, 20: 1.12, 24: 1.18,
+      28: 1.24, 31: 0.75, 32: 0.75, 33: 0.77, 36: 1.31,
+      40: 1.38, 44: 1.44, 48: 1.50,
+    },
+    mae: 0.83,
+    rmse: 1.16,
+    bias: -0.18,
+    insight: 'Temperature forecast accuracy is good with a mean absolute error of 0.8°C. The model shows no systematic bias.',
+  },
+  wind: {
+    degradation: {
+      1: 1.10, 2: 1.18, 3: 1.25, 4: 1.32, 5: 1.38,
+      6: 1.42, 7: 1.48, 8: 1.66, 9: 1.63, 10: 1.57,
+      12: 1.62, 15: 1.68, 18: 1.72, 20: 1.75, 24: 1.80,
+      28: 1.75, 31: 1.44, 32: 1.53, 33: 1.56, 36: 1.82,
+      40: 1.88, 44: 1.92, 48: 1.95,
+    },
+    mae: 1.57,
+    rmse: 2.15,
+    bias: 0.05,
+    insight: 'Wind speed accuracy is good with a mean absolute error of 1.6 m/s. No systematic wind bias detected.',
+  },
+  rain: {
+    tp: 3103, fp: 5160, fn: 78, tn: 1876,
+    precision: 0.376, recall: 0.975, f1: 0.543,
+    insight: 'Rain detection is moderate — the model catches most rain events but produces too many false alarms.',
+  },
 }

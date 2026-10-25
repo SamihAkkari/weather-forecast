@@ -68,19 +68,30 @@ function downloadCsv(content, filename) {
   knows exactly which analysis the file corresponds to.
 */
 export function exportAnalysisCsv(analysisData, label) {
-  const station = analysisData.station_name?.replace(/\s+/g, '_') ?? 'station'
+  if (!analysisData) return
 
   // Temperature degradation
   const tempRows = Object.entries(analysisData.temperature.degradation)
-    .map(([horizon, mae]) => ({ horizon_h: horizon, mae }))
-    .sort((a, b) => a.horizon_h - b.horizon_h)
-  downloadCsv(arrayToCsv(tempRows), `temperature_degradation_${station}_${label}.csv`)
+    .map(([step, mae]) => ({ step_h: parseInt(step), temp_mae: mae }))
+    .sort((a, b) => a.step_h - b.step_h)
+  downloadCsv(arrayToCsv(tempRows), `temperature_${label}.csv`)
 
-  // Rain
-  const rainRows = [{ metric: 'rain', ...analysisData.rain }]
-  downloadCsv(arrayToCsv(rainRows), `rain_${station}_${label}.csv`)
+  // Wind degradation
+  const windRows = Object.entries(analysisData.wind.degradation)
+    .map(([step, mae]) => ({ step_h: parseInt(step), wind_mae: mae }))
+    .sort((a, b) => a.step_h - b.step_h)
+  downloadCsv(arrayToCsv(windRows), `wind_${label}.csv`)
 
-  // Sunshine
-  const sunshineRows = [{ metric: 'sunshine', ...analysisData.sunshine }]
-  downloadCsv(arrayToCsv(sunshineRows), `sunshine_${station}_${label}.csv`)
+  // Rain confusion matrix
+  const rainRows = [{
+    metric: 'rain',
+    tp: analysisData.rain.tp,
+    fp: analysisData.rain.fp,
+    fn: analysisData.rain.fn,
+    tn: analysisData.rain.tn,
+    precision: analysisData.rain.precision,
+    recall: analysisData.rain.recall,
+    f1: analysisData.rain.f1,
+  }]
+  downloadCsv(arrayToCsv(rainRows), `rain_${label}.csv`)
 }

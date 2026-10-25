@@ -233,56 +233,65 @@ def _build_temperature(rows: list[dict]) -> dict:
         return {"degradation": {}, "mae": None, "rmse": None,
                 "bias": None, "insight": "No data available."}
 
+
     # Weighted averages across steps
     total_n   = sum(r["n_temp_samples"] for r in rows)
-    w_mae     = sum(float(r["temp_mae"])  * r["n_temp_samples"] for r in rows) / total_n
-    w_rmse    = sum(float(r["temp_rmse"]) * r["n_temp_samples"] for r in rows) / total_n
-    w_bias    = sum(float(r["temp_bias"]) * r["n_temp_samples"] for r in rows) / total_n
-
-    degradation = {
-        int(r["step"]): _safe(r["temp_mae"])
-        for r in rows
-    }
-
-    mae  = _safe(w_mae)
-    rmse = _safe(w_rmse)
-    bias = _safe(w_bias)
-
-    return {
-        "degradation": degradation,
-        "mae":         mae,
-        "rmse":        rmse,
-        "bias":        bias,
-        "insight":     _temp_insight(mae, rmse, bias),
-    }
+    if total_n == 0:
+        return {"degradation": {}, "mae": None, "rmse": None,
+                "bias": None, "insight": "No data available."}
+    else:    
+        w_mae     = sum(float(r["temp_mae"])  * r["n_temp_samples"] for r in rows) / total_n
+        w_rmse    = sum(float(r["temp_rmse"]) * r["n_temp_samples"] for r in rows) / total_n
+        w_bias    = sum(float(r["temp_bias"]) * r["n_temp_samples"] for r in rows) / total_n
+    
+        degradation = {
+            int(r["step"]): _safe(r["temp_mae"])
+            for r in rows
+        }
+    
+        mae  = _safe(w_mae)
+        rmse = _safe(w_rmse)
+        bias = _safe(w_bias)
+    
+        return {
+            "degradation": degradation,
+            "mae":         mae,
+            "rmse":        rmse,
+            "bias":        bias,
+            "insight":     _temp_insight(mae, rmse, bias),
+        }
 
 
 def _build_wind(rows: list[dict]) -> dict:
     if not rows:
         return {"degradation": {}, "mae": None, "rmse": None,
-                "bias": None, "insight": "No data available."}
+                "bias": None, "insight": "No data available."}        
 
     total_n = sum(r["n_wind_samples"] for r in rows)
-    w_mae   = sum(float(r["wind_mae"])  * r["n_wind_samples"] for r in rows) / total_n
-    w_rmse  = sum(float(r["wind_rmse"]) * r["n_wind_samples"] for r in rows) / total_n
-    w_bias  = sum(float(r["wind_bias"]) * r["n_wind_samples"] for r in rows) / total_n
-
-    degradation = {
-        int(r["step"]): _safe(r["wind_mae"])
-        for r in rows
-    }
-
-    mae  = _safe(w_mae)
-    rmse = _safe(w_rmse)
-    bias = _safe(w_bias)
-
-    return {
-        "degradation": degradation,
-        "mae":         mae,
-        "rmse":        rmse,
-        "bias":        bias,
-        "insight":     _wind_insight(mae, bias),
-    }
+    if total_n == 0:
+        return {"degradation": {}, "mae": None, "rmse": None,
+                "bias": None, "insight": "No data available."}
+    else:
+        w_mae   = sum(float(r["wind_mae"])  * r["n_wind_samples"] for r in rows) / total_n
+        w_rmse  = sum(float(r["wind_rmse"]) * r["n_wind_samples"] for r in rows) / total_n
+        w_bias  = sum(float(r["wind_bias"]) * r["n_wind_samples"] for r in rows) / total_n
+    
+        degradation = {
+            int(r["step"]): _safe(r["wind_mae"])
+            for r in rows
+        }
+    
+        mae  = _safe(w_mae)
+        rmse = _safe(w_rmse)
+        bias = _safe(w_bias)
+    
+        return {
+            "degradation": degradation,
+            "mae":         mae,
+            "rmse":        rmse,
+            "bias":        bias,
+            "insight":     _wind_insight(mae, bias),
+        }
 
 
 def _build_rain(rows: list[dict]) -> dict:
@@ -294,26 +303,31 @@ def _build_rain(rows: list[dict]) -> dict:
         return {"tp": 0, "fp": 0, "fn": 0, "tn": 0,
                 "precision": 0, "recall": 0, "f1": 0,
                 "insight": "No data available."}
-
-    tp = sum(int(r["rain_tp"]) for r in rows)
-    fp = sum(int(r["rain_fp"]) for r in rows)
-    fn = sum(int(r["rain_fn"]) for r in rows)
-    tn = sum(int(r["rain_tn"]) for r in rows)
-
-    prec   = _precision(tp, fp)
-    rec    = _recall(tp, fn)
-    f1     = _f1(prec, rec)
-
-    return {
-        "tp":        tp,
-        "fp":        fp,
-        "fn":        fn,
-        "tn":        tn,
-        "precision": prec,
-        "recall":    rec,
-        "f1":        f1,
-        "insight":   _rain_insight(tp, fp, fn, f1),
-    }
+    total_n = sum(r["n_rain_samples"] for r in rows)
+    if total_n == 0:
+        return {"tp": 0, "fp": 0, "fn": 0, "tn": 0,
+                "precision": 0, "recall": 0, "f1": 0,
+                "insight": "No data available."}
+    else:
+        tp = sum(int(r["rain_tp"]) for r in rows)
+        fp = sum(int(r["rain_fp"]) for r in rows)
+        fn = sum(int(r["rain_fn"]) for r in rows)
+        tn = sum(int(r["rain_tn"]) for r in rows)
+    
+        prec   = _precision(tp, fp)
+        rec    = _recall(tp, fn)
+        f1     = _f1(prec, rec)
+    
+        return {
+            "tp":        tp,
+            "fp":        fp,
+            "fn":        fn,
+            "tn":        tn,
+            "precision": prec,
+            "recall":    rec,
+            "f1":        f1,
+            "insight":   _rain_insight(tp, fp, fn, f1),
+        }
 
 
 # ── Main entry point ───────────────────────────────────────────────────────────
