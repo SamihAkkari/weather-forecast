@@ -5,7 +5,7 @@ from src.ingestion.time_manager import TimeManager
 from src.config.config import Config
 from src.processing.weather_code import compute_hourly_code, compute_daily_code
 from datetime import datetime, timedelta
-
+import copy
 from src.processing import utils 
 
 logger = logging.getLogger(__name__)
@@ -146,7 +146,10 @@ def get_viewer_data(lat: float, lng: float) -> dict:
     # Step 2 — get current time truncated to the hour
     # This is used to fetch the current observation and forecast from now onward
     current_time = TimeManager.current_france_time_iso(time_truncation="hour")
-
+    
+    current_obs_raw, cur = DatabaseGetter.get_observations(station_id=nearest_station.station_id, fromm=Config.OBSERVATIONS_TABLE_NAME_HOURLY, time = current_time)
+    current_obs = DatabaseGetter.transform_data_to_list_of_dict(current_obs_raw, cur)
+    
     # Fetch only forecast — no observation call
     forecast_raw, cur = DatabaseGetter.get_forecasts_at_time_step(
         station_id=nearest_station.station_id,
@@ -161,11 +164,34 @@ def get_viewer_data(lat: float, lng: float) -> dict:
 
     station_info = nearest_station.__dict__
 
-    return _build_response(station_info, forecast)
+    return _build_response(station_info, current_obs, forecast)
 
+def validate_and_complete_current_obs(current_obs: list[dict], forecast: list[dict]) -> dict:
+    def modify_time_step_fr_if_necessary(time_step: str) -> str:
+        dt = datetime.fromisoformat(time_step.replace('Z', '+00:00'))
+        one_hour_ago = dt - timedelta(hours=1)
+        one_hour_ago  = one_hour_ago.isoformat().replace('+00:00', 'Z')
+        return one_hour_ago  
+        
+    if current_obs is None or current_obs == [] or len(current_obs)>1:
+        current_obs = copy.deepcopy(forecast[0])
+        current_time_step = modify_time_step_fr_if_necessary(time_step = current_obs["time_step_fr"])
+        current_obs["time_step_fr"] = current_time_step
+        return current_obs
+    
+    current_obs = current_obs[0]
+    variables_to_check = ["temperature_celsius", "humidity_percentage", 
+                          "wind_speed_m_per_s", "precipitation_mm", "snow_precipitation_mm",
+                          "mean_sea_level_pressure", "wind_gust_m_per_s", "cape_m2_s2",
+                          "total_cloud_cover"]
 
+    for variable in variables_to_check :
+        if variable not in current_obs.keys() or current_obs[variable] is None:
+            current_obs[variable] = forecast[0][variable]
+    return current_obs
+    
 
-def _build_response(station_info: dict, forecast: list[dict]) -> dict:
+def _build_response(station_info: dict, current_obs: list[dict], forecast: list[dict]) -> dict:
     """
     Takes the raw data dict from DatabaseGetter and transforms it
     into the exact shape the frontend expects.
@@ -180,15 +206,16 @@ def _build_response(station_info: dict, forecast: list[dict]) -> dict:
     structure on the frontend.
     """
     # The first forecast entry represents current/next conditions
-    current = forecast[0] if forecast else {}
-
+    # current = forecast[0] if forecast else {}
+    current_obs = validate_and_complete_current_obs(current_obs, forecast)
+    
     return {
         "station":    _build_station(station_info),
         # "conditions": _build_conditions(current),
-        "forecast":   _build_hourly_forecast(forecast),
+        "forecast":   _build_hourly_forecast(current_obs, forecast),
         "daily":      _build_daily_forecast(forecast),
-        "widgets":    _build_widgets(current, forecast),
-        "activities": _build_lifestyle(current, forecast)
+        "widgets":    _build_widgets(current_obs, forecast),
+        "activities": _build_lifestyle(current_obs, forecast)
     }
 
 
@@ -199,12 +226,20 @@ def _build_station(station_info: dict) -> dict:
         "lng":     station_info.get("longitude"),
     }
 
-def _build_hourly_forecast(forecast: list[dict]) -> list[dict]:
+def _build_hourly_forecast(current: dict, forecast: list[dict]) -> list[dict]:
     """
     Builds the hourly cards data — one entry per forecast timestep.
     We limit to 48 hours maximum.
     """
-    return [
+    hourly = [{
+        "time_step_fr":  current.get("time_step_fr"),
+        "temperature_celsius":   current.get("temperature_celsius"),
+        "precipitation_mm": current.get("precipitation_mm"),
+        "weather_code": compute_hourly_code(current)
+        }]
+    
+    for entry in forecast[:48]:
+        hourly.append(
         {
             "time_step_fr":          entry.get("time_step_fr"),
             "temperature_celsius":   entry.get("temperature_celsius"),
@@ -212,9 +247,9 @@ def _build_hourly_forecast(forecast: list[dict]) -> list[dict]:
             "weather_code": compute_hourly_code(entry),
             # "windSpeed":     entry.get("wind_speed_m_per_s"),
             # "humidity":      entry.get("humidity_percentage"),
-        }
-        for entry in forecast[:48]
-    ]
+        })
+    return hourly
+
 
 
 def _build_daily_forecast(forecast: list[dict]) -> list[dict]:

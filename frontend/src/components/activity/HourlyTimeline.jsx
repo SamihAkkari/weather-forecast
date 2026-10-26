@@ -11,11 +11,12 @@ const BAR_COLORS = {
 */
 function formatHour(isoString) {
   const date = new Date(isoString)
-  return date.toLocaleTimeString('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'Europe/Paris'
-  })
+  return `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`
+  // return date.toLocaleTimeString('fr-FR', {
+  //   hour: '2-digit',
+  //   minute: '2-digit',
+  //   timeZone: 'Europe/Paris'
+  // })
 }
 
 

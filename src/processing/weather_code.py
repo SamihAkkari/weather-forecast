@@ -145,12 +145,12 @@ def compute_hourly_code(entry: dict) -> int:
         8. Cloud cover
     """
 
-    precip    = entry.get("precipitation_mm")     # mm accumulated
-    tsnowp    = entry.get("tsnowp")               # mm water eq. accumulated
+    precip    = entry.get("precipitation_mm")     #
+    tsnowp    = entry.get("snow_precipitation_mm")               # 
     cape      = entry.get("cape_m2_s2")
     cloud     = entry.get("total_cloud_cover")    # %
     temp      = entry.get("temperature_celsius")  # °C
-    gusts     = entry.get("fg10")                 # m/s, optional
+    gusts     = entry.get("wind_gust_m_per_s")                 # m/s, optional
 
     # Hourly rates (open-meteo normalises everything to per-hour)
     precip_rate = precip / MODEL_DT_HOURS if _ok(precip) else None

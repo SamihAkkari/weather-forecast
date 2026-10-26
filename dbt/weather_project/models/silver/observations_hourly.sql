@@ -52,7 +52,10 @@ clean_obs AS (
             AS precipitation_mm,
 
         NULLIF(ray_glo01, 'NaN'::double precision)
-            AS global_radiation_J_m2
+            AS global_radiation_J_m2,
+        
+        NULLIF(pmer, 'NaN'::double precision)
+            AS mean_sea_level_pressure
 
         -- geo_id_insee::TEXT AS station_id,
         -- validity_time::timestamptz AT TIME ZONE 'Europe/Paris' AS time_step_fr,

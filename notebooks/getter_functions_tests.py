@@ -97,4 +97,8 @@ nearest_station = spatial.find_nearest_station(stations, 45, 2)
 
 DatabaseGetter.get_frontend_formatted_data_for_analysis(nearest_station , days=5)
 
+current_time = '2026-03-09T22:00:00Z'
+current_obs_raw, cur = DatabaseGetter.get_observations(station_id=nearest_station.station_id, fromm=Config.OBSERVATIONS_TABLE_NAME_HOURLY, time = current_time)
+current_obs = DatabaseGetter.transform_data_to_list_of_dict(current_obs_raw, cur)
+
 
