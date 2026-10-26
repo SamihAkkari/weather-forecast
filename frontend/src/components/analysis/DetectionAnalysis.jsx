@@ -28,7 +28,7 @@ function ConfusionMatrix({ tp, fp, fn, tn }) {
 }
 
 function MetricBar({ label, percent }) {
-  const display = Math.round(percent * 100)
+  const display = percent
   const color =
     display >= 80 ? 'bg-green-400' :
     display >= 60 ? 'bg-yellow-400' :
@@ -54,7 +54,7 @@ function DetectionAnalysis({ data }) {
   return (
     <div>
       <p className="text-xs text-gray-400 mb-4">
-        Confusion matrix — summed across all runs and stations in the period
+        Confusion matrix: summed across all runs and stations in the period
       </p>
 
       <div className="grid grid-cols-2 gap-6 mb-4">

@@ -93,7 +93,7 @@ function AnalysisPage() {
     ? `MAE ${analysisData.wind.mae} m/s`
     : null
   const rainHeadline = analysisData
-    ? `F1 ${Math.round(analysisData.rain.f1 * 100)}%`
+    ? `F1 ${analysisData.rain.f1}%`
     : null
 
   return (

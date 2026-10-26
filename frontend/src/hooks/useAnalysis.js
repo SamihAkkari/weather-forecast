@@ -15,6 +15,7 @@ export function useAnalysis() {
 
     if (USE_MOCK_DATA) {
       setTimeout(() => {
+        console.log('🟡 [MOCK] analysisData:', mockAnalysis)
         setAnalysisData(mockAnalysis)
         setLoading(false)
       }, 400)
@@ -32,6 +33,7 @@ export function useAnalysis() {
         params.lng = lng
       }
       const res = await api.get('/analysis', { params })
+      console.log('🟢 [API] analysisData:', res.data)
       setAnalysisData(res.data)
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to load analysis.')

@@ -205,12 +205,12 @@ def _rain_insight(tp, fp, fn, f1):
     total_actual = tp + fn
     if total_actual == 0:
         return "No rain events observed in this period."
-    if f1 >= 0.80:
+    if f1 >= 80:
         return (
             f"Rain detection is strong — the model correctly identified "
             f"{tp} out of {total_actual} rainy hours with only {fp} false alarms."
         )
-    elif f1 >= 0.55:
+    elif f1 >= 55:
         return (
             f"Rain detection is moderate — {tp} of {total_actual} rainy hours "
             f"caught correctly, but {fp} false alarms and {fn} misses."
@@ -300,24 +300,25 @@ def _build_rain(rows: list[dict]) -> dict:
     We want total confusion matrix counts for the whole period.
     """
     if not rows:
-        return {"tp": 0, "fp": 0, "fn": 0, "tn": 0,
-                "precision": 0, "recall": 0, "f1": 0,
+        return {"tp": None, "fp": None, "fn": None, "tn": None,
+                "precision": None, "recall": None, "f1": None,
                 "insight": "No data available."}
     total_n = sum(r["n_rain_samples"] for r in rows)
     if total_n == 0:
-        return {"tp": 0, "fp": 0, "fn": 0, "tn": 0,
-                "precision": 0, "recall": 0, "f1": 0,
+        return {"tp": None, "fp": None, "fn": None, "tn": None,
+                "precision": None, "recall": None, "f1": None,
                 "insight": "No data available."}
     else:
         tp = sum(int(r["rain_tp"]) for r in rows)
         fp = sum(int(r["rain_fp"]) for r in rows)
         fn = sum(int(r["rain_fn"]) for r in rows)
         tn = sum(int(r["rain_tn"]) for r in rows)
-    
-        prec   = _precision(tp, fp)
-        rec    = _recall(tp, fn)
-        f1     = _f1(prec, rec)
-    
+
+        prec   = round(_precision(tp, fp) * 100)
+        rec    = round(_recall(tp, fn) * 100)
+        f1     = round(_f1(prec, rec))
+        # import pdb
+        # pdb.set_trace()
         return {
             "tp":        tp,
             "fp":        fp,

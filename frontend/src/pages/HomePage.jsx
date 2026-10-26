@@ -35,7 +35,7 @@ function HomePage() {
                     </Link>
 
                     {/* Weather analysis link: pressing it sends you to weather analysis page */}
-                    <Link to="analysis" className="bg-white border border-gray-100 rounded-xl p-7 opacity-50">
+                    <Link to="analysis" className="bg-white border border-gray-100 rounded-xl p-7 cursor-pointer hover:border-gray-300 transition-colors block">
                         <div className="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center text-xl mb-4">
                             📊
                         </div>
@@ -43,7 +43,7 @@ function HomePage() {
                         <p className="text-sm text-gray-400 mb-5 leading-relaxed">
                             Compare stations, explore historical data and export CSV files.
                         </p>
-                        <span className="text-sm text-gray-300 font-medium">Coming soon</span>
+                        <span className="text-sm font-medium text-blue-800">Go to analyser →</span>
                     </Link>
 
                 </div>

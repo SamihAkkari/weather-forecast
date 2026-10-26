@@ -89,9 +89,6 @@ def build_time_index(forecast: list[dict]) -> pd.DatetimeIndex:
     since pvlib expects UTC or timezone-aware times.
     """  
     
-    # import pdb
-    # pdb.set_trace()
-    
     times = pd.DatetimeIndex(
     pd.to_datetime([entry["time_step_fr"] for entry in forecast])
     ).tz_localize(None)
