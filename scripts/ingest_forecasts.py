@@ -1,28 +1,25 @@
-import os
 import sys
-os.chdir('c:\\Users\\sakkari\\Code\\weather-forecast')
 from src.api.api_factory import APIFactory
 from src.client.clients import ForecastAromeClient
 from src.ingestion.ingestor import ForecastIngestor
 import logging
+from logging.handlers import RotatingFileHandler
 
 
-
-# handler = RotatingFileHandler(
-#     "logs/app.log",
-#     maxBytes=5 * 1024 * 1024,  # 5 MB
-#     backupCount=5,
-# )
+handler = RotatingFileHandler(
+    "/app/logs/app.log",
+    maxBytes=5 * 1024 * 1024,  # 5 MB
+    backupCount=5,
+)
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
-    stream=sys.stdout
-    # handlers=[
-    #     logging.StreamHandler(),
-    #     handler,
-    # ],
-    # force = True
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        handler,
+    ],
+    force = True
 )
 
 def make_client(service):

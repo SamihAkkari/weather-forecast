@@ -9,6 +9,7 @@ from src.processing.observations_processor import ObservationProcessor
 from src.ingestion.time_manager import TimeManager
 from datetime import timedelta
 from urllib.parse import urlparse, parse_qs
+from src.config.config import Config
 
 import random
 
@@ -39,15 +40,15 @@ class BaseIngestor(ABC):
     def run(self, *args): ...
 
     def trigger_dbt(self, tag): # rigid function to change later         
+        if Config.DBT_MODE == "docker_exec":
+            cmd = ["docker", "exec", "-w", "/usr/app/dbt/weather_project",
+                   "dbt_runner", "dbt", "run", "--select", f"tag:{tag}"]
+        else:
+            cmd = [Config.DBT_BIN, "run", "--select", f"tag:{tag}",
+                   "--project-dir", Config.DBT_PROJECT_DIR,
+                   "--profiles-dir", Config.DBT_PROFILES_DIR]
         try:
-            subprocess.run([
-                "docker", "exec",
-                "-w", "/usr/app/dbt/weather_project",
-                "dbt_runner",
-                "dbt", "run",
-                "--select", f"tag:{tag}"
-            ], 
-            check=True, 
+            subprocess.run(cmd, check=True, 
             capture_output=True, # This captures stdout and stderr
             text=True            # This returns strings instead of bytes
             )
@@ -57,11 +58,9 @@ class BaseIngestor(ABC):
             if "Completed successfully" in e.stdout and "PASS=1" in e.stdout:
                 logger.info("dbt logic passed, but dbt crashed during logging/cleanup.")
             else:
-                logger.error(f"dbt command failed with exit code {e.returncode}")
-                logger.error("--- STDOUT ---")
-                logger.error(e.stdout)
-                logger.error("--- STDERR ---")
-                logger.error(e.stderr)
+                logger.error("dbt failed with exit code %s", e.returncode)
+                logger.error("--- STDOUT ---\n%s", e.stdout)
+                logger.error("--- STDERR ---\n%s", e.stderr)
                 raise
              
     def _log_fetch(self, identifier, count):

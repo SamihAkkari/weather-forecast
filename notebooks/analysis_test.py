@@ -24,7 +24,7 @@ station_id = nearest.station_id
 # logger.info(f"Analysis for station {station_id}")
 
 
-analysis_processor.compute_analysis(days= 7, station_id = station_id, 
+analysis_processor.compute_analysis(days= 7, station_id = None, 
                                     forecast_table = Config.SILVER_SCHEMA+"."+Config.SILVER_FORECAST_AROME_TABLE_NAME, 
                                     obs_table= Config.SILVER_SCHEMA+"."+Config.OBSERVATIONS_TABLE_NAME_HOURLY)
 

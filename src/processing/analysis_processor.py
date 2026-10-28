@@ -152,6 +152,11 @@ def _f1(precision, recall):
         return 0.0
     return round(2 * precision * recall / (precision + recall), 3)
 
+def _specificity(tn, fp):
+    return round(tn / (tn + fp), 3) if (tn + fp) > 0 else 0.0
+
+def _balanced_accuracy(recall, specificity):
+    return round((recall + specificity) / 2, 3)
 
 # ── Insight sentence generators ────────────────────────────────────────────────
 
@@ -299,6 +304,7 @@ def _build_rain(rows: list[dict]) -> dict:
     Rain metrics are summed across all steps — not averaged.
     We want total confusion matrix counts for the whole period.
     """
+
     if not rows:
         return {"tp": None, "fp": None, "fn": None, "tn": None,
                 "precision": None, "recall": None, "f1": None,
@@ -317,6 +323,8 @@ def _build_rain(rows: list[dict]) -> dict:
         prec   = round(_precision(tp, fp) * 100)
         rec    = round(_recall(tp, fn) * 100)
         f1     = round(_f1(prec, rec))
+        specificity = _specificity(tn, fp) * 100
+        balanced_accuracy = _balanced_accuracy(rec, specificity)
         # import pdb
         # pdb.set_trace()
         return {
@@ -327,6 +335,8 @@ def _build_rain(rows: list[dict]) -> dict:
             "precision": prec,
             "recall":    rec,
             "f1":        f1,
+            "specificity": specificity,
+            "balanced_acc": balanced_accuracy,
             "insight":   _rain_insight(tp, fp, fn, f1),
         }
 

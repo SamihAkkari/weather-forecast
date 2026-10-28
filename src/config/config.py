@@ -66,3 +66,10 @@ class Config:
     AROME_FORECAST_UPDATE_TIMES = ["00:00:00", "03:00:00", "06:00:00", "09:00:00", "12:00:00", "15:00:00", "18:00:00", "21:00:00"]
     
     # AROME_FORECAST_UPDATE_FREQUENCY_HOURS = 5 # hours
+
+    # --- dbt settings ---
+    # "docker_exec" = old laptop setup | "local" = dbt installed in the same image
+    DBT_MODE = os.getenv('DBT_MODE', 'docker_exec')
+    DBT_BIN = os.getenv('DBT_BIN', 'dbt')
+    DBT_PROJECT_DIR = os.getenv('DBT_PROJECT_DIR', 'dbt/weather_project')
+    DBT_PROFILES_DIR = os.getenv('DBT_PROFILES_DIR', 'dbt')

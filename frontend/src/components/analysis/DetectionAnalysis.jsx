@@ -66,6 +66,8 @@ function DetectionAnalysis({ data }) {
           <MetricBar label="Precision" percent={data.precision} />
           <MetricBar label="Recall"    percent={data.recall}    />
           <MetricBar label="F1 score"  percent={data.f1}        />
+          <MetricBar label="Specificity"  percent={data.specificity}        />
+          <MetricBar label="Balanced accuracy"  percent={data.balanced_acc}        />
         </div>
       </div>
 

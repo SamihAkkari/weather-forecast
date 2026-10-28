@@ -26,7 +26,7 @@ def make_stations_table(CSV_FILE, SCHEMA, TABLE):
         dbname = Config.POSTGRES_DB,
         user = Config.POSTGRES_USER,
         password = Config.POSTGRES_PASSWORD,
-        host = "localhost",
+        host = Config.POSTGRES_HOST,
         port = Config.POSTGRES_PORT
     )
 
@@ -37,6 +37,14 @@ def make_stations_table(CSV_FILE, SCHEMA, TABLE):
 
     # ---- Step 4: create table inside schema
     cur.execute(create_table_sql)
+
+    cur.execute(f"SELECT COUNT(*) FROM {SCHEMA}.{TABLE}")
+    if cur.fetchone()[0] > 0:
+        print(f"{SCHEMA}.{TABLE} already has data, skipping CSV load")
+        conn.commit()
+        cur.close()
+        conn.close()
+        return
 
     # ---- Step 5: load CSV using COPY
     with open(CSV_FILE, "r") as f:
@@ -93,7 +101,7 @@ def make_observations_horaire_table_without_data(SCHEMA, TABLE):
         dbname = Config.POSTGRES_DB,
         user = Config.POSTGRES_USER,
         password = Config.POSTGRES_PASSWORD,
-        host = "localhost",
+        host = Config.POSTGRES_HOST,
         port = Config.POSTGRES_PORT
     )
 
@@ -108,112 +116,112 @@ def make_observations_horaire_table_without_data(SCHEMA, TABLE):
     cur.close()
     conn.close()
 
-def make_observations_infrahoraire6m_table_without_data(SCHEMA, TABLE):
-    make_schema_sql = f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}"
-    make_observations_table = f"""
-    CREATE TABLE IF NOT EXISTS {SCHEMA}.{TABLE} (
-        lat DOUBLE PRECISION,
-        lon DOUBLE PRECISION,
-        geo_id_insee TEXT,
-        reference_time TEXT, 
-        insert_time TEXT, 
-        validity_time TEXT,
-        t DOUBLE PRECISION,
-        td DOUBLE PRECISION,
-        u DOUBLE PRECISION,
-        dd DOUBLE PRECISION,
-        ff DOUBLE PRECISION,
-        dxi10 DOUBLE PRECISION,
-        fxi10 DOUBLE PRECISION,
-        rr_per DOUBLE PRECISION,
-        t_10 DOUBLE PRECISION,
-        t_20 DOUBLE PRECISION,
-        t_50 DOUBLE PRECISION,
-        t_100 DOUBLE PRECISION,
-        vv DOUBLE PRECISION,
-        etat_sol DOUBLE PRECISION,
-        sss DOUBLE PRECISION,
-        insolh DOUBLE PRECISION,
-        ray_glo01 DOUBLE PRECISION,
-        pres DOUBLE PRECISION,
-        pmer DOUBLE PRECISION
-    );
-    """
+# def make_observations_infrahoraire6m_table_without_data(SCHEMA, TABLE):
+#     make_schema_sql = f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}"
+#     make_observations_table = f"""
+#     CREATE TABLE IF NOT EXISTS {SCHEMA}.{TABLE} (
+#         lat DOUBLE PRECISION,
+#         lon DOUBLE PRECISION,
+#         geo_id_insee TEXT,
+#         reference_time TEXT, 
+#         insert_time TEXT, 
+#         validity_time TEXT,
+#         t DOUBLE PRECISION,
+#         td DOUBLE PRECISION,
+#         u DOUBLE PRECISION,
+#         dd DOUBLE PRECISION,
+#         ff DOUBLE PRECISION,
+#         dxi10 DOUBLE PRECISION,
+#         fxi10 DOUBLE PRECISION,
+#         rr_per DOUBLE PRECISION,
+#         t_10 DOUBLE PRECISION,
+#         t_20 DOUBLE PRECISION,
+#         t_50 DOUBLE PRECISION,
+#         t_100 DOUBLE PRECISION,
+#         vv DOUBLE PRECISION,
+#         etat_sol DOUBLE PRECISION,
+#         sss DOUBLE PRECISION,
+#         insolh DOUBLE PRECISION,
+#         ray_glo01 DOUBLE PRECISION,
+#         pres DOUBLE PRECISION,
+#         pmer DOUBLE PRECISION
+#     );
+#     """
 
-        # ---- Step 2: connect to Postgres
-    conn = psycopg2.connect(
-        dbname = Config.POSTGRES_DB,
-        user = Config.POSTGRES_USER,
-        password = Config.POSTGRES_PASSWORD,
-        host = "localhost",
-        port = Config.POSTGRES_PORT
-    )
+#         # ---- Step 2: connect to Postgres
+#     conn = psycopg2.connect(
+#         dbname = Config.POSTGRES_DB,
+#         user = Config.POSTGRES_USER,
+#         password = Config.POSTGRES_PASSWORD,
+#         host = Config.POSTGRES_HOST,
+#         port = Config.POSTGRES_PORT
+#     )
 
-    cur = conn.cursor()
-    # ---- Step 3: create schema if not exists
-    cur.execute(make_schema_sql)
+#     cur = conn.cursor()
+#     # ---- Step 3: create schema if not exists
+#     cur.execute(make_schema_sql)
 
-    # ---- Step 4: create table inside schema
-    cur.execute(make_observations_table)
+#     # ---- Step 4: create table inside schema
+#     cur.execute(make_observations_table)
 
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
-def make_silver_observation_infrahoraire6m_table_without_data(SCHEMA, TABLE):
-    make_schema_sql = f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}"
-    make_observations_table = f"""
-    CREATE TABLE IF NOT EXISTS {SCHEMA}.{TABLE} (
-    	station_id TEXT,
-        time_step_fr timestamptz,
-        temperature_celsius Double precision, 
-        humidity_percentage Double precision, 
-        wind_direction_degree Double precision, 
-        wind_speed_m_per_s Double precision, 
-        precipitation_mm Double precision, 
-        global_radiation_J_m2 Double precision,
-        transfer_time_fr timestamptz
-    );
-    """
+#     conn.commit()
+#     cur.close()
+#     conn.close()
 
 
-    #Convert to Timescale hypertable
-    create_hypertable_sql = f"""
-    SELECT create_hypertable(
-        '{SCHEMA}.{TABLE}',
-        'time_step_fr',
-        'station_id',
-        4,
-        if_not_exists => TRUE
-    );
-    """
+# def make_silver_observation_infrahoraire6m_table_without_data(SCHEMA, TABLE):
+#     make_schema_sql = f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}"
+#     make_observations_table = f"""
+#     CREATE TABLE IF NOT EXISTS {SCHEMA}.{TABLE} (
+#     	station_id TEXT,
+#         time_step_fr timestamptz,
+#         temperature_celsius Double precision, 
+#         humidity_percentage Double precision, 
+#         wind_direction_degree Double precision, 
+#         wind_speed_m_per_s Double precision, 
+#         precipitation_mm Double precision, 
+#         global_radiation_J_m2 Double precision,
+#         transfer_time_fr timestamptz
+#     );
+#     """
 
-        # ---- Step 2: connect to Postgres
-    conn = psycopg2.connect(
-        dbname = Config.POSTGRES_DB,
-        user = Config.POSTGRES_USER,
-        password = Config.POSTGRES_PASSWORD,
-        host = "localhost",
-        port = Config.POSTGRES_PORT
-    )
 
-    cur = conn.cursor()
+#     #Convert to Timescale hypertable
+#     create_hypertable_sql = f"""
+#     SELECT create_hypertable(
+#         '{SCHEMA}.{TABLE}',
+#         'time_step_fr',
+#         'station_id',
+#         4,
+#         if_not_exists => TRUE
+#     );
+#     """
 
-    cur.execute("CREATE EXTENSION IF NOT EXISTS timescaledb;")
+#         # ---- Step 2: connect to Postgres
+#     conn = psycopg2.connect(
+#         dbname = Config.POSTGRES_DB,
+#         user = Config.POSTGRES_USER,
+#         password = Config.POSTGRES_PASSWORD,
+#         host = Config.POSTGRES_HOST,
+#         port = Config.POSTGRES_PORT
+#     )
 
-    # ---- Step 3: create schema if not exists
-    cur.execute(make_schema_sql)
+#     cur = conn.cursor()
 
-    # ---- Step 4: create table inside schema
-    cur.execute(make_observations_table)
+#     cur.execute("CREATE EXTENSION IF NOT EXISTS timescaledb;")
 
-    # THIS makes it TimescaleDB
-    cur.execute(create_hypertable_sql)
+#     # ---- Step 3: create schema if not exists
+#     cur.execute(make_schema_sql)
 
-    conn.commit()
-    cur.close()
-    conn.close()
+#     # ---- Step 4: create table inside schema
+#     cur.execute(make_observations_table)
+
+#     # THIS makes it TimescaleDB
+#     cur.execute(create_hypertable_sql)
+
+#     conn.commit()
+#     cur.close()
+#     conn.close()
 
 def make_silver_observation_horaire_table_without_data(SCHEMA, TABLE):
     make_schema_sql = f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}"
@@ -247,7 +255,7 @@ def make_silver_observation_horaire_table_without_data(SCHEMA, TABLE):
         dbname = Config.POSTGRES_DB,
         user = Config.POSTGRES_USER,
         password = Config.POSTGRES_PASSWORD,
-        host = "localhost",
+        host = Config.POSTGRES_HOST,
         port = Config.POSTGRES_PORT
     )
 
@@ -293,7 +301,7 @@ def make_bronze_sp1_arome_forecast_table_without_data(SCHEMA, TABLE):
         dbname = Config.POSTGRES_DB,
         user = Config.POSTGRES_USER,
         password = Config.POSTGRES_PASSWORD,
-        host = "localhost",
+        host = Config.POSTGRES_HOST,
         port = Config.POSTGRES_PORT
     )
 
@@ -328,7 +336,7 @@ def make_bronze_sp2_arome_forecast_table_without_data(SCHEMA, TABLE):
         dbname = Config.POSTGRES_DB,
         user = Config.POSTGRES_USER,
         password = Config.POSTGRES_PASSWORD,
-        host = "localhost",
+        host = Config.POSTGRES_HOST,
         port = Config.POSTGRES_PORT
     )
 
@@ -387,7 +395,7 @@ def make_silver_forecast_arome_table_without_data(SCHEMA, TABLE):
         dbname = Config.POSTGRES_DB,
         user = Config.POSTGRES_USER,
         password = Config.POSTGRES_PASSWORD,
-        host = "localhost",
+        host = Config.POSTGRES_HOST,
         port = Config.POSTGRES_PORT
     )
 
@@ -416,8 +424,8 @@ if __name__ == "__main__":
     make_observations_horaire_table_without_data(Config.BRONZE_SCHEMA, Config.OBSERVATIONS_TABLE_NAME_HOURLY)
     make_silver_observation_horaire_table_without_data(Config.SILVER_SCHEMA, Config.OBSERVATIONS_TABLE_NAME_HOURLY)
 
-    make_observations_infrahoraire6m_table_without_data(Config.BRONZE_SCHEMA, Config.OBSERVATIONS_TABLE_NAME_6m)
-    make_silver_observation_infrahoraire6m_table_without_data(Config.SILVER_SCHEMA, Config.OBSERVATIONS_TABLE_NAME_6m)
+    # make_observations_infrahoraire6m_table_without_data(Config.BRONZE_SCHEMA, Config.OBSERVATIONS_TABLE_NAME_6m)
+    # make_silver_observation_infrahoraire6m_table_without_data(Config.SILVER_SCHEMA, Config.OBSERVATIONS_TABLE_NAME_6m)
     
     make_bronze_sp1_arome_forecast_table_without_data(Config.BRONZE_SCHEMA, Config.BRONZE_SP1_FORECAST_TABLE_NAME)
     make_bronze_sp2_arome_forecast_table_without_data(Config.BRONZE_SCHEMA, Config.BRONZE_SP2_FORECAST_TABLE_NAME)

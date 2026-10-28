@@ -5,7 +5,7 @@ from client.clients import Client
 import logging
 from logging.handlers import RotatingFileHandler
 import cfgrib
-
+import sys
 
 import numpy as np
 import pandas as pd
@@ -54,7 +54,7 @@ def group_datasets(datasets: list[xr.Dataset]) -> dict[str, xr.Dataset]:
 
 
 handler = RotatingFileHandler(
-    "logs/app.log",
+    "/app/logs/app.log",
     maxBytes=5 * 1024 * 1024,  # 5 MB
     backupCount=5,
 )
@@ -63,7 +63,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
     handlers=[
-        logging.StreamHandler(),
+        logging.StreamHandler(sys.stdout),
         handler,
     ],
 )

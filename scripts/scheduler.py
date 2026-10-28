@@ -4,7 +4,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-
+from logging.handlers import RotatingFileHandler
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 
@@ -23,10 +23,26 @@ def launch(module: str, timeout_s: int):
 
 
 def main():
+    # logging.basicConfig(
+    #     level=logging.INFO,
+    #     format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
+    #     stream=sys.stdout,
+    # )
+
+    handler = RotatingFileHandler(
+        "/app/logs/app.log",
+        maxBytes=5 * 1024 * 1024,  # 5 MB
+        backupCount=5,
+    )
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
-        stream=sys.stdout,
+        handlers=[
+            logging.StreamHandler(sys.stdout),
+            handler,
+        ],
+        force = True
     )
 
     test_mode = os.getenv("SCHEDULER_TEST") == "1"
