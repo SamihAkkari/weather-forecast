@@ -26,3 +26,4 @@ Thumbs.db
 #
 *.xlsx
 *.csv
+!data/liste-stations-obs-metropole-om_completed.csv  # I keep track to this file because it is used during intialisation

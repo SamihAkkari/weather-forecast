@@ -36,7 +36,7 @@ class BaseIngestor(ABC):
     def ingest(self, data): ...
 
     @abstractmethod
-    def run_once(self, *args): ...
+    def run(self, *args): ...
 
     def trigger_dbt(self, tag): # rigid function to change later         
         try:
@@ -91,11 +91,11 @@ class ObservationsIngestor(BaseIngestor):
         self.max_retries = api_client.api.max_retries
         self.running = False
 
-    def sleep_until_next_hour(self):
-        now = TimeManager.utc_now()
-        next_hour = TimeManager.utc_truncated(now + timedelta(hours=1), to='hour')
-        sleep_seconds = (next_hour - now).total_seconds()
-        time.sleep(sleep_seconds)
+    # def sleep_until_next_hour(self):
+    #     now = TimeManager.utc_now()
+    #     next_hour = TimeManager.utc_truncated(now + timedelta(hours=1), to='hour')
+    #     sleep_seconds = (next_hour - now).total_seconds()
+    #     time.sleep(sleep_seconds)
 
     def fetch(self, params):
         """Fetch data from API"""
@@ -118,45 +118,59 @@ class ObservationsIngestor(BaseIngestor):
             self._log_error("Observations ingestion error", e)
             raise
 
-    def run_once(self, date):
+    def run(self):
         """This can be used later with advanced schedulers"""        
-        retry_count = 0
-        while retry_count < self.max_retries:
-            params = {
-                "date": date,
-                "format": "json"
-            }
+        ingested_any = False
+        for step_back in reversed(range(0, self.steps_back)):
+            date = TimeManager.last_interval_iso(self.time_steps_seconds, step_back)
 
-            if DatabaseRepository._this_date_is_already_ingested(params.get("date"), self.data_base_target_table):
-                self._log_skip(f"The data of date: {params.get("date")} has already been ingested")
-                break
+            if DatabaseRepository._this_date_is_already_ingested(date, self.data_base_target_table):
+                self._log_skip(f"The data of date: {date} has already been ingested")
+                continue
 
             logger.info(f"Fetching data for the date: {date}")
-            records = self.fetch(params)            
-            if records != []:
-                logger.info(f"Ingesting the data obtained with {len(records)} stations after {retry_count} retries")
-                self.ingest(records)
-                self.trigger_dbt(tag = self.data_base_target_table) #Here we use the bronze table name since bronze and silver have the same tables names just schema is what differs  
-                break # stop retrying
+            
+            try:
+                records = self.fetch({"date": date, "format": "json"})
+            except Exception:
+                logger.exception("Fetch failed for %s, the next scheduled run will retry", date)
+                break
 
-            retry_count += 1
-            if retry_count < self.max_retries:
-                logger.info(f"Data not available yet, retrying {retry_count}/{self.max_retries} in {self.retry_frequency}s")
-                time.sleep(self.retry_frequency)
-            else:
-                logger.warning(f"Giving up on observation at time {date} after {self.max_retries} retries")
+            if not records or records == []:
+                logger.info("Data for %s not available yet, the next run will retry", date)
+                break
+
+            self.ingest(records)
+            ingested_any = True
+        
+        if ingested_any:
+            self.trigger_dbt(tag=self.data_base_target_table)
+        return ingested_any
+    
+            # if records != []:
+            #     logger.info(f"Ingesting the data obtained with {len(records)} stations after {retry_count} retries")
+            #     self.ingest(records)
+            #     self.trigger_dbt(tag = self.data_base_target_table) #Here we use the bronze table name since bronze and silver have the same tables names just schema is what differs  
+            #     break # stop retrying
+
+            # retry_count += 1
+            # if retry_count < self.max_retries:
+            #     logger.info(f"Data not available yet, retrying {retry_count}/{self.max_retries} in {self.retry_frequency}s")
+            #     time.sleep(self.retry_frequency)
+            # else:
+            #     logger.warning(f"Giving up on observation at time {date} after {self.max_retries} retries")
     
         
-    def run_loop(self):
-        """Start continuous ingestion loop"""
-        self.running = True
-        logger.info("Real-time ingestor started")
-        while self.running:
-            for step_back in reversed(range(0, self.steps_back)):
-                date = TimeManager.last_interval_iso(self.time_steps_seconds, step_back)
-                self.run_once(date)
-            logger.info(f"Sleeping until next hour...")
-            self.sleep_until_next_hour()
+    # def run_loop(self):
+    #     """Start continuous ingestion loop"""
+    #     self.running = True
+    #     logger.info("Real-time ingestor started")
+    #     while self.running:
+    #         for step_back in reversed(range(0, self.steps_back)):
+    #             date = TimeManager.last_interval_iso(self.time_steps_seconds, step_back)
+    #             self.run_once(date)
+    #         logger.info(f"Sleeping until next hour...")
+    #         self.sleep_until_next_hour()
 
     # def stop(self):
     #     self.running = False
@@ -256,22 +270,6 @@ class ForecastIngestor(BaseIngestor):
             )
             raise
 
-    # def fetch(self, client, params: dict) -> str | None:
-    #     """Download GRIB file to a temp path. Returns path or None on failure."""
-    #     try:       
-    #         response = client.fetch_data(params = params)  # your API method
-    #         if response:
-    #             grib_processor = GribProcessor(response, params.get("referencetime"))
-    #             records = grib_processor.get_ready_to_ingest_records(client.api.record_class)
-    #             self._log_fetch("forecast", len(records))
-    #         else:
-    #             records = None
-    #             self._log_skip(f"No GRIB data found for reference time {params.get("referencetime")}")
-    #         return records
-    #     except Exception as e:
-    #         logger.error(f"Fetch error for run {params.get("referencetime")}: {e}")
-    #         raise
-
     def ingest(self, client, records: list[dict]) -> None:
         """Insert records into DB."""
         try:
@@ -318,144 +316,100 @@ class ForecastIngestor(BaseIngestor):
             raise ValueError("No valid forecast run found in the api")
         else:
             return TimeManager.convert_to_iso(latest_run_time)
-
-    # def run_once(self) -> None:
-    #     """This can be used later with advanced schedulers"""
-    #     run_time = self.get_latest_run_time()
-    #     # params = {
-    #     #     "referencetime" : "2026-03-08T09:00:00Z",
-    #     #     "time": ["00H06H", "07H12H", "13H18H", "19H24H", "25H30H", "31H36H", "37H42H", "43H48H", "49H51H"],
-    #     #     "format": "grib2"
-    #     # }
-
-    #     params = {
-    #         "referencetime" : run_time,
-    #         "time": ["00H06H", "07H12H", "13H18H", "19H24H", "25H30H", "31H36H", "37H42H", "43H48H", "49H51H"],
-    #         "format": "grib2"
-    #     }
-
-    #     MAX_RETRIES = 5
-    #     WAIT_SECONDS = 6*60  # to readjust based on how long data usually takes
-
-    #     for client in self.data_api_clients:
-    #         if DatabaseRepository.forecast_run_already_ingested(params.get("referencetime"), client.api.bronze_table):
-    #             self._log_skip(f"Forecast run {params.get("referencetime")} already ingested — skipping")
-    #         else:
-    #             parameters = copy.deepcopy(params)
-    #             for value in params.get("time"):
-    #                 parameters['time'] = value
-    #                 logger.info(f"Fetching data for run: {run_time}, forecast time: {value}")
-
-    #                 retries = 0
-    #                 records = None
-
-    #                 while retries < MAX_RETRIES:
-    #                     records = self.fetch(client, parameters)
-
-    #                     if records:
-    #                         logger.info(f"Data found after {retries} retries")
-    #                         break
-
-    #                     retries += 1
-    #                     logger.info(f"No data yet for forecast time {value}, retry {retries}/{MAX_RETRIES} in {WAIT_SECONDS}s")
-    #                     time.sleep(WAIT_SECONDS)
-
-    #                 if records:
-    #                     logger.info(f"Ingesting {len(records)} stations")
-    #                     self.ingest(client, records)
-    #                 else:
-    #                     logger.warning(f"Giving up on forecast time {value} after {MAX_RETRIES} retries")
-
-    #     self.trigger_dbt(tag="forecast_arome")
         
 
-    def run_once(self) -> None:
+    def run(self) -> None:
         """Fetch and ingest missing forecast intervals."""
     
         run_time = self.get_latest_run_time()
+        intervals = ["00H06H","07H12H","13H18H","19H24H","25H30H","31H36H","37H42H","43H48H","49H51H",]
     
-        params = {
-            "referencetime": run_time,
-            "time": [
-                "00H06H",
-                "07H12H",
-                "13H18H",
-                "19H24H",
-                "25H30H",
-                "31H36H",
-                "37H42H",
-                "43H48H",
-                "49H51H",
-            ],
-            "format": "grib2",
-        }
+        # params = {
+        #     "referencetime": run_time,
+        #     "time": [
+        #         "00H06H",
+        #         "07H12H",
+        #         "13H18H",
+        #         "19H24H",
+        #         "25H30H",
+        #         "31H36H",
+        #         "37H42H",
+        #         "43H48H",
+        #         "49H51H",
+        #     ],
+        #     "format": "grib2",
+        # }
     
-        MAX_RETRIES = 5
-        WAIT_SECONDS = 6 * 60
-    
+        # MAX_RETRIES = 5
+        # WAIT_SECONDS = 6 * 60
+        ingested_any = False
         for client in self.data_api_clients:
-            for interval in params["time"]:
-    
-                already_ingested = (
-                    DatabaseRepository.forecast_interval_already_ingested(
+            for interval in intervals:
+                if DatabaseRepository.forecast_interval_already_ingested(
                         reference_time=run_time,
                         forecast_interval=interval,
-                        target_table_name=client.api.bronze_table,
-                    )
-                )
-    
-                if already_ingested:
+                        target_table_name=client.api.bronze_table):
                     self._log_skip(
                         f"Run {run_time}, interval {interval} "
                         "already ingested — skipping"
                     )
                     continue
     
-                parameters = copy.deepcopy(params)
-                parameters["time"] = interval
-    
-                logger.info(
-                    "Fetching data for run: %s, forecast interval: %s",
-                    run_time,
-                    interval,
-                )
-    
-                records = None
-    
-                for attempt in range(1, MAX_RETRIES + 1):
+                parameters = {"referencetime": run_time, "time": interval, "format": "grib2"}
+                logger.info("Fetching data for run: %s, forecast interval: %s", run_time, interval)
+                try:
                     records = self.fetch(client, parameters)
+                except Exception:
+                    logger.exception("Fetch failed for %s / %s", run_time, interval)
+                    break
+
+                if not records or records == []:
+                    logger.info("Run %s interval %s not available yet", run_time, interval)
+                    break  # later intervals won't be there either
+
+                self.ingest(client, records)
+                ingested_any = True
+
+        if ingested_any:
+            self.trigger_dbt(tag="forecast_arome")
+        return ingested_any        
     
-                    if records:
-                        logger.info(
-                            "Data found for interval %s on attempt %s/%s",
-                            interval,
-                            attempt,
-                            MAX_RETRIES,
-                        )
-                        break
+        #         records = None
     
-                    if attempt < MAX_RETRIES:
-                        logger.info(
-                            "No data yet for interval %s; "
-                            "retrying in %s seconds (attempt %s/%s)",
-                            interval,
-                            WAIT_SECONDS,
-                            attempt,
-                            MAX_RETRIES,
-                        )
-                        time.sleep(WAIT_SECONDS)
+        #         for attempt in range(1, MAX_RETRIES + 1):
+        #             records = self.fetch(client, parameters)
     
-                if records:
-                    logger.info("Ingesting %s records", len(records))
-                    self.ingest(client, records)
-                else:
-                    logger.warning(
-                        "Giving up on interval %s after %s attempts",
-                        interval,
-                        MAX_RETRIES,
-                    )
+        #             if records:
+        #                 logger.info(
+        #                     "Data found for interval %s on attempt %s/%s",
+        #                     interval,
+        #                     attempt,
+        #                     MAX_RETRIES,
+        #                 )
+        #                 break
     
-        self.trigger_dbt(tag="forecast_arome")
+        #             if attempt < MAX_RETRIES:
+        #                 logger.info(
+        #                     "No data yet for interval %s; "
+        #                     "retrying in %s seconds (attempt %s/%s)",
+        #                     interval,
+        #                     WAIT_SECONDS,
+        #                     attempt,
+        #                     MAX_RETRIES,
+        #                 )
+        #                 time.sleep(WAIT_SECONDS)
+    
+        #         if records:
+        #             logger.info("Ingesting %s records", len(records))
+        #             self.ingest(client, records)
+        #         else:
+        #             logger.warning(
+        #                 "Giving up on interval %s after %s attempts",
+        #                 interval,
+        #                 MAX_RETRIES,
+        #             )
+    
+        # self.trigger_dbt(tag="forecast_arome")
 
         
         # if DatabaseRepository.forecast_run_already_ingested(params.get("referencetime"), self.data_base_target_table):
@@ -474,10 +428,10 @@ class ForecastIngestor(BaseIngestor):
         #     self.trigger_dbt(tag = "forecast")
 
 
-    def run_loop(self):
-        """Start continuous ingestion loop"""
-        self.running = True
-        logger.info("Real-time ingestor started")
-        while self.running:
-            self.run_once()
-            time.sleep(self.update_frequency)
+    # def run_loop(self):
+    #     """Start continuous ingestion loop"""
+    #     self.running = True
+    #     logger.info("Real-time ingestor started")
+    #     while self.running:
+    #         self.run_once()
+    #         time.sleep(self.update_frequency)

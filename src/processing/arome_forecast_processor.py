@@ -1,5 +1,6 @@
 from dataclasses import asdict
 import os
+import glob
 import numpy as np
 import pandas as pd
 import cfgrib
@@ -17,18 +18,23 @@ class GribProcessor:
     def __init__(self, grib_bytes: bytes, run_time : str):
         self.grib_bytes = grib_bytes
         self.run_time = run_time
+        self.tmp_path = None
+        self.datasets = []
 
     def load(self) -> dict[str, xr.Dataset]:
         tmp = tempfile.NamedTemporaryFile(suffix=".grib2", delete=False)
-        try:
-            tmp.write(self.grib_bytes)
-            tmp.close()
+        tmp.write(self.grib_bytes)
+        tmp.close()      
+        self.tmp_path = tmp.name
+        self.datasets = cfgrib.open_datasets(tmp.name) 
 
-            self.datasets = cfgrib.open_datasets(tmp.name)
-        finally:
-            pass
-            # os.remove(tmp.name)
-    
+    def cleanup(self):
+        for ds in self.datasets:
+            ds.close()
+        if self.tmp_path:
+            for path in glob.glob(self.tmp_path + "*"):   # grib file + cfgrib .idx files
+                os.remove(path)    
+
     def get_ready_to_ingest_records(self, records_class):
         """
         This is the pipeline of all data transformations needed to get from raw GRIB bytes to station-level records.
@@ -38,19 +44,22 @@ class GribProcessor:
             3. extract_data_at_stations() - for each variable's DataArray, extract the values at the nearest grid point to each station, resulting in a dict of variable name → (n_stations, n_steps) array.
             4. build_forecast_records() - combine the extracted variable arrays with station metadata and timestamps to build a list of dicts ready for database insertion.
         """
-        self.load()
-        self.reference_data = next(iter(self.datasets))
-        grid_lats = self.reference_data.latitude.values
-        grid_lons = self.reference_data.longitude.values
+        try:
+            self.load()
+            self.reference_data = next(iter(self.datasets))
+            grid_lats = self.reference_data.latitude.values
+            grid_lons = self.reference_data.longitude.values
 
-        stations = DatabaseGetter.get_stations()
+            stations = DatabaseGetter.get_stations()
 
 
-        variables = records_class.forecast_variables()  # all non-metadata fields
-        extracted_data = GribProcessor.extract_forecast_variables_data(self.datasets, variables)
-        records = GribProcessor.extract_data_at_stations_records(extracted_data, stations, grid_lats, grid_lons, self.run_time, records_class)
-
-        return records
+            variables = records_class.forecast_variables()  # all non-metadata fields
+            extracted_data = GribProcessor.extract_forecast_variables_data(self.datasets, variables)
+            records = GribProcessor.extract_data_at_stations_records(extracted_data, stations, grid_lats, grid_lons, self.run_time, records_class)
+            return records
+        finally:
+            self.cleanup()
+        
 
     @staticmethod
     def extract_forecast_variables_data(

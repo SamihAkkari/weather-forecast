@@ -9,6 +9,8 @@ class ObservationProcessor:
 
     def get_ready_to_ingest_records(self, records_class):
         records = []
+        if self.response_data == []:
+            logger.error("The API did not return data for the current data")
         stations = DatabaseGetter.get_stations()
         stations_ids = [station.station_id for station in stations]
         for observation in self.response_data:
@@ -16,6 +18,6 @@ class ObservationProcessor:
                 records.append(records_class(
                     **{var: val for var, val in observation.items()}
                 ))
-        if records == [] and stations_ids != []:
+        if records == [] and self.response_data != []:
             logger.error("The API returned data for the current data but the logic in ObservationProcessor did not handle it correctly")
         return records

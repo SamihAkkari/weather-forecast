@@ -131,6 +131,7 @@ class DatabaseRepository:
     #             else:
     #                 logger.info("Bronze tables is ready")
     
+    @staticmethod
     def _this_date_is_already_ingested(date, target_table_name: str):
         try:
             with DatabaseConnection() as conn:
