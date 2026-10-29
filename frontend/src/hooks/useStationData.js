@@ -49,7 +49,7 @@ function useStationData(location) {
       })
       .catch(err => {
         console.log('🔴 [API] error:', err)
-        setError(err.message)
+        setError(err.response?.data?.detail || err.message)
         setLoading(false)
       })
   }, [location])

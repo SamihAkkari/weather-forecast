@@ -40,9 +40,17 @@ app.add_middleware(
 #         }
 #         )
 #     return data
+def ensure_in_france(lat: float, lng: float):
+    b = Config.FRANCE_BOUNDS
+    if not (b["min_lat"] <= lat <= b["max_lat"] and b["min_lon"] <= lng <= b["max_lon"]):
+        raise HTTPException(
+            status_code=422,
+            detail="Only metropolitan France is currently supported. Please select a location in France.",
+        )
 
 @app.get("/station-current-forecast")
 def get_viewer_page_data(lat: float, lng: float):
+    ensure_in_france(lat, lng)
     try:
         return get_viewer_data(lat, lng)
     except Exception as e:
@@ -61,6 +69,7 @@ def get_pv_production(
     inverter_efficiency:float = 0.96
 
 ):
+    ensure_in_france(lat, lng)
     try:
         stations = DatabaseGetter.get_stations()
         nearest = find_nearest_station(stations, lat, lng)
@@ -142,6 +151,8 @@ def get_analysis(
                if omitted, aggregates over all stations.
     days     : how many past days to include in the analysis.
     """
+    if lat is not None and lng is not None:
+        ensure_in_france(lat, lng)      # <-- new
     try:
         station_id = None
 

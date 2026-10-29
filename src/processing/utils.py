@@ -338,9 +338,9 @@ def _summary_message(params: dict) -> str:
 # ── Activity builders ──────────────────────────────────────────────────────────
 
 def _build_cycling(current: dict, forecast: list[dict]) -> dict:
-    t = current.get("temperature_celsius")
-    w = current.get("wind_speed_m_per_s")
-    g = current.get("wind_gust_m_per_s")
+    t = round(current.get("temperature_celsius"))
+    w = round(current.get("wind_speed_m_per_s"))
+    g = round(current.get("wind_gust_m_per_s"))
     p = current.get("precipitation_mm")
     s = current.get("snow_precipitation_mm")
 

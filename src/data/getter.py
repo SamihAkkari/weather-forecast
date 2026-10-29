@@ -7,7 +7,8 @@ from typing import Tuple, List
 from datetime import datetime
 import src.processing.analysis_processor as analyser
 from src.ingestion.time_manager import TimeManager
-
+from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 logger = logging.getLogger(__name__)
 
 class DatabaseGetter:
@@ -116,49 +117,149 @@ class DatabaseGetter:
             "conditions" : current_observation[0],
             "forecast" : forecasts}
         return data
-
+ 
+    
     @staticmethod
-    def get_observations(station_id, fromm, time = None):
-        # if "6m" in fromm:
-        #     dataclass_obj = ObservationInfrahoraire6mRecord
-        # else:
-        #     dataclass_obj = ObservationHoraireRecord
-
+    def get_observations(station_id, fromm, time=None):
         with DatabaseConnection() as conn:
             with conn.cursor() as cur:
+    
+                base_query = f"""
+                    SELECT *
+                    FROM {Config.SILVER_SCHEMA}.{fromm}
+                    WHERE station_id = %s
+                """
+                params = [station_id]
+    
                 if time is None:
-                    cur.execute(f"""
-                            SELECT * 
-                            FROM {Config.SILVER_SCHEMA}.{fromm}
-                            WHERE
-                                station_id = %s 
-                            """, (station_id,))
-                else:
-                    if isinstance(time, tuple):
-                        if len(time) != 2:
-                            logger.error("time if provided as a tuple it should contain two values")
-                            raise ValueError
-                        if time[1] < time[0]:
-                            logger.error("Invalid time ranges")
-                            raise ValueError
-                        cur.execute(f"""
-                                SELECT * 
-                                FROM {Config.SILVER_SCHEMA}.{fromm}
-                                WHERE
-                                    station_id = %s and time_step_fr > %s and time_step_fr < %s
-                                """, (station_id,time[0],time[1]))
-                    elif isinstance(time, datetime) or isinstance(time, str):
-                        cur.execute(f"""
-                                SELECT * 
-                                FROM {Config.SILVER_SCHEMA}.{fromm}
-                                WHERE
-                                    station_id = %s and time_step_fr = %s
-                                
-                                """, (station_id,time,))
+                    pass
+    
+                elif isinstance(time, tuple):
+                    if len(time) != 2:
+                        logger.error(
+                            "A time range must contain exactly two values"
+                        )
+                        raise ValueError(
+                            "A time range must contain exactly two values"
+                        )
+    
+                    start, end = time
+    
+                    if end < start:
+                        logger.error("Invalid time range: end precedes start")
+                        raise ValueError(
+                            "The end of the time range must not precede the start"
+                        )
+    
+                    base_query += """
+                        AND time_step_fr > %s
+                        AND time_step_fr < %s
+                    """
+                    params.extend([start, end])
+    
+                elif isinstance(time, date):
+                    # datetime is a subclass of date, so handle it first.
+                    # A datetime at midnight is treated as a specific timestep
+                    # in this implementation, not as a date-only request.
+                    if isinstance(time, datetime):
+                        base_query += " AND time_step_fr = %s"
+                        params.append(time)
+    
                     else:
-                        logger.error("In get_observations, the time should either be None to get all observations of the station, or a tuple to get a range of time, or datetime or iso string to get at specific timestep, other types are not handled")
-                        raise ValueError
+                        # Retrieve every observation for the given calendar day.
+                        start = datetime.combine(time, datetime.min.time())
+                        end = start + timedelta(days=1)
+    
+                        base_query += """
+                            AND time_step_fr >= %s
+                            AND time_step_fr < %s
+                        """
+                        params.extend([start, end])
+    
+                elif isinstance(time, str):
+                    try:
+                        if len(time) == 10:
+                            # Date-only string: YYYY-MM-DD
+                            day = date.fromisoformat(time)
+                            start = datetime.combine(
+                                day, datetime.min.time()
+                            )
+                            end = start + timedelta(days=1)
+    
+                            base_query += """
+                                AND time_step_fr >= %s
+                                AND time_step_fr < %s
+                            """
+                            params.extend([start, end])
+    
+                        else:
+                            # Full datetime string: exact timestep
+                            parsed_time = datetime.fromisoformat(time)
+    
+                            base_query += " AND time_step_fr = %s"
+                            params.append(parsed_time)
+    
+                    except ValueError as exc:
+                        logger.error("Invalid time format: %s", time)
+                        raise ValueError(
+                            "time must be a date (YYYY-MM-DD), a datetime "
+                            "in ISO format, a date/datetime object, a tuple "
+                            "of two bounds, or None"
+                        ) from exc
+    
+                else:
+                    logger.error("Unsupported time type: %s", type(time))
+                    raise ValueError(
+                        "time must be None, a date, a datetime, an ISO "
+                        "string, or a tuple of two bounds"
+                    )
+    
+                cur.execute(base_query, tuple(params))
                 return cur.fetchall(), cur
+
+
+    # @staticmethod
+    # def get_observations(station_id, fromm, time = None):
+    #     # if "6m" in fromm:
+    #     #     dataclass_obj = ObservationInfrahoraire6mRecord
+    #     # else:
+    #     #     dataclass_obj = ObservationHoraireRecord
+
+    #     with DatabaseConnection() as conn:
+    #         with conn.cursor() as cur:
+    #             if time is None:
+    #                 cur.execute(f"""
+    #                         SELECT * 
+    #                         FROM {Config.SILVER_SCHEMA}.{fromm}
+    #                         WHERE
+    #                             station_id = %s 
+    #                         """, (station_id,))
+    #             else:
+    #                 if isinstance(time, tuple):
+    #                     if len(time) != 2:
+    #                         logger.error("time if provided as a tuple it should contain two values")
+    #                         raise ValueError
+    #                     if time[1] < time[0]:
+    #                         logger.error("Invalid time ranges")
+    #                         raise ValueError
+    #                     cur.execute(f"""
+    #                             SELECT * 
+    #                             FROM {Config.SILVER_SCHEMA}.{fromm}
+    #                             WHERE
+    #                                 station_id = %s and time_step_fr > %s and time_step_fr < %s
+    #                             """, (station_id,time[0],time[1]))
+    #                 elif isinstance(time, datetime) or isinstance(time, str):
+    #                     cur.execute(f"""
+    #                             SELECT * 
+    #                             FROM {Config.SILVER_SCHEMA}.{fromm}
+    #                             WHERE
+    #                                 station_id = %s and time_step_fr = %s
+                                
+    #                             """, (station_id,time,))
+    #                 else:
+    #                     logger.error("In get_observations, the time should either be None to get all observations of the station, or a tuple to get a range of time, or datetime or iso string to get at specific timestep, other types are not handled")
+    #                     raise ValueError
+    #             return cur.fetchall(), cur
 
 
     @staticmethod
@@ -183,6 +284,64 @@ class DatabaseGetter:
                 
                 
                 # return cur.fetchall(), cur
+
+
+
+    
+    
+    @staticmethod
+    def get_forecasts_for_day(station_id, fromm, day):
+        """
+        Retrieve the latest available forecast for every timestep
+        within a specified calendar day.
+    
+        Args:
+            station_id: Station identifier.
+            fromm: Forecast table name.
+            day: Requested day as a date, datetime, or ISO date string
+                 (YYYY-MM-DD).
+    
+        Returns:
+            A tuple containing the fetched rows and the database cursor.
+        """
+        if isinstance(day, datetime):
+            day = day.date()
+        elif isinstance(day, str):
+            try:
+                day = date.fromisoformat(day)
+            except ValueError as exc:
+                raise ValueError(
+                    "day must be a date in YYYY-MM-DD format"
+                ) from exc
+        elif not isinstance(day, date):
+            raise ValueError(
+                "day must be a date, datetime, or YYYY-MM-DD string"
+            )
+    
+        start_of_day = datetime.combine(day, time.min)
+        start_of_next_day = start_of_day + timedelta(days=1)
+    
+        with DatabaseConnection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    f"""
+                        SELECT DISTINCT ON (station_id, time_step_fr) *
+                        FROM {Config.SILVER_SCHEMA}.{fromm}
+                        WHERE
+                            station_id = %s
+                            AND time_step_fr >= %s
+                            AND time_step_fr < %s
+                        ORDER BY
+                            station_id,
+                            time_step_fr,
+                            run_time DESC;
+                    """,
+                    (station_id, start_of_day, start_of_next_day),
+                )
+    
+                return cur.fetchall(), cur
+
+
 
     @staticmethod
     def get_forecasts_at_time_step(station_id, fromm, time = None, exactly_at_time = False):

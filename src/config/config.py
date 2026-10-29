@@ -73,3 +73,7 @@ class Config:
     DBT_BIN = os.getenv('DBT_BIN', 'dbt')
     DBT_PROJECT_DIR = os.getenv('DBT_PROJECT_DIR', 'dbt/weather_project')
     DBT_PROFILES_DIR = os.getenv('DBT_PROFILES_DIR', 'dbt')
+    
+    # Metropolitan France bounding box (slightly padded)
+    FRANCE_BOUNDS = {"min_lat": 42.4, "max_lat": 51.14,
+                     "min_lon": -5.14, "max_lon": 9.63}

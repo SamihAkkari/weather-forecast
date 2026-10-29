@@ -146,9 +146,13 @@ def get_viewer_data(lat: float, lng: float) -> dict:
     # Step 2 — get current time truncated to the hour
     # This is used to fetch the current observation and forecast from now onward
     current_time = TimeManager.current_france_time_iso(time_truncation="hour")
+    today = str(TimeManager.current_france_time_iso(time_truncation="day"))[:10]
     
     current_obs_raw, cur = DatabaseGetter.get_observations(station_id=nearest_station.station_id, fromm=Config.OBSERVATIONS_TABLE_NAME_HOURLY, time = current_time)
     current_obs = DatabaseGetter.transform_data_to_list_of_dict(current_obs_raw, cur)
+    
+    today_obs_raw, cur = DatabaseGetter.get_observations(station_id=nearest_station.station_id, fromm=Config.OBSERVATIONS_TABLE_NAME_HOURLY, time = today )
+    today_obs = DatabaseGetter.transform_data_to_list_of_dict(today_obs_raw, cur)
     
     # Fetch only forecast — no observation call
     forecast_raw, cur = DatabaseGetter.get_forecasts_at_time_step(
@@ -159,12 +163,15 @@ def get_viewer_data(lat: float, lng: float) -> dict:
     )
     forecast = DatabaseGetter.transform_data_to_list_of_dict(forecast_raw, cur)
 
+    today_forecast_raw, cur = DatabaseGetter.get_forecasts_for_day(station_id=nearest_station.station_id, fromm=Config.SILVER_FORECAST_AROME_TABLE_NAME, day=today)
+    today_forecast = DatabaseGetter.transform_data_to_list_of_dict(today_forecast_raw, cur)
+
     # forecast = utils.unaccumulate(forecast, "precipitation_mm", nearest_station.station_id)
     # forecast = utils.unaccumulate(forecast, "snow_precipitation_mm", nearest_station.station_id)
 
     station_info = nearest_station.__dict__
 
-    return _build_response(station_info, current_obs, forecast)
+    return _build_response(station_info, current_obs, today_obs, forecast, today_forecast)
 
 def validate_and_complete_current_obs(current_obs: list[dict], forecast: list[dict]) -> dict:
     def modify_time_step_fr_if_necessary(time_step: str) -> str:
@@ -191,7 +198,7 @@ def validate_and_complete_current_obs(current_obs: list[dict], forecast: list[di
     return current_obs
     
 
-def _build_response(station_info: dict, current_obs: list[dict], forecast: list[dict]) -> dict:
+def _build_response(station_info: dict, current_obs: list[dict], today_obs: list[dict], forecast: list[dict], today_forecast: list[dict]) -> dict:
     """
     Takes the raw data dict from DatabaseGetter and transforms it
     into the exact shape the frontend expects.
@@ -213,7 +220,7 @@ def _build_response(station_info: dict, current_obs: list[dict], forecast: list[
         "station":    _build_station(station_info),
         # "conditions": _build_conditions(current),
         "forecast":   _build_hourly_forecast(current_obs, forecast),
-        "daily":      _build_daily_forecast(forecast),
+        "daily":      _build_daily_forecast(today_obs, forecast, today_forecast),
         "widgets":    _build_widgets(current_obs, forecast),
         "activities": _build_lifestyle(current_obs, forecast)
     }
@@ -252,7 +259,87 @@ def _build_hourly_forecast(current: dict, forecast: list[dict]) -> list[dict]:
 
 
 
-def _build_daily_forecast(forecast: list[dict]) -> list[dict]:
+from datetime import datetime, timedelta
+
+
+def specify_today_past_hours(today: str) -> list[str]:
+    """Return the past hourly timestamps for today that need coverage."""
+    now = TimeManager.current_france_time_iso()
+    time_steps = []
+    for hour in range(0,23):
+        time_stamp = today + "T" + f"{hour:02d}" + ":00:00Z"
+        if time_stamp == now:
+            break
+        time_steps.append(time_stamp )
+    return time_steps
+
+
+def get_past_hours(
+    entries: list[dict],
+    missing_hours: list[str],
+) -> tuple[list[dict], list[str]]:
+    """
+    Select entries matching missing hourly timestamps.
+
+    Returns the matched entries and the timestamps still missing.
+    Entries with a missing temperature do not count as covered.
+    """
+    indexed = {}
+
+    for entry in entries:
+        timestamp = entry.get("time_step_fr")
+        if timestamp is None:
+            continue
+
+        timestamp = str(timestamp)[:13]
+
+        if entry.get("temperature_celsius") is not None:
+            indexed[timestamp] = entry
+
+    remaining = []
+    matched = []
+
+    for hour in missing_hours:
+        key = str(hour)[:13]
+
+        if key in indexed:
+            matched.append(indexed[key])
+        else:
+            remaining.append(hour)
+
+    return matched, remaining
+
+
+def discard_last_day_if_not_worth(
+    data: list[dict],
+    last_day: str,
+    minimum_hours: int = 12,
+) -> list[dict]:
+    """
+    Remove the final day's entries if fewer than minimum_hours
+    distinct hourly temperatures are available.
+    """
+    last_day_entries = [
+        entry for entry in data
+        if str(entry.get("time_step_fr", ""))[:10] == last_day
+        and entry.get("temperature_celsius") is not None
+    ]
+
+    valid_hours = {
+        str(entry["time_step_fr"])[:13]
+        for entry in last_day_entries
+    }
+
+    if len(valid_hours) < minimum_hours:
+        return [
+            entry for entry in data
+            if str(entry.get("time_step_fr", ""))[:10] != last_day
+        ]
+
+    return data
+
+
+def _build_daily_forecast(today_obs: list[dict], forecast: list[dict], today_forecast: list[dict]) -> list[dict]:
     """
     Aggregates hourly forecast into daily min/max temperature
     and a representative weather condition icon.
@@ -261,9 +348,30 @@ def _build_daily_forecast(forecast: list[dict]) -> list[dict]:
     The icon is determined by the dominant condition of the day.
     """
     from collections import defaultdict
+    
+    daily = []
+    today = str(TimeManager.current_france_time_iso(time_truncation="day"))[:10]
+    last_day = forecast[-1]['time_step_fr'][0:10] # careful that it is ordered
+
+    missing_past_hours = specify_today_past_hours(today)
+
+    today_past_hours_observed, missing_past_hours = get_past_hours(today_obs, missing_past_hours)
+    forecasted_past_hours, missing_past_hours = get_past_hours(today_forecast, missing_past_hours)
+    
+    if missing_past_hours:
+        logger.warning(
+            "Could not fill %d past hourly slots for %s: %s",
+            len(missing_past_hours),
+            today,
+            missing_past_hours,
+        )  
+    
+    data = today_past_hours_observed + forecasted_past_hours + forecast
+    
+    data = discard_last_day_if_not_worth(data, last_day) # should retrun the data either as it is if more than half the hours of th elast day are present or without any timetep of the last day if less
 
     days = defaultdict(list)
-    for entry in forecast:
+    for entry in data:
         time_str = entry.get("time_step_fr", "")
         if not time_str:
             continue
@@ -271,8 +379,6 @@ def _build_daily_forecast(forecast: list[dict]) -> list[dict]:
         date_key = str(time_str)[:10]
         days[date_key].append(entry)
 
-    daily = []
-    today = str(TimeManager.current_france_time_iso(time_truncation="day"))[:10]
 
     for date_key in sorted(days.keys()):
         entries = days[date_key]

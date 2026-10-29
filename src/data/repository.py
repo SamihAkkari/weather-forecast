@@ -146,7 +146,7 @@ class DatabaseRepository:
                     return exists
         except Exception as e:
             logger.error(f"Error checking if date {date} is already ingested: {e}")
-
+            raise
     # @staticmethod
     # def forecast_run_already_ingested(reference_time, target_table_name: str):
     #     """Mirrors _this_date_is_already_ingested() pattern."""
