@@ -49,7 +49,6 @@ services:
       DBT_LOG_PATH: /tmp/dbt/logs
     volumes:
       - ./logs:/app/logs
-      - .:/app #bind mounting to allow for efficient testing
     depends_on:
       db:
         condition: service_healthy
@@ -65,8 +64,6 @@ services:
     command: ["python", "-m", "api.main"]
     ports:
       - "127.0.0.1:8001:8001"
-    volumes:
-      - .:/app #bind mounting to allow for efficient testing
     depends_on:
       db:
         condition: service_healthy

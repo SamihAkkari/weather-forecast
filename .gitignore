@@ -23,6 +23,9 @@ sources/
 .DS_Store
 Thumbs.db
 
+# Keep override docker compose only for dev
+docker-compose.override.yaml
+
 #
 *.xlsx
 *.csv
