@@ -242,7 +242,7 @@ function AnalysisPage() {
             <VariableWidget
               label="Rain detection"
               icon="🌧"
-              // headline={rainHeadline} // I commented those out since sometime F1 only is misleading 
+              // headline={rainHeadline} // I commented those out since not clear what metric to put
               // accentColor="#60a5fa"
             >
               <DetectionAnalysis data={analysisData.rain} />

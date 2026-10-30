@@ -1,4 +1,5 @@
 import ValueWithUnit from "../common/ValueWithUnit";
+import { formatHourFr } from '../../utils/time'
 import SunCalc from "suncalc";
 
 function getWeatherIcon(entry, location) {
@@ -56,10 +57,10 @@ function getWeatherIcon(entry, location) {
 }
 
 function isNight(timeString, lat, lng) {
-    console.log("RAW STRING:", timeString)
+    // console.log("RAW STRING:", timeString)
     const date = new Date(timeString)
 
-    date.setHours(date.getHours() - 2) // Quick fix to handle the +00:00 timezone issue, need to fix it in the backend
+    // date.setHours(date.getHours() - 2) // Quick fix to handle the +00:00 timezone issue, need to fix it in the backend
 
     const sunTimes = SunCalc.getTimes(date, lat, lng)
 
@@ -75,10 +76,10 @@ function isNight(timeString, lat, lng) {
 // }
 
 // The API returns the values in France time but with +00:00 timezone which makes the js think it is UTC, now this is a quick fix here but need to fix it in the backend
-function formatHour(timeString) {
-    const date = new Date(timeString)
-    return `${date.getUTCHours()}:00`
-}
+// function formatHour(timeString) {
+//     const date = new Date(timeString)
+//     return `${date.getUTCHours()}:00`
+// }
 
 function HourlyCards({ forecast, location }) {
     return (
@@ -95,7 +96,7 @@ function HourlyCards({ forecast, location }) {
                     <div
                         key={index}
                         className="min-w-20 border border-gray-100 rounded-xl p-3 text-center flex-shrink-0">
-                        <p className="text-xs text-gray-400 mb-2">{formatHour(entry.time_step_fr)}</p>
+                        <p className="text-xs text-gray-400 mb-2">{formatHourFr(entry.time_step_fr)}</p>
                         {/* <p className="text-base mb-2">{getWeatherIcon(entry.precipitation_mm)}</p> */}
                         <p className="mb-2">{getWeatherIcon(entry, location)}</p>
                         <p className="text-sm font-medium text-gray-900 mb-1">

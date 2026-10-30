@@ -17,7 +17,7 @@ def _get_pool():
                 dbname=Config.POSTGRES_DB, user=Config.POSTGRES_USER,
                 password=Config.POSTGRES_PASSWORD, host=Config.POSTGRES_HOST,
                 port=Config.POSTGRES_PORT,
-                options=f"-c statement_timeout={timeout_ms}",
+                options=f"-c timezone=UTC -c statement_timeout={timeout_ms}",
             )
         return _pool
 

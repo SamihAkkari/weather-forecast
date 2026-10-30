@@ -18,5 +18,5 @@ SELECT
         ELSE NULL
     END AS openning_date,
     LOWER(pack) AS station_type,
-    DATE_TRUNC('minute', NOW() AT TIME ZONE 'Europe/Paris') AS transfer_time_fr
+    DATE_TRUNC('minute', NOW()) AS transfer_time_fr
 FROM {{ source('bronze', 'stations') }}

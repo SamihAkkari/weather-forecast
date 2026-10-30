@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { formatHourFr } from '../../utils/time'
 
 const BAR_COLORS = {
   green:  '#16a34a',
@@ -9,15 +10,15 @@ const BAR_COLORS = {
 /*
   Formats ISO string to hour label: "2026-10-20T14:00:00+00:00" → "14:00"
 */
-function formatHour(isoString) {
-  const date = new Date(isoString)
-  return `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`
-  // return date.toLocaleTimeString('fr-FR', {
-  //   hour: '2-digit',
-  //   minute: '2-digit',
-  //   timeZone: 'Europe/Paris'
-  // })
-}
+// function formatHour(isoString) {
+//   const date = new Date(isoString)
+//   return `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`
+//   // return date.toLocaleTimeString('fr-FR', {
+//   //   hour: '2-digit',
+//   //   minute: '2-digit',
+//   //   timeZone: 'Europe/Paris'
+//   // })
+// }
 
 
 function Tooltip({ parameters }) {
@@ -62,7 +63,7 @@ function HourlyRow({ entry }) {
       onMouseLeave={() => setShowTooltip(false)}
     >
       <span className="text-xs text-gray-400 w-10 flex-shrink-0">
-        {formatHour(entry.time)}
+        {formatHourFr(entry.time)}
       </span>
 
       <div className="flex-1 h-2 bg-gray-100 rounded-full">

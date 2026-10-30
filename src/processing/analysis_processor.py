@@ -10,7 +10,7 @@ Python only post-processes the rows into the frontend response shape.
 import logging
 import numpy as np
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from src.data.db import DatabaseConnection
 import math
 from sklearn.metrics import (
@@ -458,7 +458,8 @@ def compute_analysis(
     -------
     dict shaped for the frontend AnalysisPage
     """
-    date_to   = datetime.utcnow()
+    # date_to   = datetime.utcnow()
+    date_to   = datetime.now(timezone.utc)
     date_from = date_to - timedelta(days=days)
 
     logger.info(

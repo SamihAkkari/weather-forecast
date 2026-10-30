@@ -34,7 +34,8 @@ inverter_efficiency = 0.96
 stations = DatabaseGetter.get_stations()
 nearest = find_nearest_station(stations, lat, lng)
 
-current_time = TimeManager.current_france_time_iso(time_truncation="hour")
+# current_time = TimeManager.current_france_time_iso(time_truncation="hour")
+current_time = TimeManager.current_utc_iso("hour")
 
 forecast_raw, cur = DatabaseGetter.get_forecasts_at_time_step(
     station_id=nearest.station_id,

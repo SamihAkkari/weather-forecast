@@ -11,8 +11,8 @@ WITH pending_runs AS (
       AND NOT EXISTS (
         SELECT 1 FROM {{ this }} s
         WHERE s.station_id   = LPAD(b1.station_id::TEXT, 8, '0')
-          AND s.run_time     = b1.run_time::timestamptz AT TIME ZONE 'Europe/Paris'
-          AND s.time_step_fr = b1.valid_time::timestamptz AT TIME ZONE 'Europe/Paris'
+          AND s.run_time     = b1.run_time
+          AND s.time_step_fr = b1.valid_time
       )
     {% endif %}
 ),
@@ -68,8 +68,8 @@ base AS (
 -- 4. Only now keep rows that are not yet in silver
 SELECT
     LPAD(station_id::TEXT, 8, '0') AS station_id,
-    run_time::timestamptz AT TIME ZONE 'Europe/Paris'   AS run_time,
-    valid_time::timestamptz AT TIME ZONE 'Europe/Paris' AS time_step_fr,
+    run_time   AS run_time,
+    valid_time AS time_step_fr,
     forecast_step,
     t2m - 273.15 AS temperature_celsius,
     r2           AS humidity_percentage,
@@ -82,7 +82,7 @@ SELECT
     prmsl        AS mean_sea_level_pressure,
     fg10         AS wind_gust_m_per_s,
     tsnowp       AS CUMUL_snow_precipitation_mm,
-    DATE_TRUNC('minute', NOW() AT TIME ZONE 'Europe/Paris') AS transfer_time_fr,
+    DATE_TRUNC('minute', NOW()) AS transfer_time_fr,
     CASE
         WHEN forecast_step = 2 THEN tp
         WHEN tp IS NULL OR previous_tp IS NULL THEN NULL
@@ -103,7 +103,7 @@ FROM base
 WHERE NOT EXISTS (
     SELECT 1 FROM {{ this }} s
     WHERE s.station_id   = LPAD(base.station_id::TEXT, 8, '0')
-      AND s.run_time     = base.run_time::timestamptz AT TIME ZONE 'Europe/Paris'
-      AND s.time_step_fr = base.valid_time::timestamptz AT TIME ZONE 'Europe/Paris'
+      AND s.run_time     = base.run_time
+      AND s.time_step_fr = base.valid_time
 )
 {% endif %}

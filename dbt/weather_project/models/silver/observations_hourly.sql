@@ -4,16 +4,16 @@
 ) }}
 
 WITH last_silver AS (
-    SELECT COALESCE(MAX(time_step_fr), '1900-01-01'::timestamp) AS last_time
+    SELECT COALESCE(MAX(time_step_fr), '1900-01-01'::timestamptz) AS last_time
     FROM {{ this }}
 ),
 
 new_times AS (
     SELECT DISTINCT
-        validity_time::timestamptz AT TIME ZONE 'Europe/Paris' AS time_step_fr
+        validity_time::timestamptz AS time_step_fr
     FROM {{ source('bronze', 'observations_hourly') }} b
     CROSS JOIN last_silver l
-    WHERE validity_time::timestamptz AT TIME ZONE 'Europe/Paris' > l.last_time
+    where validity_time::timestamptz > l.last_time
 ),
 
 all_stations AS (
@@ -33,8 +33,7 @@ clean_obs AS (
     SELECT
         geo_id_insee::TEXT AS station_id,
 
-        validity_time::timestamptz
-            AT TIME ZONE 'Europe/Paris' AS time_step_fr,
+        validity_time::timestamptz AS time_step_fr,
 
         NULLIF(t, 'NaN'::double precision) - 273.15
             AS temperature_celsius,
@@ -68,10 +67,10 @@ clean_obs AS (
         END AS precipitation_mm,
 
         CASE
-            WHEN ay_glo01 = 'NaN'::double precision
-                OR ay_glo01 < 0
+            WHEN ray_glo01 = 'NaN'::double precision
+                OR ray_glo01 < 0
             THEN NULL
-            ELSE ay_glo01
+            ELSE ray_glo01
         END AS global_radiation_J_m2,
         
         NULLIF(pmer, 'NaN'::double precision)
@@ -87,7 +86,7 @@ clean_obs AS (
         -- ray_glo01 AS global_radiation_J_m2
     FROM {{ source('bronze', 'observations_hourly') }} b
     CROSS JOIN last_silver l
-    WHERE validity_time::timestamptz AT TIME ZONE 'Europe/Paris' > l.last_time
+    WHERE validity_time::timestamptz > l.last_time
 )
 
 SELECT
@@ -99,7 +98,7 @@ SELECT
     c.wind_speed_m_per_s,
     c.precipitation_mm,
     c.global_radiation_J_m2,
-    DATE_TRUNC('minute', NOW() AT TIME ZONE 'Europe/Paris') AS transfer_time_fr
+    DATE_TRUNC('minute', NOW()) AS transfer_time_fr
 FROM grid g
 LEFT JOIN clean_obs c
     ON g.station_id = c.station_id

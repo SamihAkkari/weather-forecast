@@ -6,20 +6,21 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine, Legend
 } from 'recharts'
 import { usePvProduction } from '../hooks/usePvProduction'
+import { formatHourFr } from '../utils/time'
 
 /*
   Formats ISO time string to hour label.
   "2026-10-22T13:00:00" → "13:00"
 */
-function formatHour(isoString) {
-  const date = new Date(isoString)
-  return `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`
-  // return date.toLocaleTimeString('fr-FR', {
-  //   hour: '2-digit',
-  //   minute: '2-digit',
-  //   timeZone: 'Europe/Paris',
-  // })
-}
+// function formatHour(isoString) {
+//   const date = new Date(isoString)
+//   return `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`
+//   // return date.toLocaleTimeString('fr-FR', {
+//   //   hour: '2-digit',
+//   //   minute: '2-digit',
+//   //   timeZone: 'Europe/Paris',
+//   // })
+// }
 
 /*
   Generates a human-readable insight sentence from total energy.
@@ -111,7 +112,7 @@ function PvProductionPage({ selectedLocation }) {
     power_kw is derived from power_w for cleaner axis labels.
   */
   const chartData = pvData?.hourly.map(entry => ({
-    hour:      formatHour(entry.time),
+    hour:      formatHourFr(entry.time),
     power_kw:  parseFloat((entry.power_w / 1000).toFixed(2)),
     clipping_pct: entry.clipping_percentage,
     ghi_wm2:   entry.ghi_wm2,
@@ -124,7 +125,7 @@ function PvProductionPage({ selectedLocation }) {
     efficiency: ratio of actual output to theoretical max (capacity * hours)
   */
   const peakKw     = pvData ? (pvData.peak_power_w / 1000).toFixed(2)  : null
-  const peakHour   = pvData ? formatHour(pvData.peak_hour)              : null
+  const peakHour   = pvData ? formatHourFr(pvData.peak_hour)              : null
   const peakPct    = pvData
     ? Math.round((pvData.peak_power_w / (system.inverter_capacity_kw * 1000)) * 100)
     : null

@@ -145,8 +145,10 @@ def get_viewer_data(lat: float, lng: float) -> dict:
 
     # Step 2 — get current time truncated to the hour
     # This is used to fetch the current observation and forecast from now onward
-    current_time = TimeManager.current_france_time_iso(time_truncation="hour")
-    today = str(TimeManager.current_france_time_iso(time_truncation="day"))[:10]
+    # current_time = TimeManager.current_france_time_iso(time_truncation="hour")
+    current_time = TimeManager.current_utc_iso("hour")
+    # today = str(TimeManager.current_france_time_iso(time_truncation="day"))[:10]
+    today = TimeManager.current_france_date_iso()
     
     current_obs_raw, cur = DatabaseGetter.get_observations(station_id=nearest_station.station_id, fromm=Config.OBSERVATIONS_TABLE_NAME_HOURLY, time = current_time)
     current_obs = DatabaseGetter.transform_data_to_list_of_dict(current_obs_raw, cur)
@@ -264,7 +266,8 @@ from datetime import datetime, timedelta
 
 def specify_today_past_hours(today: str) -> list[str]:
     """Return the past hourly timestamps for today that need coverage."""
-    now = TimeManager.current_france_time_iso()
+    # now = TimeManager.current_france_time_iso()
+    now = TimeManager.current_utc_iso("hour")
     time_steps = []
     for hour in range(0,23):
         time_stamp = today + "T" + f"{hour:02d}" + ":00:00Z"
@@ -350,7 +353,8 @@ def _build_daily_forecast(today_obs: list[dict], forecast: list[dict], today_for
     from collections import defaultdict
     
     daily = []
-    today = str(TimeManager.current_france_time_iso(time_truncation="day"))[:10]
+    # today = str(TimeManager.current_france_time_iso(time_truncation="day"))[:10]
+    today = TimeManager.current_france_date_iso()
     last_day = forecast[-1]['time_step_fr'][0:10] # careful that it is ordered
 
     missing_past_hours = specify_today_past_hours(today)
@@ -376,7 +380,8 @@ def _build_daily_forecast(today_obs: list[dict], forecast: list[dict], today_for
         if not time_str:
             continue
         # Extract date part — works for both "2026-04-21T14:00:00" and datetime objects
-        date_key = str(time_str)[:10]
+        # date_key = str(time_str)[:10]
+        date_key = TimeManager.iso_to_france_date(time_str)
         days[date_key].append(entry)
 
 

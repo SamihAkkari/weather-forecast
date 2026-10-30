@@ -1,5 +1,6 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import Navbar from '../components/common/Navbar'
+import { formatHourFr } from '../utils/time'
 import {
   AreaChart, Area, XAxis, YAxis,
   Tooltip, ResponsiveContainer
@@ -55,12 +56,12 @@ const WIDGET_CONFIG = {
   Formats ISO time string to a short hour label for the X axis.
   "2026-10-22T14:00:00+00:00" → "14:00"
 */
-function formatHour(isoString) {
-  const match = isoString.match(/[T ](\d{2}):(\d{2})/);
+// function formatHour(isoString) {
+//   const match = isoString.match(/[T ](\d{2}):(\d{2})/);
 
-  if (!match) return '';
+//   if (!match) return '';
 
-  return `${match[1]}:${match[2]}`;
+//   return `${match[1]}:${match[2]}`;
   
   // const date = new Date(isoString)
   // return date.toLocaleTimeString('fr-FR', {
@@ -68,7 +69,7 @@ function formatHour(isoString) {
   //   minute: '2-digit',
   //   timeZone: 'Europe/Paris',
   // })
-}
+// }
 
 function WidgetDetailPage() {
   const { id } = useParams()
@@ -102,7 +103,7 @@ function WidgetDetailPage() {
     We add a formatted hour label for the X axis.
   */
   const chartData = widgetData.hourly_values.map(entry => ({
-    hour:  formatHour(entry.time_step_fr),
+    hour:  formatHourFr(entry.time_step_fr),
     value: entry.value,
   }))
 

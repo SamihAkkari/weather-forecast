@@ -90,11 +90,28 @@ class TimeManager:
         )
 
     @staticmethod
-    def current_france_time_iso(time_truncation = "hour"):
-        time = TimeManager.utc_now_truncated(to=time_truncation)
-        time = TimeManager.utc_to_france(time)
-        time = TimeManager.convert_to_iso(time)
-        return time
+    def current_utc_iso(truncation="hour"):
+        """Current real UTC time, e.g. '2026-10-30T14:00:00Z'."""
+        return TimeManager.convert_to_iso(TimeManager.utc_now_truncated(to=truncation))
+
+    @staticmethod
+    def iso_to_france_date(time_str) -> str:
+        """'2026-10-30T23:00:00+00:00' -> '2026-10-31' (the Paris calendar date)."""
+        dt = datetime.fromisoformat(str(time_str).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(ZoneInfo("Europe/Paris")).date().isoformat()
+
+    @staticmethod
+    def current_france_date_iso() -> str:
+        return datetime.now(ZoneInfo("Europe/Paris")).date().isoformat()
+
+    # @staticmethod
+    # def current_france_time_iso(time_truncation = "hour"):
+    #     time = TimeManager.utc_now_truncated(to=time_truncation)
+    #     time = TimeManager.utc_to_france(time)
+    #     time = TimeManager.convert_to_iso(time)
+    #     return time
 
     @staticmethod
     def get_time_before(days):

@@ -54,37 +54,41 @@ def convert_ghi_from_to_instant(forecast: list[dict]) -> list[float]:
 # ── Step 2 — Build time index ──────────────────────────────────────────────────
 
 def build_time_index(forecast: list[dict]) -> pd.DatetimeIndex:
-    """
-    Extracts timestamps from forecast entries and builds a
-    timezone-aware DatetimeIndex that pvlib requires.
+    """Timestamps are real UTC instants; pvlib needs tz-aware times."""
+    times = pd.DatetimeIndex(pd.to_datetime([e["time_step_fr"] for e in forecast], utc=True))
+    return times.tz_convert("Europe/Paris")
+    
+    # """
+    # Extracts timestamps from forecast entries and builds a
+    # timezone-aware DatetimeIndex that pvlib requires.
 
-    time_step_fr is in French local time (Europe/Paris).
-    We convert to UTC for pvlib solar position calculations
-    since pvlib expects UTC or timezone-aware times.
-    """  
+    # time_step_fr is in French local time (Europe/Paris).
+    # We convert to UTC for pvlib solar position calculations
+    # since pvlib expects UTC or timezone-aware times.
+    # """  
     
-    times = pd.DatetimeIndex(
-    pd.to_datetime([entry["time_step_fr"] for entry in forecast])
-    ).tz_localize(None)
+    # times = pd.DatetimeIndex(
+    # pd.to_datetime([entry["time_step_fr"] for entry in forecast])
+    # ).tz_localize(None)
     
-    ambiguous = [True] * len(times)
+    # ambiguous = [True] * len(times)
     
-    times = times.tz_localize(
-        "Europe/Paris",
-        ambiguous=ambiguous
-    )
+    # times = times.tz_localize(
+    #     "Europe/Paris",
+    #     ambiguous=ambiguous
+    # )
     
-    # times = pd.to_datetime([
-    #     entry["time_step_fr"] for entry in forecast
-    # ]).tz_localize(None)
+    # # times = pd.to_datetime([
+    # #     entry["time_step_fr"] for entry in forecast
+    # # ]).tz_localize(None)
 
-    # # If timestamps are naive (no timezone), localize to Paris time
-    # if times.tz is None:
-    #     times = times.tz_localize("Europe/Paris")
-    # else:
-    #     times = times.tz_convert("Europe/Paris")
+    # # # If timestamps are naive (no timezone), localize to Paris time
+    # # if times.tz is None:
+    # #     times = times.tz_localize("Europe/Paris")
+    # # else:
+    # #     times = times.tz_convert("Europe/Paris")
 
-    return times
+    # return times
 
 def buildInsight():
     return ""

@@ -167,7 +167,7 @@ class GribProcessor:
                 records.append(records_class(
                     station_id     = station_id,
                     run_time       = run_time_ts,
-                    valid_time     = valid_time,
+                    valid_time     = valid_time.tz_localize("UTC"),
                     ingestion_time = ingestion_ts,
                     **{
                         var: float(time_map[valid_time][s_idx])
