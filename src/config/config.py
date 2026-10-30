@@ -47,6 +47,8 @@ class Config:
     POSTGRES_DB = os.getenv('POSTGRES_DB')
     POSTGRES_USER = os.getenv('POSTGRES_USER')
     POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
+    DB_STATEMENT_TIMEOUT_MS = 0
+    DB_POOL_MAX = 40    
 
     BRONZE_SCHEMA = 'bronze'
     SILVER_SCHEMA = 'silver'
@@ -77,3 +79,4 @@ class Config:
     # Metropolitan France bounding box (slightly padded)
     FRANCE_BOUNDS = {"min_lat": 42.4, "max_lat": 51.14,
                      "min_lon": -5.14, "max_lon": 9.63}
+

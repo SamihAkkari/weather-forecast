@@ -11,6 +11,9 @@ from datetime import date, datetime, timedelta
 from datetime import date, datetime, time, timedelta
 logger = logging.getLogger(__name__)
 
+import time
+_STATIONS_CACHE = {"ts": 0.0, "rows": None}
+
 class DatabaseGetter:
 
 
@@ -372,7 +375,16 @@ class DatabaseGetter:
 
 
     @staticmethod
-    def get_stations() -> list[SilverObservationListeStationsRecords]:
+    def get_stations():
+        """Stations almost never change, so we keep them in memory for 1 hour."""
+        if _STATIONS_CACHE["rows"] is not None and time.time() - _STATIONS_CACHE["ts"] < 3600:
+            return _STATIONS_CACHE["rows"]
+        rows = DatabaseGetter._load_stations()
+        _STATIONS_CACHE.update(ts=time.time(), rows=rows)
+        return rows
+
+    @staticmethod
+    def _load_stations() -> list[SilverObservationListeStationsRecords]:
         cols = ', '.join(SilverObservationListeStationsRecords.columns()) 
         try:
             with DatabaseConnection() as conn:
