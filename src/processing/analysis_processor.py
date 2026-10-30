@@ -8,9 +8,18 @@ Python only post-processes the rows into the frontend response shape.
 """
 
 import logging
+import numpy as np
 import math
 from datetime import datetime, timedelta
 from src.data.db import DatabaseConnection
+import math
+from sklearn.metrics import (
+    accuracy_score,
+    balanced_accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score
+)
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +104,10 @@ ORDER BY step
 
 # ── Database query ─────────────────────────────────────────────────────────────
 
+        
+def format_metric(value):
+    return round(value * 100) if not math.isnan(value) else float("nan")
+
 def _fetch_step_metrics(
     date_from: datetime,
     date_to: datetime,
@@ -132,8 +145,8 @@ def _fetch_step_metrics(
 
 def _safe(value, decimals=2):
     """Rounds a value safely, returns None if None or NaN."""
-    if value is None:
-        return None
+    # if value is None:
+    #     return None
     try:
         f = float(value)
         return round(f, decimals) if math.isfinite(f) else None
@@ -238,20 +251,41 @@ def _build_temperature(rows: list[dict]) -> dict:
         return {"degradation": {}, "mae": None, "rmse": None,
                 "bias": None, "insight": "No data available."}
 
-
+    # import pdb
+    # pdb.set_trace()
     # Weighted averages across steps
     total_n   = sum(r["n_temp_samples"] for r in rows)
     if total_n == 0:
         return {"degradation": {}, "mae": None, "rmse": None,
                 "bias": None, "insight": "No data available."}
     else:    
-        w_mae     = sum(float(r["temp_mae"])  * r["n_temp_samples"] for r in rows) / total_n
-        w_rmse    = sum(float(r["temp_rmse"]) * r["n_temp_samples"] for r in rows) / total_n
-        w_bias    = sum(float(r["temp_bias"]) * r["n_temp_samples"] for r in rows) / total_n
+        def weighted_average(rows, metric):
+            valid_rows = [
+                (float(r[metric]), float(r["n_temp_samples"]))
+                for r in rows
+                if r.get(metric) is not None
+                and r.get("n_temp_samples") is not None
+                and float(r["n_temp_samples"]) > 0
+            ]
+        
+            total_n = sum(n for _, n in valid_rows)
+        
+            if total_n == 0:
+                return None
+        
+            return sum(value * n for value, n in valid_rows) / total_n
+
+        w_mae  = weighted_average(rows, "temp_mae")
+        w_rmse = weighted_average(rows, "temp_rmse")
+        w_bias = weighted_average(rows, "temp_bias")
+        
+        # w_mae     = sum(float(r["temp_mae"])  * r["n_temp_samples"] for r in rows) / total_n
+        # w_rmse    = sum(float(r["temp_rmse"]) * r["n_temp_samples"] for r in rows) / total_n
+        # w_bias    = sum(float(r["temp_bias"]) * r["n_temp_samples"] for r in rows) / total_n
     
         degradation = {
             int(r["step"]): _safe(r["temp_mae"])
-            for r in rows
+            for r in rows if r["temp_mae"] is not None
         }
     
         mae  = _safe(w_mae)
@@ -315,16 +349,76 @@ def _build_rain(rows: list[dict]) -> dict:
                 "precision": None, "recall": None, "f1": None,
                 "insight": "No data available."}
     else:
+        # import pdb
+        # pdb.set_trace()
         tp = sum(int(r["rain_tp"]) for r in rows)
         fp = sum(int(r["rain_fp"]) for r in rows)
         fn = sum(int(r["rain_fn"]) for r in rows)
-        tn = sum(int(r["rain_tn"]) for r in rows)
+        tn = sum(int(r["rain_tn"]) for r in rows)       
+        
+        # Reconstruct actual labels
+        nb_samples = tp + tn + fp + fn
+        
+        
+        y_true = (
+            [1] * tp +
+            [0] * tn +
+            [0] * fp +
+            [1] * fn
+        )
+        
+        # Reconstruct predicted labels
+        y_pred = (
+            [1] * tp +
+            [0] * tn +
+            [1] * fp +
+            [0] * fn
+        )
 
-        prec   = round(_precision(tp, fp) * 100)
-        rec    = round(_recall(tp, fn) * 100)
-        f1     = round(_f1(prec, rec))
+
+        accuracy = format_metric(accuracy_score(y_true, y_pred))
+        if np.isnan(accuracy):
+            accuracy = None
+
+        if len(np.unique(y_true)) < 2:
+            balanced_accuracy  = None
+        else:
+            balanced_accuracy = format_metric(
+                balanced_accuracy_score(y_true, y_pred)
+            )
+        
+        prec = format_metric(
+            precision_score(y_true, y_pred, zero_division=float("nan"))
+        )
+        if np.isnan(prec):
+            prec = None
+        
+        rec = format_metric(
+            recall_score(y_true, y_pred, zero_division=float("nan"))
+        )
+        if np.isnan(rec):
+            rec = None
+        
+        
+        f1 = format_metric(
+            f1_score(y_true, y_pred, zero_division=float("nan"))
+        )
+        if np.isnan(f1):
+            f1 = None
+
+        # accuracy =  accuracy_score(y_true, y_pred) * 100
+        # balanced_accuracy = balanced_accuracy_score(y_true, y_pred) * 100
+        # prec   = round(precision_score(y_true, y_pred, zero_division=float("nan")) * 100)
+        # rec    = round(recall_score(y_true, y_pred, zero_division=float("nan")) * 100)
+        # f1     = round(f1_score(y_true, y_pred, zero_division=float("nan")) * 100)
+
+        # prec   = round(_precision(tp, fp) * 100)
+        # rec    = round(_recall(tp, fn) * 100)
+        # f1     = round(_f1(prec, rec))
         specificity = _specificity(tn, fp) * 100
-        balanced_accuracy = _balanced_accuracy(rec, specificity)
+        if np.isnan(specificity ):
+            specificity  = None
+        # balanced_accuracy = _balanced_accuracy(rec, specificity)
         # import pdb
         # pdb.set_trace()
         return {
@@ -337,6 +431,7 @@ def _build_rain(rows: list[dict]) -> dict:
             "f1":        f1,
             "specificity": specificity,
             "balanced_acc": balanced_accuracy,
+            "accuracy": accuracy,
             "insight":   _rain_insight(tp, fp, fn, f1),
         }
 

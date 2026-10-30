@@ -92,9 +92,9 @@ function AnalysisPage() {
   const windHeadline = analysisData
     ? `MAE ${analysisData.wind.mae} m/s`
     : null
-  const rainHeadline = analysisData
-    ? `F1 ${analysisData.rain.f1}%`
-    : null
+  // const rainHeadline = analysisData
+  //   ? `ACC ${analysisData.rain.accuracy}%`
+  //   : null
 
   return (
     <div className="min-h-screen bg-white">
@@ -242,8 +242,8 @@ function AnalysisPage() {
             <VariableWidget
               label="Rain detection"
               icon="🌧"
-              headline={rainHeadline}
-              accentColor="#60a5fa"
+              // headline={rainHeadline} // I commented those out since sometime F1 only is misleading 
+              // accentColor="#60a5fa"
             >
               <DetectionAnalysis data={analysisData.rain} />
             </VariableWidget>

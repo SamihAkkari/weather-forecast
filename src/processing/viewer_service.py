@@ -430,8 +430,17 @@ def _build_widgets(current, forecast: list[dict]) -> dict:
     hourly_humidity = [{"time_step_fr": entry.get("time_step_fr"), "value": entry.get("humidity_percentage")} for entry in forecast[:48]]
     # hourly_wind_dir = [{"time_step_fr": entry.get("time_step_fr"), "value": _wind_direction(entry.get("wind_direction_degree"))} for entry in forecast[:48]]
     hourly_wind_speed = [{"time_step_fr": entry.get("time_step_fr"), "value":entry.get("wind_speed_m_per_s")} for entry in forecast[:48]]
-    hourly_pressure = [{"time_step_fr": entry.get("time_step_fr"), "value":round(entry.get("mean_sea_level_pressure")/100, 1)} for entry in forecast[:48]]
+    # hourly_pressure = [{"time_step_fr": entry.get("time_step_fr"), "value":round(entry.get("mean_sea_level_pressure")/100, 1)} for entry in forecast[:48]]
     hourly_feels = [{"time_step_fr": entry.get("time_step_fr"), "value":_compute_feels_like(entry.get("temperature_celsius"), entry.get("humidity_percentage"), entry.get("wind_speed_m_per_s"))} for entry in forecast[:48]]
+
+    hourly_pressure = [
+        {"time_step_fr": e.get("time_step_fr"),
+         "value": round(e["mean_sea_level_pressure"] / 100, 1)
+                  if e.get("mean_sea_level_pressure") is not None else None}
+        for e in forecast[:48]
+    ]
+
+
     
     # import pdb
     # pdb.set_trace()

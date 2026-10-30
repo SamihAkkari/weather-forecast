@@ -17,6 +17,10 @@ from src.processing import utils
 
 from src.processing.spatial import GeoUtils
 
+import logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(name)s | %(levelname)s | %(message)s")
+logger = logging.getLogger("api")
+
 app = FastAPI(title="Weather Forecast API", version="1.0.0")
 
 app.add_middleware(
@@ -60,8 +64,11 @@ def get_viewer_page_data(lat: float, lng: float):
     ensure_in_france(lat, lng)
     try:
         return get_viewer_data(lat, lng)
+    except LookupError as e:                
+        raise HTTPException(status_code=503, detail=str(e))    
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("station-current-forecast failed")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @app.get("/pv-production")
@@ -92,7 +99,7 @@ def get_pv_production(
         forecast = DatabaseGetter.transform_data_to_list_of_dict(forecast_raw, cur)
 
         if not forecast:
-            raise HTTPException(status_code=404, detail="No forecast data available")
+            raise LookupError("No forecast data is available yet for this location. Please try again later.")
 
         # forecast = utils.unaccumulate(forecast, "global_radiation_j_m2", nearest.station_id)
 
@@ -181,5 +188,5 @@ def get_analysis(
         return result
 
     except Exception as e:
-        # logger.error(f"Analysis error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Analysis error: {e}")
+        raise HTTPException(status_code=500)

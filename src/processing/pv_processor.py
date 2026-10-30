@@ -40,39 +40,13 @@ from pvlib.solarposition import get_solarposition
 logger = logging.getLogger(__name__)
 
 
-# ── Step 1 — De-accumulation ───────────────────────────────────────────────────
-
-def deaccumulate_ghi(forecast: list[dict], previous_cumulative: float = 0.0) -> list[float]:
-    """
-    Converts cumulative GHI (J/m² since run_time) to
-    instantaneous GHI (W/m²) for each hourly timestep.
-
-    Returns a list of W/m² values aligned with the forecast list.
-    Negative values are clipped to 0 (can occur due to model noise
-    at night when cumulative value is near zero).
-    """
-    cumulative = [
-        float(entry.get("global_radiation_j_m2") or 0)
-        for entry in forecast
-    ]
-
-    ghi_wm2 = []
-    prev = previous_cumulative
-
-    for cum in cumulative:
-        instant = (cum - prev) / 3600.0
-        ghi_wm2.append(max(0.0, instant))
-        prev = cum
-
-    return ghi_wm2
-
 def convert_ghi_from_to_instant(forecast: list[dict]) -> list[float]:
     """
     Converts GHI (J/m²) to
     instantaneous GHI (W/m²) for each hourly timestep.
     """
     ghi_wm2 = [
-        float(entry.get("global_radiation_j_m2") / 3600 or 0)
+        float(entry.get("global_radiation_j_m2") / 3600)
         for entry in forecast
     ]
     return ghi_wm2

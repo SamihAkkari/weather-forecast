@@ -28,27 +28,56 @@ function ConfusionMatrix({ tp, fp, fn, tn }) {
 }
 
 function MetricBar({ label, percent }) {
-  const display = percent
+  const isMissing = percent == null || Number.isNaN(percent)
+
   const color =
-    display >= 80 ? 'bg-green-400' :
-    display >= 60 ? 'bg-yellow-400' :
+    percent >= 80 ? 'bg-green-400' :
+    percent >= 60 ? 'bg-yellow-400' :
     'bg-red-400'
 
   return (
     <div>
       <div className="flex justify-between items-center mb-1">
         <p className="text-xs text-gray-400">{label}</p>
-        <p className="text-xs font-medium text-gray-700">{display}%</p>
+        <p className="text-xs font-medium text-gray-700">
+          {isMissing ? 'N/A' : `${percent}%`}
+        </p>
       </div>
+
       <div className="w-full bg-gray-100 rounded-full h-1.5">
-        <div
-          className={`h-1.5 rounded-full ${color}`}
-          style={{ width: `${display}%` }}
-        />
+        {!isMissing && (
+          <div
+            className={`h-1.5 rounded-full ${color}`}
+            style={{ width: `${percent}%` }}
+          />
+        )}
       </div>
     </div>
   )
 }
+
+// function MetricBar({ label, percent }) {
+//   const display = percent
+//   const color =
+//     display >= 80 ? 'bg-green-400' :
+//     display >= 60 ? 'bg-yellow-400' :
+//     'bg-red-400'
+
+//   return (
+//     <div>
+//       <div className="flex justify-between items-center mb-1">
+//         <p className="text-xs text-gray-400">{label}</p>
+//         <p className="text-xs font-medium text-gray-700">{display}%</p>
+//       </div>
+//       <div className="w-full bg-gray-100 rounded-full h-1.5">
+//         <div
+//           className={`h-1.5 rounded-full ${color}`}
+//           style={{ width: `${display}%` }}
+//         />
+//       </div>
+//     </div>
+//   )
+// }
 
 function DetectionAnalysis({ data }) {
   return (
@@ -68,6 +97,7 @@ function DetectionAnalysis({ data }) {
           <MetricBar label="F1 score"  percent={data.f1}        />
           <MetricBar label="Specificity"  percent={data.specificity}        />
           <MetricBar label="Balanced accuracy"  percent={data.balanced_acc}        />
+          <MetricBar label="Accuracy"  percent={data.accuracy}        />
         </div>
       </div>
 
