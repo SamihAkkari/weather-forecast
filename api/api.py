@@ -15,6 +15,8 @@ from src.processing.pv_processor import compute_pv_production
 
 from src.processing import utils 
 
+from src.processing.spatial import GeoUtils
+
 app = FastAPI(title="Weather Forecast API", version="1.0.0")
 
 app.add_middleware(
@@ -41,12 +43,17 @@ app.add_middleware(
 #         )
 #     return data
 def ensure_in_france(lat: float, lng: float):
-    b = Config.FRANCE_BOUNDS
-    if not (b["min_lat"] <= lat <= b["max_lat"] and b["min_lon"] <= lng <= b["max_lon"]):
+    if not GeoUtils.is_inside_france(lat, lng):
         raise HTTPException(
             status_code=422,
             detail="Only metropolitan France is currently supported. Please select a location in France.",
         )
+    # b = Config.FRANCE_BOUNDS
+    # if not (b["min_lat"] <= lat <= b["max_lat"] and b["min_lon"] <= lng <= b["max_lon"]):
+    #     raise HTTPException(
+    #         status_code=422,
+    #         detail="Only metropolitan France is currently supported. Please select a location in France.",
+    #     )
 
 @app.get("/station-current-forecast")
 def get_viewer_page_data(lat: float, lng: float):

@@ -3,6 +3,47 @@ from dataclasses import dataclass
 import xarray as xr
 from src.data.models import SilverObservationListeStationsRecords
 
+import json
+from pathlib import Path
+
+from shapely.geometry import Point, shape
+from shapely.prepared import prep
+
+
+class GeoUtils:
+
+    _france_polygon = None
+
+    @classmethod
+    def _load_france_polygon(cls):
+        """Load and cache the metropolitan France boundary."""
+        if cls._france_polygon is None:
+            path = Path(__file__).parent / "france_metropole.geojson"
+
+            with path.open(encoding="utf-8") as file:
+                geojson = json.load(file)
+
+            cls._france_polygon = prep(shape(geojson))
+
+        return cls._france_polygon
+
+    @classmethod
+    def is_inside_france(cls, latitude: float, longitude: float) -> bool:
+        """
+        Check whether coordinates are inside metropolitan France.
+
+        Boundary points are considered inside.
+        """
+        if not (-90 <= latitude <= 90):
+            raise ValueError("Invalid latitude")
+
+        if not (-180 <= longitude <= 180):
+            raise ValueError("Invalid longitude")
+
+        france = cls._load_france_polygon()
+
+        return france.covers(Point(longitude, latitude))
+
 
 @dataclass
 class StationNearestGrid:
@@ -64,3 +105,4 @@ def extract_at_indices(
     lon_idxs = np.array([idx.lon_nearest_grid_idx for idx in indices])
     
     return da[:, lat_idxs, lon_idxs].T  # (n_stations, n_steps)
+

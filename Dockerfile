@@ -20,4 +20,4 @@ RUN useradd --create-home appuser && chown -R appuser /app
 USER appuser
 
 ENV PYTHONUNBUFFERED=1
-CMD ["python", "-m", "scripts.scheduler"]
+# CMD ["python", "-m", "scripts.scheduler"]
