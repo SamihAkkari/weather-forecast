@@ -112,6 +112,7 @@ function PvProductionPage({ selectedLocation }) {
     power_kw is derived from power_w for cleaner axis labels.
   */
   const chartData = pvData?.hourly.map(entry => ({
+    time: entry.time,
     hour:      formatHourFr(entry.time),
     power_kw:  parseFloat((entry.power_w / 1000).toFixed(2)),
     clipping_pct: entry.clipping_percentage,
@@ -301,10 +302,16 @@ function PvProductionPage({ selectedLocation }) {
                     </linearGradient>
                   </defs>
                   <XAxis
-                    dataKey="hour"
+                    dataKey="time"
+                    tickFormatter={value => formatHourFr(value)}
                     tick={{ fontSize: 10, fill: '#9ca3af' }}
                     tickLine={false}
                     axisLine={false}
+                    interval="preserveStartEnd"                  
+                    // dataKey="hour"
+                    // tick={{ fontSize: 10, fill: '#9ca3af' }}
+                    // tickLine={false}
+                    // axisLine={false}
                   />
                   <YAxis
                     tick={{ fontSize: 10, fill: '#9ca3af' }}
@@ -317,10 +324,18 @@ function PvProductionPage({ selectedLocation }) {
                     content={({ active, payload, label }) => {
                         if (active && payload?.length) {
                         const data = payload[0].payload
+                        const formattedDate = new Date(label).toLocaleString('fr-FR', {
+                          weekday: 'short',
+                          day: '2-digit',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          timeZone: 'Europe/Paris',
+                        })                        
 
                         return (
                             <div className="bg-white border border-gray-100 rounded-lg p-3 text-xs shadow-sm">
-                            <p className="text-gray-400 mb-2">{label}</p>
+                            <p className="text-gray-400 mb-2">{formattedDate}</p>
                             <p className="text-amber-500">
                                 AC Power: {data.power_kw} kW
                             </p>
@@ -381,10 +396,17 @@ function PvProductionPage({ selectedLocation }) {
               <ResponsiveContainer width="100%" height={160}>
                 <LineChart data={chartData}>
                   <XAxis
-                    dataKey="hour"
+                    dataKey="time"
+                    tickFormatter={value => formatHourFr(value)}
                     tick={{ fontSize: 10, fill: '#9ca3af' }}
                     tickLine={false}
                     axisLine={false}
+                    interval="preserveStartEnd"   
+
+                    // dataKey="hour"
+                    // tick={{ fontSize: 10, fill: '#9ca3af' }}
+                    // tickLine={false}
+                    // axisLine={false}
                   />
                   <YAxis
                     tick={{ fontSize: 10, fill: '#9ca3af' }}
@@ -394,6 +416,16 @@ function PvProductionPage({ selectedLocation }) {
                     width={52}
                   />
                   <Tooltip
+                    labelFormatter={value =>
+                        new Date(value).toLocaleString('fr-FR', {
+                          weekday: 'short',
+                          day: '2-digit',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          timeZone: 'Europe/Paris',
+                        })
+                      }                  
                     formatter={(v, name) => [
                       `${v} W/m²`,
                       name === 'ghi_wm2' ? 'GHI (horizontal)' : 'POA (panel surface)'

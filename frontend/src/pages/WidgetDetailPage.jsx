@@ -103,6 +103,7 @@ function WidgetDetailPage() {
     We add a formatted hour label for the X axis.
   */
   const chartData = widgetData.hourly_values.map(entry => ({
+    time: entry.time_step_fr,
     hour:  formatHourFr(entry.time_step_fr),
     value: entry.value,
   }))
@@ -148,11 +149,17 @@ function WidgetDetailPage() {
                 </linearGradient>
               </defs>
               <XAxis
-                dataKey="hour"
+                dataKey="time"
+                tickFormatter={value => formatHourFr(value)}
                 tick={{ fontSize: 10, fill: '#9ca3af' }}
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
+                // dataKey="hour"
+                // tick={{ fontSize: 10, fill: '#9ca3af' }}
+                // tickLine={false}
+                // axisLine={false}
+                // interval="preserveStartEnd"
               />
               <YAxis
                 tick={{ fontSize: 10, fill: '#9ca3af' }}
@@ -162,6 +169,18 @@ function WidgetDetailPage() {
                 tickFormatter={v => `${v.toFixed(0)}${config.unit}`}
               />
               <Tooltip
+                labelFormatter={value => {
+                const date = new Date(value)
+
+                return date.toLocaleString('fr-FR', {
+                  weekday: 'short',
+                  day: '2-digit',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  timeZone: 'Europe/Paris',
+                })
+              }}
                 formatter={v => [config.formatValue(v), config.label]}
                 contentStyle={{
                   border: '0.5px solid #f0f0f0',
