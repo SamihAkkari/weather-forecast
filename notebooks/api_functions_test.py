@@ -18,6 +18,7 @@ from src.processing import utils
 from src.processing.viewer_service import get_viewer_data
 
 from api.api import get_viewer_page_data
+from api.api import get_analysis
 
 
 lat = 48.8647
@@ -60,3 +61,6 @@ result = compute_pv_production(
 
 
 get_viewer_page_data(lat, lng)
+
+get_analysis(lat=lat, lng= lng)
+
