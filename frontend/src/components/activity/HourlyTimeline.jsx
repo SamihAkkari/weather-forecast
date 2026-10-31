@@ -1,10 +1,31 @@
 import { useState } from 'react'
 import { formatHourFr } from '../../utils/time'
 
-const BAR_COLORS = {
-  green:  '#16a34a',
-  yellow: '#facc15',
-  red:    '#ef4444',
+const BAR_COLORS = [
+  { score: 0, color: '#7f1d1d' },
+  { score: 0.25, color: '#ef4444' },
+  { score: 0.5, color: '#facc15' },
+  { score: 0.75, color: '#86efac' },
+  { score: 1, color: '#14532d' },
+]
+
+function getBarColor(score) {
+  const clampedScore = Number.isFinite(score)
+    ? Math.max(0, Math.min(1, score))
+    : 0.5
+  const upperIndex = BAR_COLORS.findIndex(stop => stop.score >= clampedScore)
+  const lower = BAR_COLORS[Math.max(0, upperIndex - 1)]
+  const upper = BAR_COLORS[upperIndex === -1 ? BAR_COLORS.length - 1 : upperIndex]
+  const ratio = upper.score === lower.score
+    ? 0
+    : (clampedScore - lower.score) / (upper.score - lower.score)
+  const lowerRgb = lower.color.match(/[A-Fa-f0-9]{2}/g).map(value => parseInt(value, 16))
+  const upperRgb = upper.color.match(/[A-Fa-f0-9]{2}/g).map(value => parseInt(value, 16))
+  const rgb = lowerRgb.map((value, index) =>
+    Math.round(value + (upperRgb[index] - value) * ratio)
+  )
+
+  return `rgb(${rgb.join(', ')})`
 }
 
 /*
@@ -25,9 +46,16 @@ function Tooltip({ parameters }) {
   const entries = Object.entries(parameters)
 
   const DOT_COLORS = {
-    green:  'bg-green-400',
-    yellow: 'bg-yellow-400',
-    red:    'bg-red-400',
+    dark_green:   'bg-green-800',
+    green:        'bg-green-600',
+    light_green:  'bg-green-400',
+    yellow_green: 'bg-lime-400',
+    yellow:       'bg-yellow-400',
+    yellow_orange:'bg-amber-400',
+    orange:       'bg-orange-500',
+    dark_orange:  'bg-orange-700',
+    red:          'bg-red-500',
+    dark_red:     'bg-red-800',
   }
 
   return (
@@ -71,7 +99,7 @@ function HourlyRow({ entry }) {
           className="h-2 rounded-full transition-all"
           style={{
             width:      `${Math.round(entry.score * 100)}%`,
-            background: BAR_COLORS[entry.status] ?? BAR_COLORS.yellow,
+            background: getBarColor(entry.score),
           }}
         />
       </div>

@@ -5,10 +5,13 @@ const STATUS_STYLES = {
 }
 
 function CurrentStatus({ current_status }) {
-  const styles = STATUS_STYLES[current_status.status] ?? STATUS_STYLES.yellow
+  const quality = current_status.score >= 0.7
+    ? 'green'
+    : current_status.score >= 0.4 ? 'yellow' : 'red'
+  const styles = STATUS_STYLES[quality]
 
   const params = Object.values(current_status.parameters ?? {})
-  const nonGreen = params.filter(p => p.status !== 'green')
+  const nonGreen = params.filter(p => p.score < 0.7)
   const displayParams = nonGreen.length > 0 ? nonGreen : params
   const reason = displayParams.map(p => p.description).join(' · ')
 
@@ -17,8 +20,8 @@ function CurrentStatus({ current_status }) {
       <div className={`w-3 h-3 rounded-full ${styles.dot} animate-pulse flex-shrink-0`} />
       <div>
         <p className={`text-sm font-medium ${styles.text} mb-0.5`}>
-          {current_status.status === 'green' ? 'Good conditions right now'
-           : current_status.status === 'yellow' ? 'Fair conditions right now'
+          {quality === 'green' ? 'Good conditions right now'
+           : quality === 'yellow' ? 'Fair conditions right now'
            : 'Poor conditions right now'}
         </p>
         <p className="text-xs text-gray-400">{reason}</p>

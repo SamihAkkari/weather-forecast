@@ -117,8 +117,8 @@ function WeatherWidgets({ widgets }) {
   }
 
   // const { humidity, feels_like, wind, sunrise, uv_index, visibility, pressure } = widgets
-  const { humidity, feels_like, wind, sunrise, pressure } = widgets
-  const sunProgress = parseSunProgress(sunrise.value, sunrise.message)
+  const { humidity, feels_like, wind, pressure } = widgets
+  // const sunProgress = parseSunProgress(sunrise.value, sunrise.message)
 
   /*
     handleWidgetClick navigates to /widget/:id and passes
@@ -164,12 +164,12 @@ function WeatherWidgets({ widgets }) {
           Sunrise widget is NOT clickable — no hourly data to show.
           No onClick passed, no ↗ arrow rendered.
         */}
-        <Widget
+        {/* <Widget
           label="Sunrise" icon="🌅"
           value={sunrise.value} unit=""
           message={sunrise.message}
           visual={<SunArc progress={sunProgress} />}
-        />
+        /> */}
 
         {/* <Widget
           label="UV index" icon="🔆"

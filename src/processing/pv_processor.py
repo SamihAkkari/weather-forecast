@@ -90,8 +90,27 @@ def build_time_index(forecast: list[dict]) -> pd.DatetimeIndex:
 
     # return times
 
-def buildInsight():
-    return ""
+# Rounded, editable assumptions used only for the comparison sentence
+HOUSEHOLD_KWH_PER_DAY = 13.0   # roughly 4,700 kWh per year for an average French household
+EV_KM_PER_KWH = 6.0            # about 16-17 kWh per 100 km, mixed driving
+
+def buildInsight(total_kwh, capacity_kw, n_hours, clipping_pct):
+    if total_kwh < 0.05:
+        return "Almost no production is expected over this period (night-time or very cloudy weather)."
+    per_kwp = total_kwh / capacity_kw
+    per_day = total_kwh / max(n_hours, 1) * 24
+    household_pct = per_day / HOUSEHOLD_KWH_PER_DAY * 100
+    km = total_kwh * EV_KM_PER_KWH
+    text = (
+        f"Over the next {n_hours} hours your {capacity_kw:g} kWp system is forecast to produce about "
+        f"{total_kwh:.1f} kWh ({per_kwp:.1f} kWh per kWp). That is on average {per_day:.1f} kWh per day, "
+        f"about {household_pct:.0f}% of the daily electricity use of an average French household, "
+        f"or roughly {km:.0f} km in an electric car."
+    )
+    if clipping_pct >= 1:
+        text += (f" About {clipping_pct}% of the potential energy is lost to inverter clipping; "
+                 "a larger inverter would capture more.")
+    return text + " This is an estimate from the AROME forecast; real output also depends on shading and soiling."
 
 
 
@@ -321,14 +340,16 @@ def compute_pv_production(
         100 - round(100 * total_energy_kwh / unclipped_energy_kwh)
         if unclipped_energy_kwh > 0 else 0
     )    
-    if clipping_percentage_energy == 0:
-        clipping_message = "✓ No clipping detected"
+    if clipping_percentage_energy < 1:
+        clipping_message = "✓ No significant clipping detected"
+    elif clipping_percentage_energy < 5:
+        clipping_message = "Minor clipping"
     else:
-        clipping_message = "⚠️ Clipping is likely"
+        clipping_message = "⚠️ Clipping: consider a larger inverter"
 
     peak_entry = max(hourly, key=lambda h: h["power_w"])
 
-    insight = buildInsight()
+    insight = buildInsight(total_energy_kwh, system_capacity_kw, len(hourly), clipping_percentage_energy)
 
     return {
         "system": {

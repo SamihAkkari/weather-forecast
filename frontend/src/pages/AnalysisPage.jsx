@@ -86,12 +86,17 @@ function AnalysisPage() {
     Headline metrics shown in each widget header
     before the user expands — gives instant value.
   */
-  const tempHeadline = analysisData
+const tempHeadline = analysisData
+  ? analysisData.temperature.mae != null
     ? `MAE ${analysisData.temperature.mae}°C`
-    : null
-  const windHeadline = analysisData
+    : "No data available"
+  : "No data available";
+
+const windHeadline = analysisData
+  ? analysisData.wind.mae != null
     ? `MAE ${analysisData.wind.mae} m/s`
-    : null
+    : "No data available"
+  : "No data available";
   // const rainHeadline = analysisData
   //   ? `ACC ${analysisData.rain.accuracy}%`
   //   : null

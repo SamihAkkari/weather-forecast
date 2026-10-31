@@ -222,21 +222,39 @@ def _wind_insight(mae, bias):
 def _rain_insight(tp, fp, fn, f1):
     total_actual = tp + fn
     if total_actual == 0:
-        return "No rain events observed in this period."
-    if f1 >= 80:
-        return (
-            f"Rain detection is strong — the model correctly identified "
-            f"{tp} out of {total_actual} rainy hours with only {fp} false alarms."
-        )
-    elif f1 >= 55:
-        return (
-            f"Rain detection is moderate — {tp} of {total_actual} rainy hours "
-            f"caught correctly, but {fp} false alarms and {fn} misses."
-        )
+        return "No rain was observed in this period, so rain detection cannot be assessed."
+    hit_rate = round(100 * tp / total_actual)
+    verdict = "strong" if f1 >= 80 else "moderate" if f1 >= 55 else "weak"
+    if fp > 2 * fn:
+        issue = f"The main weakness is false alarms: rain forecast but not observed ({fp} cases)."
+    elif fn > 2 * fp:
+        issue = f"The main weakness is missed rain: observed but not forecast ({fn} cases)."
+    else:
+        issue = f"False alarms: {fp}, missed rain: {fn}."
     return (
-        f"Rain detection is poor — the model missed {fn} of {total_actual} "
-        f"rainy hours and produced {fp} false alarms."
+        f"Rain detection is {verdict}: the model caught {hit_rate}% of observed rainy hours "
+        f"({tp} of {total_actual}). {issue} Rain means at least 0.1 mm in the hour; each station, "
+        "hour and forecast run counts as one sample."
     )
+
+# def _rain_insight(tp, fp, fn, f1):
+#     total_actual = tp + fn
+#     if total_actual == 0:
+#         return "No rain events observed in this period."
+#     if f1 >= 80:
+#         return (
+#             f"Rain detection is strong — the model correctly identified "
+#             f"{tp} out of {total_actual} rainy hours with only {fp} false alarms."
+#         )
+#     elif f1 >= 55:
+#         return (
+#             f"Rain detection is moderate — {tp} of {total_actual} rainy hours "
+#             f"caught correctly, but {fp} false alarms and {fn} misses."
+#         )
+#     return (
+#         f"Rain detection is poor — the model missed {fn} of {total_actual} "
+#         f"rainy hours and produced {fp} false alarms."
+#     )
 
 
 # ── Response builders ──────────────────────────────────────────────────────────

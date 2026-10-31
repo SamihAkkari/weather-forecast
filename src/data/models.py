@@ -173,7 +173,7 @@ class AllSP1ForecastAromeRecords(BaseRecord):
     ssrd: float  # Surface short-wave (solar) radiation downwards (J/m²)
     tp: float  # Total precipitation (mm). This is accumulated not instant for the timestep
     tgrp: float  # Graupel (snow pellets) precipitation (kg/m2 equiv to mm). Accumulated from the first timestep
-    tsnowp: float  # Total snow precipitation (kg/m2 equivelant to mm) accumulated from the first timestep
+    tsnowp: float  # b 
 
 @dataclass
 class AllSP2ForecastAromeRecords(BaseRecord):

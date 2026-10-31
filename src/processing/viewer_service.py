@@ -23,112 +23,35 @@ It knows about:
 
 """
 
-# !!! These thresholds need to be better calibrated !!!
-RULES = {
-    "cycling": {
-        "temperature": [
-            (0, 0.1, "red", "Freezing: risk of icy roads"),
-            (5, 0.4, "yellow", "Very cold: dress in layers"),
-            (22, 0.9, "green", "Comfortable cycling temperature"),
-            (25, 0.5, "yellow", "Warm: stay hydrated"),
-            (float("inf"), 0.1, "red", "Too hot: increased risk of overheating"),
-        ],
-
-        # Wind speed in km/h
-        "wind": [
-            (4.16, 0.9, "green", "Light wind: good cycling conditions"),
-            (8.3, 0.4, "yellow", "Moderate wind: increased effort and crosswind exposure"),
-            (float("inf"), 0.1, "red", "Strong wind: difficult handling, especially in gusts"),
-        ],
-
-        # Rainfall intensity in mm/h
-        "rain": [
-            (0.05, 0.9, "green", "Dry conditions"),
-            (0.2, 0.8, "green", "Dry conditions or negligible rainfall"),
-            (2.5, 0.4, "yellow", "Rain: reduced grip and longer braking distances"),
-            (float("inf"), 0.1, "red", "Heavy rain: poor visibility and hazardous road conditions"),
-        ],
-
-        # Snowfall precipitation in mm/h, expressed as water equivalent
-        "snow": [
-            (0.1, 0.9, "green", "No significant snowfall"),
-            (0.5, 0.2, "red", "Light snow: slippery surfaces"),
-            (float("inf"), 0.1, "red", "Snowfall: increased risk of poor visibility and icy roads"),
-        ],
-    },
-
-    "fishing": {
-        "temperature": [
-            (0, 0.1, "red", "Freezing: cold exposure and possible icy access"),
-            (8, 0.4, "yellow", "Cold: dress warmly and prepare for prolonged exposure"),
-            (24, 0.9, "green", "Comfortable air temperature for a fishing session"),
-            (30, 0.5, "yellow", "Warm: bring water, shade, and sun protection"),
-            (float("inf"), 0.1, "red", "Extreme heat: increased risk of heat stress"),
-        ],
-
-        # Wind speed in km/h
-        "wind": [
-            (2.7, 0.7, "green", "Light wind: comfortable casting conditions"),
-            (6.1, 0.9, "green", "Moderate wind: surface chop may favor feeding activity"),
-            (9.7, 0.4, "yellow", "Strong wind: difficult casting and reduced control"),
-            (float("inf"), 0.1, "red", "Very strong wind: potentially dangerous fishing conditions"),
-        ],
-
-        # Precipitation intensity in mm/h
-        "rain": [
-            (0.1, 0.7, "green", "Dry conditions or negligible rainfall"),
-            (1.0, 0.9, "green", "Light rain: potentially favorable low-light conditions"),
-            (3.0, 0.5, "yellow", "Moderate rain: reduced comfort and visibility"),
-            (float("inf"), 0.1, "red", "Heavy rain: poor visibility and potentially hazardous conditions"),
-        ],
-    },
-
-    "picnic": {
-        # Currenlty we use the air temeptaure and not the apparent one
-        "temperature": [
-            (10, 0.1, "red", "Too cold: uncomfortable for an outdoor picnic"),
-            (14, 0.4, "yellow", "Cool: warm clothing and blankets recommended"),
-            (18, 0.7, "green", "Mild: generally pleasant picnic conditions"),
-            (24, 0.9, "green", "Ideal temperature: comfortable outdoor conditions"),
-            (29, 0.5, "yellow", "Warm: seek shade and keep food properly chilled"),
-            (34, 0.2, "red", "Very hot: risk of heat discomfort and food spoilage"),
-            (float("inf"), 0.1, "red", "Extreme heat: outdoor picnic not recommended"),
-        ],
-
-        # Wind speed in km/h
-        "wind": [
-            (3.3, 0.9, "green", "Light wind: comfortable conditions for a picnic"),
-            (4.1, 0.7, "green", "Gentle breeze: generally pleasant outdoors"),
-            (7, 0.4, "yellow", "Strong breeze: napkins and lightweight items may blow away"),
-            (8.3, 0.2, "red", "Very windy: difficult to keep food and picnic items in place"),
-            (float("inf"), 0.1, "red", "Dangerous wind: outdoor picnic not recommended"),
-        ],
-
-        # Wind gust speed in km/h
-        "wind_gust": [
-            (7, 0.9, "green", "Light gusts: picnic items should remain manageable"),
-            (11, 0.4, "yellow", "Strong gusts: secure belongings and lightweight equipment"),
-            (float("inf"), 0.1, "red", "Dangerous gusts: outdoor picnic not recommended"),
-        ],
-
-        # Precipitation intensity in mm/h
-        "rain": [
-            (0.01, 0.9, "green", "Dry conditions: ideal for keeping food and belongings dry"),
-            (0.1, 0.7, "green", "Negligible precipitation: generally suitable conditions"),
-            (0.2, 0.5, "yellow", "Light drizzle: bring shelter and protect food"),
-            (0.5, 0.3, "yellow", "Persistent drizzle: reduced comfort and damp belongings"),
-            (float("inf"), 0.1, "red", "Heavy rain: picnic outdoors not recommended"),
-        ],
-
-        # Total cloud cover as a fraction from 0 to 1
-        "cloud_cover": [
-            (20, 0.5, "yellow", "Mostly clear: limited natural shade on sunny days"),
-            (60, 0.9, "green", "Partial cloud cover: pleasant balance of light and shade"),
-            (80, 0.7, "green", "Mostly cloudy: comfortable shade, though conditions may feel cooler"),
-            (100, 0.5, "yellow", "Overcast: check temperature and the likelihood of rain"),
-        ],
-    },
+VARIABLE_DESCRIPTIONS = {
+    "humidity": (
+        "Relative humidity indicates the percentage of water vapor in the air. A relative humidity between 40 and 60 percent is"
+        "usaully considered comfortable."
+    ),
+    "feels_like": (
+        "The apparent temperature estimates how warm or cold the air feels to a person once humidity and wind "
+        "are taken into account: humid air makes warm weather feel hotter, while wind makes it feel cooler. "
+        "It is computed with the Steadman formula (used by the Australian Bureau of Meteorology) for a person "
+        "in the shade, so direct sunshine, which feels warmer, is not included. It is an estimate and may "
+        "differ from the 'ressentie' values published by other services."
+    ),
+    "wind": (
+        "Mean wind speed over the hour at 10 m above ground, in metres per second (1 m/s = 3.6 km/h). The "
+        "direction is where the wind blows from. Gusts, the brief peaks within the hour, can be much stronger than this "
+        "mean value."
+    ),
+    "pressure": (
+        "Atmospheric pressure converted to mean sea level, in hectopascals (hPa), so that stations at "
+        "different altitudes can be compared. The average is around 1013 hPa; below about 1009 hPa is "
+        "usually considered low and above about 1023 hPa high."
+    ),
+    "sunrise": (
+        ""
+    ),
 }
+
+_DIRECTION_WORDS = {"N": "north", "NE": "north-east", "E": "east", "SE": "south-east",
+                    "S": "south", "SW": "south-west", "W": "west", "NW": "north-west"}
 
 
 def get_viewer_data(lat: float, lng: float) -> dict:
@@ -454,14 +377,14 @@ def _build_widgets(current, forecast: list[dict]) -> dict:
             "value":   round(humidity, 1) if humidity is not None else None,
             "unit":    "%",
             "message": _humidity_message(humidity),
-            "variable_description": "blablablab",
+            "variable_description": VARIABLE_DESCRIPTIONS["humidity"],
             "hourly_values": hourly_humidity 
         },
         "feels_like": {
             "value":   feels,
             "unit":    "°C",
             "message": _feels_like_message(temp, feels),
-            "variable_description": "blablablab",
+            "variable_description": VARIABLE_DESCRIPTIONS["feels_like"],
             "hourly_values": hourly_feels
         },
         "wind": {
@@ -469,7 +392,7 @@ def _build_widgets(current, forecast: list[dict]) -> dict:
             "unit":      "m/s",
             "direction": _wind_direction(wind_dir_degree),
             "message":   _wind_message(wind),
-            "variable_description": "blablablab",
+            "variable_description":  VARIABLE_DESCRIPTIONS["wind"],
             "hourly_values": hourly_wind_speed 
         },
         "sunrise": {
@@ -493,91 +416,10 @@ def _build_widgets(current, forecast: list[dict]) -> dict:
                        else None,
             "unit":    "hPa",
             "message": "k",
-            "variable_description": "blablablab",
+            "variable_description": VARIABLE_DESCRIPTIONS["pressure"],
             "hourly_values": hourly_pressure
         },
     }
-
-def evaluate(value, rules):
-    for limit, score, status, description in rules:
-        if value <= limit:
-            return {
-                "score": score,
-                "status": status,
-                "description": description,
-            }
-
-def recommend(activity, conditions, time):
-    # import pdb
-    # pdb.set_trace()
-    
-    statuses = []
-    scores = []
-    results = {}
-    for name, rules in RULES[activity].items():
-        if conditions.get(name) is not None and rules:
-            # print(name)
-            # print(activity)
-            # print(conditions[name])
-            # print(rules)
-            # print(evaluate(conditions[name], rules))
-            sub_dict = evaluate(conditions[name], rules)
-            results[name]= sub_dict 
-            statuses.append(sub_dict["status"])
-            scores.append(sub_dict["score"])
-
-    if "red" in statuses:
-        status = "red"
-    elif "yellow" in statuses:
-        status = "yellow"
-    else:
-        status = "green"
-
-    score = min(scores)
-
-    return {
-        "time": time,
-        "status": status,
-        "score": score,
-        "parameters": results,
-    }
-
-
-def get_best_windows(hourly_data):
-    best_windows = []
-    current_window = []
-
-           
-    
-    def save_window(window):
-        if len(window) < 2:
-            return
-
-        best_windows.append({
-            "from": window[0]["time"],
-            "to": window[-1]["time"],
-            "reason": "Calm wind · Dry · Mild temperature", #TODO: automate this
-        })
-
-    for entry in hourly_data:
-        if entry["status"] == "green" or entry["status"]=="yellow":
-            current_window.append(entry)
-        else:
-            save_window(current_window)
-            current_window = []
-
-    # Handle a green window that extends to the last entry
-    save_window(current_window)
-    
-    # Sort by duration, longest first
-    best_windows.sort(
-        key=lambda w: (
-            datetime.fromisoformat(w["to"])
-            - datetime.fromisoformat(w["from"])
-        ).total_seconds(),
-        reverse=True,
-    )
-    return best_windows[:2]
 
 def _build_lifestyle(current: dict, forecast: list[dict]) -> list:
     """
@@ -591,70 +433,13 @@ def _build_lifestyle(current: dict, forecast: list[dict]) -> list:
         utils._build_activity(current, forecast, "hiking"),
         utils._build_activity(current, forecast, "picnic"),
         utils._build_activity(current, forecast, "fishing"),
-        utils._build_activity(current, forecast, "photography"),
+        # utils._build_activity(current, forecast, "photography"),
         utils._build_activity(current, forecast, "stargazing"),
         utils._build_activity(current, forecast, "gardening"),
         utils._build_activity(current, forecast, "clothing"),
         utils._build_activity(current, forecast, "driving"),
         utils._build_activity(current, forecast, "dogwalking"),
     ]
-
-# def _build_lifestyle(current, forecast: list[dict]) -> dict:
-#     """
-#     Builds the lifestyle widget data.
-#     Each activity is evaluated based on current current and forecast.
-#     Returns the same shape as mockLifestyle on the frontend.
-#     """
-#     temp    = current.get("temperature_celsius") if current and current != 0 else None
-#     wind    = current.get("wind_speed_m_per_s")  if current and current != 0 else None
-#     wind_gust    = current.get("wind_gust_m_per_s")  if current and current != 0 else None
-#     precip  = current.get("precipitation_mm")    if current and current != 0 else None
-#     snow_precip = current.get("snow_precipitation_mm")    if current and current != 0 else None
-#     humidity = current.get("humidity_percentage") if current and current != 0 else None
-#     cloud_cover = current.get("total_cloud_cover") if current and current != 0 else None
-#     time = current.get("time_step_fr") if current and current != 0 else None
-    
-#     cycling_current_recomm = recommend("cycling", {"temperature": temp, "wind": wind, "rain": precip, "snow": snow_precip}, time)
-#     cycling_hourly_recomm = [recommend("cycling", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm"), "snow": i.get("snow_precipitation_mm")}, i.get("time_step_fr")) for i in forecast[1:24]]
-#     cycling_best_window = get_best_windows(cycling_hourly_recomm)
-
-#     fishing_current_recomm = recommend("fishing", {"temperature": temp, "wind": wind, "rain": precip}, time)
-#     fishing_hourly_recomm = [recommend("fishing", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm")}, i.get("time_step_fr")) for i in forecast[1:24]]
-#     fishing_best_window = get_best_windows(fishing_hourly_recomm)
-
-#     picnic_current_recomm = recommend("picnic", {"temperature": temp, "wind": wind, "rain": precip, "wind_gust": wind_gust, "cloud_cover": cloud_cover}, time)
-#     picnic_hourly_recomm = [recommend("picnic", {"temperature": i.get("temperature_celsius"), "wind": i.get("wind_speed_m_per_s"), "rain": i.get("precipitation_mm"), "wind_gust": i.get("wind_gust_m_per_s"), "cloud_cover": i.get("total_cloud_cover")}, i.get("time_step_fr")) for i in forecast[1:24]]
-#     picnic_best_window = get_best_windows(picnic_hourly_recomm)
-
-#     return [
-#             {
-#                 "id":      "cycling",
-#                 "icon":    "🚴",
-#                 "label":   "Cycling",
-#                 "status": cycling_current_recomm ["status"],
-#                 "current_status": cycling_current_recomm,
-#                 "hourly": cycling_hourly_recomm,
-#                 "best_window": cycling_best_window 
-#             },
-#             {
-#                 "id":      "fishing",
-#                 "icon":    "🎣",
-#                 "label":   "Fishing",
-#                 "status": fishing_current_recomm ["status"],
-#                 "current_status": fishing_current_recomm,
-#                 "hourly": fishing_hourly_recomm,
-#                 "best_window": fishing_best_window 
-#             },
-#             {
-#                 "id":      "picnic",
-#                 "icon":    "🧺",
-#                 "label":   "Picnic",
-#                 "status": picnic_current_recomm ["status"],
-#                 "current_status": picnic_current_recomm,
-#                 "hourly": picnic_hourly_recomm,
-#                 "best_window": picnic_best_window 
-#             }
-#         ]
 
 # ── Insight message helpers ────────────────────────────────────────────────────
 # Each helper returns a short human-readable sentence based on the value.

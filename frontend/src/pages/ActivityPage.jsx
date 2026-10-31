@@ -54,6 +54,11 @@ function ActivityPage() {
         )}
 
       </div>
+    <p className="text-xs text-gray-300 mt-6">
+      Advice is indicative and based on forecasts. Always check official Météo-France warnings
+      (vigilance) before outdoor activities.
+    </p>
+    
     </div>
   )
 }
