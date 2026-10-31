@@ -586,17 +586,17 @@ def _build_lifestyle(current: dict, forecast: list[dict]) -> list:
     best window computation.
     """
     return [
-        utils._build_cycling(current, forecast),
-        utils._build_running(current, forecast),
-        utils._build_hiking(current, forecast),
-        utils._build_picnic(current, forecast),
-        utils._build_fishing(current, forecast),
-        utils._build_photography(current, forecast),
-        utils._build_stargazing(current, forecast),
-        utils._build_gardening(current, forecast),
-        utils._build_clothing(current, forecast),
-        utils._build_driving(current, forecast),
-        utils._build_dog_walking(current, forecast),
+        utils._build_activity(current, forecast, "cycling"),
+        utils._build_activity(current, forecast, "running"),
+        utils._build_activity(current, forecast, "hiking"),
+        utils._build_activity(current, forecast, "picnic"),
+        utils._build_activity(current, forecast, "fishing"),
+        utils._build_activity(current, forecast, "photography"),
+        utils._build_activity(current, forecast, "stargazing"),
+        utils._build_activity(current, forecast, "gardening"),
+        utils._build_activity(current, forecast, "clothing"),
+        utils._build_activity(current, forecast, "driving"),
+        utils._build_activity(current, forecast, "dogwalking"),
     ]
 
 # def _build_lifestyle(current, forecast: list[dict]) -> dict:

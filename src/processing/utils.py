@@ -1,44 +1,19 @@
 from src.data.getter import DatabaseGetter
+import logging
 
-# def unaccumulate(forecast, variable_name, station_id):
-#     """
-#     The objective of this function is to return the list of dicitonary of forecast with instant values and not cumulative ones.
-#     It is dedicated only for the variables that are recorded cumulatively in the database
-#     This is temporary solution; in teh future we will direclty convert cumulative to intant in silver layers
-#     """
-    
-#     # Get the run_time of this forecast so we can find the previous entry
-#     # run_time comes from the first forecast entry
-#     run_time = forecast[0].get("run_time")
+from requests.exceptions import (
+    ChunkedEncodingError,
+    ConnectionError,
+    Timeout,
+    HTTPError,
+)
 
-#     # Fetch the cumulative radiation value just before our slice starts
-#     # so the first entry in our slice is correctly de-accumulated
-#     previous = DatabaseGetter.get_previous_cumulative(
-#         station_id=station_id,
-#         run_time=run_time,
-#         current_time=forecast[0].get("time_step_fr"),
-#         variable_name = variable_name
-#     )
-
-#     cumulative = [
-#         float(entry.get(variable_name) or 0)
-#         for entry in forecast
-#     ]
-
-#     unaccum = []
-#     prev = previous
-
-#     for cum in cumulative:
-#         instant = (cum - prev)
-#         unaccum.append(max(0.0, instant))
-#         prev = cum    
-
-#     for entry, value in zip (forecast, unaccum):
-#         entry[variable_name] = value
-#     return forecast
-
+logger = logging.getLogger(__name__)
 
 # ── Activity helpers ───────────────────────────────────────────────────────────
+
+def _activity_representative_score(scores: list[float]) -> float:
+    return min(scores)
 
 def _activity_status(scores: list[float]) -> str:
     """
@@ -47,15 +22,19 @@ def _activity_status(scores: list[float]) -> str:
     as strong as its weakest link. This matches how real conditions work:
     perfect temperature doesn't help if it's pouring rain.
     """
-    worst = min(scores)
-    if worst >= 0.7:  return "green"
-    if worst >= 0.4:  return "yellow"
-    return "red"
+    if isinstance(scores, list):
+        representative_score = _activity_representative_score(scores)
+    elif isinstance(scores, float):
+        representative_score  = scores
+    else:
+        logger.error("To get the activity status, the score passed need to be either a list of floats or a float")
+        raise
+    return _status(representative_score)
 
 def _param(score: float, status: str, description: str) -> dict:
     return {"score": score, "status": status, "description": description}
 
-def _score_and_status(score: float) -> str:
+def _status(score: float) -> str:
     if score >= 0.7: return "green"
     if score >= 0.4: return "yellow"
     return "red"
@@ -575,9 +554,7 @@ def _score_wind_dogwalk(w):
 
     return score, msg
 
-
 # ── Summary message builder ────────────────────────────────────────────────────
-
 def _summary_message(params: dict) -> str:
     """
     Builds the one-line summary shown in the LifestyleWidget card.
@@ -592,506 +569,177 @@ def _summary_message(params: dict) -> str:
     return values[0]["description"] if values else ""
 
 
-# ── Activity builders ──────────────────────────────────────────────────────────
-
-def _build_cycling(current: dict, forecast: list[dict]) -> dict:
-    t = round(current.get("temperature_celsius"))
-    w = round(current.get("wind_speed_m_per_s"))
-    g = round(current.get("wind_gust_m_per_s"))
-    p = current.get("precipitation_mm")
-    s = current.get("snow_precipitation_mm")
-
-    ts, td = _score_temp_cycling(t)
-    ws, wd = _score_wind_cycling(w, g)
-    rs, rd = _score_rain_cycling(p)
-    ss, sd = _score_snow_cycling(s)
-
-    params = {
-        "temperature": _param(ts, _score_and_status(ts), td),
-        "wind":        _param(ws, _score_and_status(ws), wd),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-        "snow":        _param(ss, _score_and_status(ss), sd),
+# ── Activities configurations ──────────────────────────────────────────────────────────
+ACTIVITIES_CFG = {
+    "cycling":{
+        "id": "cycling",
+        "icon": "🚴",
+        "label": "Cycling",
+        "parameters":[
+            {"name": "temperature", "scorer_function": _score_temp_cycling, "scorer_function_inputs": ["temperature_celsius"]},
+            {"name": "wind", "scorer_function": _score_wind_cycling, "scorer_function_inputs": ["wind_speed_m_per_s", "wind_gust_m_per_s"]},
+            {"name": "rain", "scorer_function": _score_rain_cycling, "scorer_function_inputs": ["precipitation_mm"]},
+            {"name": "snow", "scorer_function": _score_snow_cycling, "scorer_function_inputs": ["snow_precipitation_mm"]}
+            ]
+        },
+    "running":{
+        "id": "running",
+        "icon": "🏃",
+        "label": "Running",
+        "parameters":[
+            {"name": "temperature", "scorer_function": _score_temp_running, "scorer_function_inputs": ["temperature_celsius"]},
+            {"name": "wind", "scorer_function": _score_wind_running, "scorer_function_inputs": ["wind_speed_m_per_s"]},
+            {"name": "rain", "scorer_function": _score_rain_running, "scorer_function_inputs": ["precipitation_mm"]},
+            ]
+        },
+    "hiking":{
+        "id": "hiking",
+        "icon": "🥾",
+        "label": "Hiking",
+        "parameters":[
+            {"name": "temperature", "scorer_function": _score_temp_hiking, "scorer_function_inputs": ["temperature_celsius"]},
+            {"name": "wind", "scorer_function": _score_wind_hiking, "scorer_function_inputs": ["wind_speed_m_per_s", "wind_gust_m_per_s"]},
+            {"name": "rain", "scorer_function": _score_rain_hiking, "scorer_function_inputs": ["precipitation_mm"]},
+            {"name": "snow", "scorer_function": _score_snow_hiking, "scorer_function_inputs": ["snow_precipitation_mm"]}
+            ]
+        },
+    "picnic":{
+        "id": "picnic",
+        "icon": "🧺",
+        "label": "Picnic",
+        "parameters":[
+            {"name": "temperature", "scorer_function": _score_temp_picnic, "scorer_function_inputs": ["temperature_celsius"]},
+            {"name": "wind", "scorer_function": _score_wind_picnic, "scorer_function_inputs": ["wind_speed_m_per_s"]},
+            {"name": "rain", "scorer_function": _score_rain_picnic, "scorer_function_inputs": ["precipitation_mm"]},
+            ]
+        },
+    "fishing":{
+        "id": "fishing",
+        "icon": "🎣",
+        "label": "Fishing",
+        "parameters":[
+            {"name": "wind", "scorer_function": _score_wind_fishing, "scorer_function_inputs": ["wind_speed_m_per_s"]},
+            {"name": "rain", "scorer_function": _score_rain_fishing, "scorer_function_inputs": ["precipitation_mm"]},
+            ]
+        },
+    "photography":{
+        "id": "photography",
+        "icon": "📷",
+        "label": "Photography",
+        "parameters":[
+            {"name": "cloud_cover", "scorer_function": _score_cloud_photography, "scorer_function_inputs": ["total_cloud_cover"]},
+            {"name": "rain", "scorer_function": _score_rain_photography, "scorer_function_inputs": ["precipitation_mm"]},
+            ]
+        },
+    "stargazing":{
+        "id": "stargazing",
+        "icon": "📷",
+        "label": "Stargazing",
+        "parameters":[
+            {"name": "cloud_cover", "scorer_function": _score_cloud_stargazing, "scorer_function_inputs": ["total_cloud_cover"]},
+            {"name": "humidity", "scorer_function": _score_humidity_stargazing, "scorer_function_inputs": ["humidity_percentage"]},
+            {"name": "rain", "scorer_function": _score_rain_stargazing, "scorer_function_inputs": ["precipitation_mm"]},
+            ]
+        },
+    "gardening":{
+        "id": "gardening",
+        "icon": "🌱",
+        "label": "Gardening",
+        "parameters":[
+            {"name": "temperature", "scorer_function": _score_temp_gardening, "scorer_function_inputs": ["temperature_celsius"]},
+            {"name": "rain", "scorer_function": _score_rain_gardening, "scorer_function_inputs": ["precipitation_mm"]},
+            ]
+        },
+    "clothing":{
+        "id": "clothing",
+        "icon": "🧥",
+        "label": "Clothing",
+        "parameters":[
+            {"name": "temperature", "scorer_function": _score_temp_clothing, "scorer_function_inputs": ["temperature_celsius"]},
+            {"name": "wind", "scorer_function": _score_wind_clothing, "scorer_function_inputs": ["wind_speed_m_per_s"]},
+            {"name": "rain", "scorer_function": _score_rain_clothing, "scorer_function_inputs": ["precipitation_mm"]},
+            ]
+        },
+    "driving":{
+        "id": "driving",
+        "icon": "🚗",
+        "label": "Driving",
+        "parameters":[
+            {"name": "snow", "scorer_function": _score_snow_driving, "scorer_function_inputs": ["snow_precipitation_mm"]},
+            {"name": "wind", "scorer_function": _score_wind_driving, "scorer_function_inputs": ["wind_gust_m_per_s"]},
+            {"name": "rain", "scorer_function": _score_rain_driving, "scorer_function_inputs": ["precipitation_mm"]},
+            ]
+        },
+    "dogwalking":{
+        "id": "dogwalking",
+        "icon": "🐕",
+        "label": "Dogwalking",
+        "parameters":[
+            {"name": "temperature", "scorer_function": _score_temp_dogwalk, "scorer_function_inputs": ["temperature_celsius"]},
+            {"name": "wind", "scorer_function": _score_wind_dogwalk, "scorer_function_inputs": ["wind_speed_m_per_s"]},
+            {"name": "rain", "scorer_function": _score_rain_dogwalk, "scorer_function_inputs": ["precipitation_mm"]},
+            ]
+        },
     }
-    overall = _activity_status([ts, ws, rs, ss])
 
+def _score_hour(entry: dict, activity_config: dict) -> tuple:    
+    activity_parameters_list = activity_config["parameters"] # list of dictionary
+    params = {}
+    tmp_list_os_scores = []
+    for parameter in activity_parameters_list:
+        parameter_name = parameter["name"]
+        parameter_scorer_function = parameter["scorer_function"]
+        parameter_scorer_function_inputs = parameter["scorer_function_inputs"]
+        
+        inputs = [entry.get(inpt) for inpt in parameter_scorer_function_inputs]
+        
+        score_value, message = parameter_scorer_function(*inputs)
+        status = _status(score_value)
+        
+        params[parameter_name] = _param(score_value, status, message)
+        tmp_list_os_scores.append(score_value)
+    
+    activity_score = _activity_representative_score(tmp_list_os_scores)
+    activity_status = _activity_status(activity_score)
+
+    return activity_score, activity_status, params
+
+
+def _build_activity(current: dict, forecast: list[dict], activity: str) -> dict:
+    # import pdb
+    # pdb.set_trace()
+    activity_config = ACTIVITIES_CFG.get(activity, None)
+    if activity_config is None:
+        logger.error("The requested activity does not exist; check typos")
+        
+    idd = activity_config["id"]
+    icon = activity_config["icon"]
+    label = activity_config["label"]
+    score, status, params = _score_hour(current, activity_config)
     return {
-        "id": "cycling", "icon": "🚴", "label": "Cycling",
-        "status": overall,
+        "id": idd, "icon": icon, "label": label,
+        "status": status,
         "message": _summary_message(params),
         "current_status": {
             "time": str(current.get("time_step_fr", "")),
-            "status": overall, "score": min(ts, ws, rs, ss),
+            "status": status, "score": score,
             "parameters": params
         },
-        "best_window": _find_best_windows(forecast, _score_cycling_hour),
-        "hourly": _build_hourly_scores(forecast, _score_cycling_hour),
+        "best_window": _find_best_windows(forecast, _score_hour, activity_config),
+        "hourly": _build_hourly_scores(forecast, _score_hour, activity_config),
     }
-
-def _build_running(current: dict, forecast: list[dict]) -> dict:
-    t = current.get("temperature_celsius")
-    w = current.get("wind_speed_m_per_s")
-    p = current.get("precipitation_mm")
-
-    ts, td = _score_temp_running(t)
-    ws, wd = _score_wind_running(w)
-    rs, rd = _score_rain_running(p)
-
-    params = {
-        "temperature": _param(ts, _score_and_status(ts), td),
-        "wind":        _param(ws, _score_and_status(ws), wd),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-    }
-    overall = _activity_status([ts, ws, rs])
-
-    return {
-        "id": "running", "icon": "🏃", "label": "Running",
-        "status": overall,
-        "message": _summary_message(params),
-        "current_status": {
-            "time": str(current.get("time_step_fr", "")),
-            "status": overall, "score": min(ts, ws, rs),
-            "parameters": params
-        },
-        "best_window": _find_best_windows(forecast, _score_running_hour),
-        "hourly": _build_hourly_scores(forecast, _score_running_hour),
-    }
-
-def _build_hiking(current: dict, forecast: list[dict]) -> dict:
-    t = current.get("temperature_celsius")
-    w = current.get("wind_speed_m_per_s")
-    g = current.get("wind_gust_m_per_s")
-    p = current.get("precipitation_mm")
-    s = current.get("snow_precipitation_mm")
-
-    ts, td = _score_temp_hiking(t)
-    ws, wd = _score_wind_hiking(w, g)
-    rs, rd = _score_rain_hiking(p)
-    ss, sd = _score_snow_hiking(s)
-
-    params = {
-        "temperature": _param(ts, _score_and_status(ts), td),
-        "wind":        _param(ws, _score_and_status(ws), wd),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-        "snow":        _param(ss, _score_and_status(ss), sd),
-    }
-    overall = _activity_status([ts, ws, rs, ss])
-
-    return {
-        "id": "hiking", "icon": "🥾", "label": "Hiking",
-        "status": overall,
-        "message": _summary_message(params),
-        "current_status": {
-            "time": str(current.get("time_step_fr", "")),
-            "status": overall, "score": min(ts, ws, rs, ss),
-            "parameters": params
-        },
-        "best_window": _find_best_windows(forecast, _score_hiking_hour),
-        "hourly": _build_hourly_scores(forecast, _score_hiking_hour),
-    }
-
-def _build_picnic(current: dict, forecast: list[dict]) -> dict:
-    t = current.get("temperature_celsius")
-    w = current.get("wind_speed_m_per_s")
-    p = current.get("precipitation_mm")
-
-    ts, td = _score_temp_picnic(t)
-    ws, wd = _score_wind_picnic(w)
-    rs, rd = _score_rain_picnic(p)
-
-    params = {
-        "temperature": _param(ts, _score_and_status(ts), td),
-        "wind":        _param(ws, _score_and_status(ws), wd),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-    }
-    overall = _activity_status([ts, ws, rs])
-
-    return {
-        "id": "picnic", "icon": "🧺", "label": "Picnic",
-        "status": overall,
-        "message": _summary_message(params),
-        "current_status": {
-            "time": str(current.get("time_step_fr", "")),
-            "status": overall, "score": min(ts, ws, rs),
-            "parameters": params
-        },
-        "best_window": _find_best_windows(forecast, _score_picnic_hour),
-        "hourly": _build_hourly_scores(forecast, _score_picnic_hour),
-    }
-
-def _build_fishing(current: dict, forecast: list[dict]) -> dict:
-    w = current.get("wind_speed_m_per_s")
-    p = current.get("precipitation_mm")
-
-    ws, wd = _score_wind_fishing(w)
-    rs, rd = _score_rain_fishing(p)
-
-    params = {
-        "wind": _param(ws, _score_and_status(ws), wd),
-        "rain": _param(rs, _score_and_status(rs), rd),
-    }
-    overall = _activity_status([ws, rs])
-
-    return {
-        "id": "fishing", "icon": "🎣", "label": "Fishing",
-        "status": overall,
-        "message": _summary_message(params),
-        "current_status": {
-            "time": str(current.get("time_step_fr", "")),
-            "status": overall, "score": min(ws, rs),
-            "parameters": params
-        },
-        "best_window": _find_best_windows(forecast, _score_fishing_hour),
-        "hourly": _build_hourly_scores(forecast, _score_fishing_hour),
-    }
-
-def _build_photography(current: dict, forecast: list[dict]) -> dict:
-    c = current.get("total_cloud_cover")
-    p = current.get("precipitation_mm")
-
-    cs, cd = _score_cloud_photography(c)
-    rs, rd = _score_rain_photography(p)
-
-    params = {
-        "cloud_cover": _param(cs, _score_and_status(cs), cd),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-    }
-    overall = _activity_status([cs, rs])
-
-    return {
-        "id": "photography", "icon": "📷", "label": "Photography",
-        "status": overall,
-        "message": _summary_message(params),
-        "current_status": {
-            "time": str(current.get("time_step_fr", "")),
-            "status": overall, "score": min(cs, rs),
-            "parameters": params
-        },
-        "best_window": _find_best_windows(forecast, _score_photography_hour),
-        "hourly": _build_hourly_scores(forecast, _score_photography_hour),
-    }
-
-def _build_stargazing(current: dict, forecast: list[dict]) -> dict:
-    c = current.get("total_cloud_cover")
-    h = current.get("humidity_percentage")
-    p = current.get("precipitation_mm")
-
-    cs, cd = _score_cloud_stargazing(c)
-    hs, hd = _score_humidity_stargazing(h)
-    rs, rd = _score_rain_stargazing(p)
-
-    params = {
-        "cloud_cover": _param(cs, _score_and_status(cs), cd),
-        "humidity":    _param(hs, _score_and_status(hs), hd),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-    }
-    overall = _activity_status([cs, hs, rs])
-
-    return {
-        "id": "stargazing", "icon": "🔭", "label": "Stargazing",
-        "status": overall,
-        "message": _summary_message(params),
-        "current_status": {
-            "time": str(current.get("time_step_fr", "")),
-            "status": overall, "score": min(cs, hs, rs),
-            "parameters": params
-        },
-        "best_window": _find_best_windows(forecast, _score_stargazing_hour),
-        "hourly": _build_hourly_scores(forecast, _score_stargazing_hour),
-    }
-
-def _build_gardening(current: dict, forecast: list[dict]) -> dict:
-    t = current.get("temperature_celsius")
-    p = current.get("precipitation_mm")
-
-    ts, td = _score_temp_gardening(t)
-    rs, rd = _score_rain_gardening(p)
-
-    params = {
-        "temperature": _param(ts, _score_and_status(ts), td),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-    }
-    overall = _activity_status([ts, rs])
-
-    return {
-        "id": "gardening", "icon": "🌱", "label": "Gardening",
-        "status": overall,
-        "message": _summary_message(params),
-        "current_status": {
-            "time": str(current.get("time_step_fr", "")),
-            "status": overall, "score": min(ts, rs),
-            "parameters": params
-        },
-        "best_window": _find_best_windows(forecast, _score_gardening_hour),
-        "hourly": _build_hourly_scores(forecast, _score_gardening_hour),
-    }
-
-def _build_clothing(current: dict, forecast: list[dict]) -> dict:
-    t = current.get("temperature_celsius")
-    p = current.get("precipitation_mm")
-    w = current.get("wind_speed_m_per_s")
-
-    ts, td = _score_temp_clothing(t)
-    rs, rd = _score_rain_clothing(p)
-    ws, wd = _score_wind_clothing(w)
-
-    params = {
-        "temperature": _param(ts, _score_and_status(ts), td),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-        "wind":        _param(ws, _score_and_status(ws), wd),
-    }
-    overall = _activity_status([ts, rs, ws])
-
-    return {
-        "id": "clothing", "icon": "🧥", "label": "Clothing",
-        "status": overall,
-        "message": _summary_message(params),
-        "current_status": {
-            "time": str(current.get("time_step_fr", "")),
-            "status": overall, "score": min(ts, rs, ws),
-            "parameters": params
-        },
-        "best_window": [],
-        "hourly": _build_hourly_scores(forecast, _score_clothing_hour),
-    }
-
-def _build_driving(current: dict, forecast: list[dict]) -> dict:
-    p = current.get("precipitation_mm")
-    s = current.get("snow_precipitation_mm")
-    g = current.get("wind_gust_m_per_s")
-
-    rs, rd = _score_rain_driving(p)
-    ss, sd = _score_snow_driving(s)
-    gs, gd = _score_wind_driving(g)
-
-    params = {
-        "rain":  _param(rs, _score_and_status(rs), rd),
-        "snow":  _param(ss, _score_and_status(ss), sd),
-        "gusts": _param(gs, _score_and_status(gs), gd),
-    }
-    overall = _activity_status([rs, ss, gs])
-
-    return {
-        "id": "driving", "icon": "🚗", "label": "Driving",
-        "status": overall,
-        "message": _summary_message(params),
-        "current_status": {
-            "time": str(current.get("time_step_fr", "")),
-            "status": overall, "score": min(rs, ss, gs),
-            "parameters": params
-        },
-        "best_window": _find_best_windows(forecast, _score_driving_hour),
-        "hourly": _build_hourly_scores(forecast, _score_driving_hour),
-    }
-
-def _build_dog_walking(current: dict, forecast: list[dict]) -> dict:
-    t = current.get("temperature_celsius")
-    p = current.get("precipitation_mm")
-    w = current.get("wind_speed_m_per_s")
-
-    ts, td = _score_temp_dogwalk(t)
-    rs, rd = _score_rain_dogwalk(p)
-    ws, wd = _score_wind_dogwalk(w)
-
-    params = {
-        "temperature": _param(ts, _score_and_status(ts), td),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-        "wind":        _param(ws, _score_and_status(ws), wd),
-    }
-    overall = _activity_status([ts, rs, ws])
-
-    return {
-        "id": "dog_walking", "icon": "🐕", "label": "Dog walking",
-        "status": overall,
-        "message": _summary_message(params),
-        "current_status": {
-            "time": str(current.get("time_step_fr", "")),
-            "status": overall, "score": min(ts, rs, ws),
-            "parameters": params
-        },
-        "best_window": _find_best_windows(forecast, _score_dog_walking_hour),
-        "hourly": _build_hourly_scores(forecast, _score_dog_walking_hour),
-    }
-
-
-# ── Hourly scorers ─────────────────────────────────────────────────────────────
-# One function per activity — scores a single forecast entry.
-# Returns (overall_score, overall_status, parameters_dict)
-
-def _score_cycling_hour(entry: dict) -> tuple:
-    t = entry.get("temperature_celsius")
-    w = entry.get("wind_speed_m_per_s")
-    g = entry.get("wind_gust_m_per_s")
-    p = entry.get("precipitation_mm")
-    s = entry.get("snow_precipitation_mm")
-    ts, td = _score_temp_cycling(t)
-    ws, wd = _score_wind_cycling(w, g)
-    rs, rd = _score_rain_cycling(p)
-    ss, sd = _score_snow_cycling(s)
-    score = min(ts, ws, rs, ss)
-    params = {
-        "temperature": _param(ts, _score_and_status(ts), td),
-        "wind":        _param(ws, _score_and_status(ws), wd),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-        "snow":        _param(ss, _score_and_status(ss), sd),
-    }
-    return score, _score_and_status(score), params
-
-def _score_running_hour(entry: dict) -> tuple:
-    t = entry.get("temperature_celsius")
-    w = entry.get("wind_speed_m_per_s")
-    p = entry.get("precipitation_mm")
-    ts, td = _score_temp_running(t)
-    ws, wd = _score_wind_running(w)
-    rs, rd = _score_rain_running(p)
-    score = min(ts, ws, rs)
-    params = {
-        "temperature": _param(ts, _score_and_status(ts), td),
-        "wind":        _param(ws, _score_and_status(ws), wd),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-    }
-    return score, _score_and_status(score), params
-
-def _score_hiking_hour(entry: dict) -> tuple:
-    t = entry.get("temperature_celsius")
-    w = entry.get("wind_speed_m_per_s")
-    g = entry.get("wind_gust_m_per_s")
-    p = entry.get("precipitation_mm")
-    s = entry.get("snow_precipitation_mm")
-    ts, td = _score_temp_hiking(t)
-    ws, wd = _score_wind_hiking(w, g)
-    rs, rd = _score_rain_hiking(p)
-    ss, sd = _score_snow_hiking(s)
-    score = min(ts, ws, rs, ss)
-    params = {
-        "temperature": _param(ts, _score_and_status(ts), td),
-        "wind":        _param(ws, _score_and_status(ws), wd),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-        "snow":        _param(ss, _score_and_status(ss), sd),
-    }
-    return score, _score_and_status(score), params
-
-def _score_picnic_hour(entry: dict) -> tuple:
-    t = entry.get("temperature_celsius")
-    w = entry.get("wind_speed_m_per_s")
-    p = entry.get("precipitation_mm")
-    ts, td = _score_temp_picnic(t)
-    ws, wd = _score_wind_picnic(w)
-    rs, rd = _score_rain_picnic(p)
-    score = min(ts, ws, rs)
-    params = {
-        "temperature": _param(ts, _score_and_status(ts), td),
-        "wind":        _param(ws, _score_and_status(ws), wd),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-    }
-    return score, _score_and_status(score), params
-
-def _score_fishing_hour(entry: dict) -> tuple:
-    w = entry.get("wind_speed_m_per_s")
-    p = entry.get("precipitation_mm")
-    ws, wd = _score_wind_fishing(w)
-    rs, rd = _score_rain_fishing(p)
-    score = min(ws, rs)
-    params = {
-        "wind": _param(ws, _score_and_status(ws), wd),
-        "rain": _param(rs, _score_and_status(rs), rd),
-    }
-    return score, _score_and_status(score), params
-
-def _score_photography_hour(entry: dict) -> tuple:
-    c = entry.get("total_cloud_cover")
-    p = entry.get("precipitation_mm")
-    cs, cd = _score_cloud_photography(c)
-    rs, rd = _score_rain_photography(p)
-    score = min(cs, rs)
-    params = {
-        "cloud_cover": _param(cs, _score_and_status(cs), cd),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-    }
-    return score, _score_and_status(score), params
-
-def _score_stargazing_hour(entry: dict) -> tuple:
-    c = entry.get("total_cloud_cover")
-    h = entry.get("humidity_percentage")
-    p = entry.get("precipitation_mm")
-    cs, cd = _score_cloud_stargazing(c)
-    hs, hd = _score_humidity_stargazing(h)
-    rs, rd = _score_rain_stargazing(p)
-    score = min(cs, hs, rs)
-    params = {
-        "cloud_cover": _param(cs, _score_and_status(cs), cd),
-        "humidity":    _param(hs, _score_and_status(hs), hd),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-    }
-    return score, _score_and_status(score), params
-
-def _score_gardening_hour(entry: dict) -> tuple:
-    t = entry.get("temperature_celsius")
-    p = entry.get("precipitation_mm")
-    ts, td = _score_temp_gardening(t)
-    rs, rd = _score_rain_gardening(p)
-    score = min(ts, rs)
-    params = {
-        "temperature": _param(ts, _score_and_status(ts), td),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-    }
-    return score, _score_and_status(score), params
-
-def _score_clothing_hour(entry: dict) -> tuple:
-    t = entry.get("temperature_celsius")
-    p = entry.get("precipitation_mm")
-    w = entry.get("wind_speed_m_per_s")
-    ts, td = _score_temp_clothing(t)
-    rs, rd = _score_rain_clothing(p)
-    ws, wd = _score_wind_clothing(w)
-    score = min(ts, rs, ws)
-    params = {
-        "temperature": _param(ts, _score_and_status(ts), td),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-        "wind":        _param(ws, _score_and_status(ws), wd),
-    }
-    return score, _score_and_status(score), params
-
-def _score_driving_hour(entry: dict) -> tuple:
-    p = entry.get("precipitation_mm")
-    s = entry.get("snow_precipitation_mm")
-    g = entry.get("wind_gust_m_per_s")
-    rs, rd = _score_rain_driving(p)
-    ss, sd = _score_snow_driving(s)
-    gs, gd = _score_wind_driving(g)
-    score = min(rs, ss, gs)
-    params = {
-        "rain":  _param(rs, _score_and_status(rs), rd),
-        "snow":  _param(ss, _score_and_status(ss), sd),
-        "gusts": _param(gs, _score_and_status(gs), gd),
-    }
-    return score, _score_and_status(score), params
-
-def _score_dog_walking_hour(entry: dict) -> tuple:
-    t = entry.get("temperature_celsius")
-    p = entry.get("precipitation_mm")
-    w = entry.get("wind_speed_m_per_s")
-    ts, td = _score_temp_dogwalk(t)
-    rs, rd = _score_rain_dogwalk(p)
-    ws, wd = _score_wind_dogwalk(w)
-    score = min(ts, rs, ws)
-    params = {
-        "temperature": _param(ts, _score_and_status(ts), td),
-        "rain":        _param(rs, _score_and_status(rs), rd),
-        "wind":        _param(ws, _score_and_status(ws), wd),
-    }
-    return score, _score_and_status(score), params
 
 
 # ── Generic hourly builder ─────────────────────────────────────────────────────
 
-def _build_hourly_scores(forecast: list[dict], scorer_fn) -> list[dict]:
+def _build_hourly_scores(forecast: list[dict], scorer_fn, activity_config: dict) -> list[dict]:
     """
     Applies a scorer function to each forecast entry and
     returns a list of hourly dicts shaped for the frontend.
     """
     result = []
     for entry in forecast[:48]:
-        score, status, params = scorer_fn(entry)
+        score, status, params = scorer_fn(entry, activity_config)
         result.append({
             "time":       str(entry.get("time_step_fr", "")),
             "score":      round(score, 2),
@@ -1101,7 +749,7 @@ def _build_hourly_scores(forecast: list[dict], scorer_fn) -> list[dict]:
     return result
 
 
-def _find_best_windows(forecast: list[dict], scorer_fn) -> list[dict]:
+def _find_best_windows(forecast: list[dict], scorer_fn, activity_config) -> list[dict]:
     """
     Finds consecutive green windows in the forecast.
     Returns up to 2 windows where score >= 0.7 for at least 2 hours.
@@ -1109,9 +757,10 @@ def _find_best_windows(forecast: list[dict], scorer_fn) -> list[dict]:
     """
     windows = []
     current_window = []
-
+    # import pdb
+    # pdb.set_trace()
     for entry in forecast[:48]:
-        score, status, _ = scorer_fn(entry)
+        score, status, _ = scorer_fn(entry, activity_config)
         if score >= 0.7:
             current_window.append(entry)
         else:
@@ -1126,7 +775,7 @@ def _find_best_windows(forecast: list[dict], scorer_fn) -> list[dict]:
     for window in windows[:2]:
         from_time = str(window[0].get("time_step_fr", ""))
         to_time   = str(window[-1].get("time_step_fr", ""))
-        _, _, params = scorer_fn(window[0])
+        _, _, params = scorer_fn(window[0], activity_config)
         best_desc = next(
             (p["description"] for p in params.values() if p["status"] == "green"),
             "Good conditions"
