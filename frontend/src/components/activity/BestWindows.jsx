@@ -23,7 +23,7 @@ function BestWindows({ best_window }) {
 
       {!best_window || best_window.length === 0 ? (
         <div className="bg-gray-50 rounded-lg p-4 text-center">
-          <p className="text-sm text-gray-400">No good window today</p>
+          <p className="text-sm text-gray-400">No ideal window today</p>
         </div>
       ) : (
         <div className="flex gap-3">
