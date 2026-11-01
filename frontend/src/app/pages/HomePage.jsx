@@ -17,13 +17,13 @@ const FEATURES = [
     text: 'Compare AROME forecasts against real observations, explore history and export CSV files.',
     cta: 'Open analyser',
   },
-  {
-    to: '/pv',
-    icon: '☀️',
-    title: 'Solar production',
-    text: 'Estimate the hourly output of your solar panels from the local forecast.',
-    cta: 'Estimate output',
-  },
+  // {
+  //   to: '/pv',
+  //   icon: '☀️',
+  //   title: 'Solar production',
+  //   text: 'Estimate the hourly output of your solar panels from the local forecast.',
+  //   cta: 'Estimate output',
+  // },
 ]
 
 const STATS = [
@@ -56,7 +56,7 @@ function HomePage() {
             French weather,<br />from the source.
           </h1>
           <p className="animate-rise mt-6 text-lg text-muted-foreground max-w-xl mx-auto [animation-delay:160ms]">
-            Real observations and high-resolution AROME forecasts, updated continuously.
+            Real observations and AROME forecasts, updated continuously.
           </p>
           <div className="animate-rise mt-10 flex flex-wrap justify-center gap-3 [animation-delay:240ms]">
             <Link to="/viewer" className="rounded-full bg-gradient-primary px-7 py-3 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-glow)] transition-transform hover:scale-105">
@@ -71,7 +71,7 @@ function HomePage() {
 
       {/* Cards */}
       <main className="relative max-w-6xl mx-auto px-6 -mt-20 pb-20">
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2">
           {FEATURES.map((f, i) => (
             <Link
               key={f.to}
@@ -92,7 +92,7 @@ function HomePage() {
           ))}
         </div>
 
-        <div className="mt-10 grid grid-cols-3 gap-5">
+        {/* <div className="mt-10 grid grid-cols-3 gap-5">
           {STATS.map(s => (
             <div key={s.label} className="text-center rounded-2xl border border-border py-6">
               <p className="font-display text-2xl sm:text-3xl font-semibold text-gradient">{s.value}</p>
@@ -103,7 +103,7 @@ function HomePage() {
 
         <p className="text-center text-xs text-subtle mt-14">
           Data source: Météo-France · Updated every 6 minutes
-        </p>
+        </p> */}
       </main>
     </div>
   )

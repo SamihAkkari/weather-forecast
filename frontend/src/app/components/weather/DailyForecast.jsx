@@ -5,38 +5,7 @@
   The key challenge is converting temperatures to Y positions on the SVG canvas.
   We do this with a scale function that maps the temperature range to pixel range.
 */
-
-const ICONS = {
-  0: "☀️",
-  1: "🌤️",
-  2: "⛅",
-  3: "☁️",
-  45: "🌫️",
-  48: "🌫️",
-  51: "🌦️",
-  53: "🌦️",
-  55: "🌧️",
-  56: "🌧️",
-  57: "🌧️",
-  61: "🌧️",
-  63: "🌧️",
-  65: "🌧️",
-  66: "🌧️",
-  67: "🌧️",
-  71: "🌨️",
-  73: "🌨️",
-  75: "❄️",
-  77: "🌨️",
-  80: "🌧️",
-  81: "🌧️",
-  82: "🌧️",
-  85: "🌨️",
-  86: "❄️",
-  95: "⛈️",
-  96: "⛈️",
-  97: "⛈️",
-  99: "⛈️",
-};
+import { getDailyWeatherIconName, getWeatherIconUrl } from "../../utils/weatherIcons";
 
 /*
   mapValue takes a value in one range and maps it to another range.
@@ -210,9 +179,16 @@ function DailyForecast({ daily }) {
               </text> */}
 
               {/* Weather icon */}
-              <text x={xPositions[i] - 16} y={HEIGHT - 48} fontSize="24">
-                {ICONS[d.weather_code] ?? "🌤️"}
-              </text>
+              <image
+                href={getWeatherIconUrl(getDailyWeatherIconName(d.weather_code))}
+                x={xPositions[i] - 16}
+                y={HEIGHT - 48}
+                width="32"
+                height="32"
+                role="img"
+                aria-label={`Weather code ${d.weather_code}`}
+                preserveAspectRatio="xMidYMid meet"
+              />
 
               {/* Day name */}
               <text

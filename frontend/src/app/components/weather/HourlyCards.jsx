@@ -1,58 +1,24 @@
 import ValueWithUnit from "../common/ValueWithUnit";
 import { formatHourFr } from "../../utils/time";
+import { getHourlyWeatherIconName, getWeatherIconUrl } from "../../utils/weatherIcons";
 import * as SunCalcNs from "suncalc";
 const SunCalc = SunCalcNs.default ?? SunCalcNs;
 
 function getWeatherIcon(entry, location) {
-  // console.log(location)
   const isDay = !isNight(entry.time_step_fr, location.lat, location.lng);
-
-  const icons = {
-    0: isDay ? "☀️" : "🌙",
-    1: isDay ? "🌤️" : "🌙",
-    2: isDay ? "⛅" : "☁️",
-    3: "☁️",
-    45: "🌫️",
-    48: "🌫️",
-    51: "🌦️",
-    53: "🌦️",
-    55: "🌧️",
-    56: "🌧️",
-    57: "🌧️",
-    61: "🌧️",
-    63: "🌧️",
-    65: "🌧️",
-    66: "🌧️",
-    67: "🌧️",
-    71: "🌨️",
-    73: "🌨️",
-    75: "❄️",
-    77: "🌨️",
-    80: "🌧️",
-    81: "🌧️",
-    82: "🌧️",
-    85: "🌨️",
-    86: "❄️",
-    95: isDay ? "⛈️" : "🌩️",
-    96: "⛈️",
-    97: isDay ? "⛈️" : "🌩️",
-    99: "⛈️",
-  };
-
-  const icon = icons[Number(entry.weather_code)] ?? "🌤️";
+  const iconName = getHourlyWeatherIconName(entry.weather_code, isDay);
 
   return (
-    <span role="img" aria-label={`Weather code ${entry.weather_code}`} className="text-3xl">
-      {icon}
-    </span>
+    <img
+      src={getWeatherIconUrl(iconName)}
+      alt={`Weather code ${entry.weather_code}`}
+      className="w-10 h-10 mx-auto"
+    />
   );
 }
 
 function isNight(timeString, lat, lng) {
-  // console.log("RAW STRING:", timeString)
   const date = new Date(timeString);
-
-  // date.setHours(date.getHours() - 2) // Quick fix to handle the +00:00 timezone issue, need to fix it in the backend
 
   const sunTimes = SunCalc.getTimes(date, lat, lng);
 
@@ -61,17 +27,6 @@ function isNight(timeString, lat, lng) {
 
   return date < sunrise || date > sunset;
 }
-
-// function formatHour(timeString) {
-//     const date = new Date(timeString)
-//     return `${date.getHours()}:00`
-// }
-
-// The API returns the values in France time but with +00:00 timezone which makes the js think it is UTC, now this is a quick fix here but need to fix it in the backend
-// function formatHour(timeString) {
-//     const date = new Date(timeString)
-//     return `${date.getUTCHours()}:00`
-// }
 
 function HourlyCards({ forecast, location }) {
   return (

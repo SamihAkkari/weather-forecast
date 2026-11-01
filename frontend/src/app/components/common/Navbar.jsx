@@ -1,9 +1,9 @@
 import { Link } from '../../router-compat'
 
 const LINKS = [
-  { to: '/viewer', label: 'Viewer' },
-  { to: '/analysis', label: 'Analysis' },
-  { to: '/pv', label: 'Solar' },
+  // { to: '/viewer', label: 'Viewer' },
+  // { to: '/analysis', label: 'Analysis' },
+  // { to: '/pv', label: 'Solar' },
 ]
 
 function Navbar() {
