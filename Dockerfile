@@ -7,7 +7,7 @@ RUN apt-get update \
 
 # dbt in its own virtual environment, so its dependencies never clash with ours
 RUN python -m venv /opt/dbt-venv \
- && /opt/dbt-venv/bin/pip install --no-cache-dir dbt-postgres==1.7.9
+ && /opt/dbt-venv/bin/pip install --no-cache-dir dbt-postgres==1.7.9 protobuf==4.25.8
 
 WORKDIR /app
 COPY requirements.txt .

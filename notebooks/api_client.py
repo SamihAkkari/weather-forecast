@@ -47,7 +47,7 @@ def group_datasets(datasets: list[xr.Dataset]) -> dict[str, xr.Dataset]:
             try:
                 result[group] = xr.merge(ds_list)
             except Exception:
-                # If merge fails, keep as list — don't force incompatible data
+                # If merge fails, keep as list   don't force incompatible data
                 result[group] = ds_list
     
     return result

@@ -3,7 +3,7 @@ import Navbar from '../components/common/Navbar'
 import { formatHourFr } from '../utils/time'
 import {
   AreaChart, Area, XAxis, YAxis,
-  Tooltip, ResponsiveContainer
+  Tooltip, ResponsiveContainer, Legend
 } from 'recharts'
 
 /*
@@ -77,7 +77,7 @@ function WidgetDetailPage() {
   const location = useLocation()
 
   /*
-    Retrieve widgets from router state — same pattern as ActivityPage.
+    Retrieve widgets from router state   same pattern as ActivityPage.
     The widgets object was passed when the user clicked a widget card.
   */
   const widgets = location.state?.widgets
@@ -106,6 +106,7 @@ function WidgetDetailPage() {
     time: entry.time_step_fr,
     hour:  formatHourFr(entry.time_step_fr),
     value: entry.value,
+    gust: entry.gust_value,
   }))
 
   return (
@@ -133,7 +134,7 @@ function WidgetDetailPage() {
             {widgetData.value}
           </span>
           <span className="text-lg text-muted-foreground">{widgetData.unit}</span>
-          <span className="text-sm text-muted-foreground ml-2">— {widgetData.message}</span>
+          <span className="text-sm text-muted-foreground ml-2">  {widgetData.message}</span>
         </div>
 
         {/* Hourly chart */}
@@ -181,7 +182,10 @@ function WidgetDetailPage() {
                   timeZone: 'Europe/Paris',
                 })
               }}
-                formatter={v => [config.formatValue(v), config.label]}
+                formatter={(v, name) => [
+                  config.formatValue(v),
+                  name === 'Gusts' ? 'Gusts' : config.label,
+                ]}
                 contentStyle={{
                   border: '0.5px solid #24456a',
                   borderRadius: '8px',
@@ -191,11 +195,27 @@ function WidgetDetailPage() {
               <Area
                 type="monotone"
                 dataKey="value"
+                name={id === 'wind' ? 'Wind speed' : config.label}
                 stroke={config.color}
                 strokeWidth={2}
                 fill={`url(#grad-${id})`}
                 dot={false}
               />
+              {id === 'wind' && chartData.some(entry => entry.gust != null) && (
+                <Area
+                  type="monotone"
+                  dataKey="gust"
+                  name="Gusts"
+                  stroke="#fbbf24"
+                  strokeWidth={2}
+                  fill="transparent"
+                  dot={false}
+                  connectNulls
+                />
+              )}
+              {id === 'wind' && chartData.some(entry => entry.gust != null) && (
+                <Legend />
+              )}
             </AreaChart>
           </ResponsiveContainer>
         </div>

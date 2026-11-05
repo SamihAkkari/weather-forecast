@@ -25,7 +25,7 @@ Why Erbs decomposition?
     It uses the clearness index (GHI vs extraterrestrial radiation) to split.
 
 Why Haydavies transposition?
-    We need POA irradiance — irradiance hitting the tilted panel surface.
+    We need POA irradiance   irradiance hitting the tilted panel surface.
     Haydavies (also called Hay-Davies) is reliable for tilted surfaces
     and only requires DNI, DHI and GHI which we have after Erbs.
 """
@@ -51,7 +51,7 @@ def convert_ghi_from_to_instant(forecast: list[dict]) -> list[float]:
     ]
     return ghi_wm2
 
-# ── Step 2 — Build time index ──────────────────────────────────────────────────
+# ── Step 2   Build time index ──────────────────────────────────────────────────
 
 def build_time_index(forecast: list[dict]) -> pd.DatetimeIndex:
     """Timestamps are real UTC instants; pvlib needs tz-aware times."""
@@ -114,7 +114,7 @@ def buildInsight(total_kwh, capacity_kw, n_hours, clipping_pct):
 
 
 
-# ── Step 3 — Core PV computation ──────────────────────────────────────────────
+# ── Step 3   Core PV computation ──────────────────────────────────────────────
 
 def compute_pv_production(
     forecast: list[dict],
@@ -153,7 +153,7 @@ def compute_pv_production(
     }
     """
     if not forecast:
-        raise ValueError("Empty forecast — cannot compute PV production")
+        raise ValueError("Empty forecast   cannot compute PV production")
 
     logger.info(
         f"Computing PV production: {system_capacity_kw}kWp, "

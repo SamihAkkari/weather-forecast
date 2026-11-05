@@ -64,6 +64,11 @@ def main():
         args=["scripts.ingest_forecasts", 3600],
         id="forecast", max_instances=1, coalesce=True, next_run_time=now,
     )
+    scheduler.add_job(
+        launch, CronTrigger(hour=3, minute=30),          # 03:30 UTC = 04:30/05:30 Paris
+        args=["scripts.maintenance", 1800],
+        id="maintenance", max_instances=1, coalesce=True,
+    )    
     try:
         scheduler.start()
     except (KeyboardInterrupt, SystemExit):

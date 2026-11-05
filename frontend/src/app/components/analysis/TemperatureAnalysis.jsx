@@ -5,7 +5,7 @@ function MetricCard({ label, value, unit }) {
     <div className="bg-muted rounded-lg p-3">
       <p className="text-xs text-muted-foreground mb-1">{label}</p>
       <p className="text-lg font-medium text-foreground">
-        {value !== null ? `${value}` : '—'}
+        {value !== null ? `${value}` : ' '}
         <span className="text-sm font-normal text-muted-foreground ml-0.5">{unit}</span>
       </p>
     </div>
@@ -16,7 +16,7 @@ function TemperatureAnalysis({ data }) {
   return (
     <div>
       <p className="text-xs text-muted-foreground mb-4">
-        MAE by forecast horizon — averaged across all runs and stations in the period
+        MAE by forecast horizon   averaged across all runs and stations in the period
       </p>
 
       <DegradationChart

@@ -1,6 +1,6 @@
 /*
   This component receives the daily array from mockWeatherDetails.
-  It draws two SVG curves — one for max temps (orange) and one for min temps (blue).
+  It draws two SVG curves   one for max temps (orange) and one for min temps (blue).
 
   The key challenge is converting temperatures to Y positions on the SVG canvas.
   We do this with a scale function that maps the temperature range to pixel range.
@@ -24,7 +24,7 @@ function mapValue(value, fromMin, fromMax, toMin, toMax) {
 /*
   buildCurvePath takes an array of {x, y} points and returns a smooth
   SVG cubic bezier path string. The control points are computed automatically
-  by offsetting horizontally — this gives the smooth S-curve look without
+  by offsetting horizontally   this gives the smooth S-curve look without
   needing to calculate full bezier handles manually.
 */
 function buildCurvePath(points) {
@@ -40,7 +40,7 @@ function buildCurvePath(points) {
 }
 
 function DailyForecast({ daily }) {
-  // Guard — if no data return nothing
+  // Guard   if no data return nothing
   if (!daily || daily.length === 0) return null;
 
   /*
@@ -56,7 +56,7 @@ function DailyForecast({ daily }) {
   const LABEL_PAD = 12; // pixels above/below a dot for its label
 
   /*
-    Compute X positions — evenly spaced across the SVG width.
+    Compute X positions   evenly spaced across the SVG width.
     We add padding on both sides so the first and last points
     don't sit right at the edge.
   */
@@ -66,7 +66,7 @@ function DailyForecast({ daily }) {
 
   /*
     Find the global min and max across ALL days.
-    This is important — we scale both curves against the same range
+    This is important   we scale both curves against the same range
     so their relative positions are meaningful.
     For example if min is always close to max the curves would look flat
     without this global scaling.
@@ -119,7 +119,7 @@ function DailyForecast({ daily }) {
           </defs>
 
           {/*
-            Area fills — we close the path down to the bottom of the SVG
+            Area fills   we close the path down to the bottom of the SVG
             to create the shaded area under each curve.
           */}
           <path
@@ -142,7 +142,7 @@ function DailyForecast({ daily }) {
             <g key={i}>
               {/* Max temp dot */}
               <circle cx={xPositions[i]} cy={maxPoints[i].y} r="3" fill="#f97316" />
-              {/* Max temp label — sits above the dot */}
+              {/* Max temp label   sits above the dot */}
               <text
                 x={xPositions[i]}
                 y={maxPoints[i].y - LABEL_PAD}
@@ -156,7 +156,7 @@ function DailyForecast({ daily }) {
 
               {/* Min temp dot */}
               <circle cx={xPositions[i]} cy={minPoints[i].y} r="3" fill="#5cbdb9" />
-              {/* Min temp label — sits below the dot */}
+              {/* Min temp label   sits below the dot */}
               <text
                 x={xPositions[i]}
                 y={minPoints[i].y + LABEL_PAD + 4}

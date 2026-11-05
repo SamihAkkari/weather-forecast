@@ -59,7 +59,7 @@ function WeatherViewerPage({ selectedLocation, onLocationChange }) {
         </div>
 
 
-        {/* Empty state — before any location is selected */}
+        {/* Empty state   before any location is selected */}
         {!selectedLocation && !stationData && (
           <div className="glass border border-dashed border-border rounded-3xl text-center py-16 text-muted-foreground text-sm">
             <div className="text-4xl mb-3 animate-float">📍</div>
@@ -81,7 +81,7 @@ function WeatherViewerPage({ selectedLocation, onLocationChange }) {
           </div>
         )}
 
-        {/* Data — only shown when stationData is available */}
+        {/* Data   only shown when stationData is available */}
         {stationData && !loading && (
           <div className="space-y-8 animate-rise">
 

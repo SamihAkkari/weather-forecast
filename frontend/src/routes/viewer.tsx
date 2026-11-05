@@ -8,9 +8,9 @@ const Page = lazy(() => import("../app/pages/WeatherViewerPage"));
 export const Route = createFileRoute("/viewer")({
   head: () => ({
     meta: [
-      { title: "Weather viewer — MeteoApp" },
+      { title: "Weather viewer   MeteoApp" },
       { name: "description", content: "Pick a station on the map and see current conditions and the forecast." },
-      { property: "og:title", content: "Weather viewer — MeteoApp" },
+      { property: "og:title", content: "Weather viewer   MeteoApp" },
       { property: "og:description", content: "Station conditions and forecasts across France." },
     ],
   }),

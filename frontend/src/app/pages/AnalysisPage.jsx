@@ -12,13 +12,14 @@ import { useAnalysis } from '../hooks/useAnalysis'
   It shows a header row with label, headline metric and a toggle arrow.
   Clicking it expands to show the full detail component below.
 */
-function VariableWidget({ label, icon, headline, children, accentColor }) {
+function VariableWidget({ label, icon, headline, children, accentColor, info }) {
   const [expanded, setExpanded] = useState(false)
+  const [infoOpen, setInfoOpen] = useState(false)
 
   return (
     <div className="glass border border-border rounded-2xl overflow-hidden">
 
-      {/* Header — always visible, clickable to toggle */}
+      {/* Header   always visible, clickable to toggle */}
       <div
         onClick={() => setExpanded(prev => !prev)}
         className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-muted transition-colors"
@@ -26,27 +27,46 @@ function VariableWidget({ label, icon, headline, children, accentColor }) {
         <div className="flex items-center gap-3">
           <span className="text-base">{icon}</span>
           <div>
-            <p className="text-sm font-medium text-foreground">{label}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium text-foreground">{label}</p>
+              {info && (
+                <button
+                  type="button"
+                  aria-label={`About ${label}`}
+                  aria-expanded={infoOpen}
+                  onClick={event => {
+                    event.stopPropagation()
+                    setInfoOpen(prev => !prev)
+                  }}
+                  className="w-4 h-4 rounded-full border border-muted-foreground text-muted-foreground text-[10px] font-semibold leading-none hover:border-primary hover:text-primary"
+                >
+                  !
+                </button>
+              )}
+            </div>
             {headline && (
               <p className="text-xs text-muted-foreground mt-0.5">{headline}</p>
+            )}
+            {infoOpen && (
+              <p role="note" className="max-w-md text-xs text-muted-foreground mt-2 leading-relaxed">
+                {info}
+              </p>
             )}
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          {/*
-            Small colored pill showing the headline metric.
-            Color is passed as a Tailwind class string from the parent.
-          */}
-          <span
-            className="text-xs px-2 py-0.5 rounded-full"
-            style={{
-              background: `${accentColor}18`,
-              color: accentColor,
-            }}
-          >
-            {headline}
-          </span>
+          {headline && (
+            <span
+              className="text-xs px-2 py-0.5 rounded-full"
+              style={{
+                background: `${accentColor}18`,
+                color: accentColor,
+              }}
+            >
+              {headline}
+            </span>
+          )}
           <span
             className="text-muted-foreground text-xs transition-transform"
             style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
@@ -84,7 +104,7 @@ function AnalysisPage() {
 
   /*
     Headline metrics shown in each widget header
-    before the user expands — gives instant value.
+    before the user expands   gives instant value.
   */
 const tempHeadline = analysisData
   ? analysisData.temperature.mae != null
@@ -168,16 +188,19 @@ const windHeadline = analysisData
               <p className="text-xs text-muted-foreground mb-1.5">History (days)</p>
               <input
                 type="number"
-                min={1} max={90}
+                min={1} max={30} step={1}
                 value={days}
-                onChange={e => setDays(parseInt(e.target.value))}
+                onChange={e => {
+                  const value = e.target.value
+                  setDays(value === '' ? '' : Math.min(30, Math.max(1, Math.trunc(Number(value)))))
+                }}
                 className="w-full border border-border rounded-lg px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:border-primary/40"
               />
             </div>
 
             <button
               onClick={handleAnalyse}
-              disabled={(!useAllStations && !location) || loading}
+              disabled={(!useAllStations && !location) || loading || days === ''}
               className="px-4 py-2 bg-gradient-primary text-primary-foreground text-foreground text-sm rounded-lg hover:opacity-90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading ? 'Analysing...' : 'Analyse'}
@@ -247,6 +270,7 @@ const windHeadline = analysisData
             <VariableWidget
               label="Rain detection"
               icon="🌧"
+              info="Rain detection is evaluated hourly. In general, AROME performs better at detecting rain when precipitation is assessed cumulatively over periods longer than 6 hours."
               // headline={rainHeadline} // I commented those out since not clear what metric to put
               // accentColor="#5cbdb9"
             >

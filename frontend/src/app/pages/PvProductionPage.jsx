@@ -24,21 +24,21 @@ import { formatHourFr } from '../utils/time'
 
 /*
   Generates a human-readable insight sentence from total energy.
-  Uses simple fixed equivalences — easy to extend later.
+  Uses simple fixed equivalences   easy to extend later.
 */
 // function buildInsight(total_kwh, capacity_kw) {
 //   const washingMachine = (total_kwh / 0.5).toFixed(0)  // ~0.5 kWh per cycle
 //   const evKm           = (total_kwh * 6).toFixed(0)     // ~6 km per kWh (average EV)
 //   const fridgeHours    = (total_kwh / 0.04).toFixed(0)  // ~40W fridge
 
-//   return `Your ${capacity_kw} kWp system will produce ${total_kwh} kWh over the forecast period — 
+//   return `Your ${capacity_kw} kWp system will produce ${total_kwh} kWh over the forecast period   
 // enough to run a washing machine ${washingMachine} times, 
 // cover approximately ${evKm} km of EV driving, 
 // or power a fridge for ${fridgeHours} hours.`
 // }
 
 /*
-  InputField — reusable labelled input used in the form.
+  InputField   reusable labelled input used in the form.
 */
 function InputField({ label, hint, value, onChange, min, max, step }) {
   return (
@@ -59,7 +59,7 @@ function InputField({ label, hint, value, onChange, min, max, step }) {
 }
 
 /*
-  SummaryCard — one of the three metric cards at the top of results.
+  SummaryCard   one of the three metric cards at the top of results.
 */
 function SummaryCard({ label, value, unit, sub }) {
   return (
@@ -86,7 +86,7 @@ function PvProductionPage({ selectedLocation }) {
   const loc = selectedLocation ?? location.state?.location
 
   /*
-    System specification state — default values are sensible
+    System specification state   default values are sensible
     starting points for a residential installation in France.
     Tilt 30° and azimuth 180° (south-facing) are optimal for France.
   */
@@ -158,7 +158,7 @@ function PvProductionPage({ selectedLocation }) {
           </div>
         ) : (
           <div className="text-sm text-destructive mb-6">
-            No location selected — please go back and click a location on the map.
+            No location selected   please go back and click a location on the map.
           </div>
         )}
 
@@ -358,7 +358,7 @@ function PvProductionPage({ selectedLocation }) {
                   {/*
                     ReferenceLine shows the inverter capacity limit.
                     If the power curve touches this line the system is clipping
-                    — the inverter is rejecting excess DC power from the panels.
+                      the inverter is rejecting excess DC power from the panels.
                   */}
                   <ReferenceLine
                     y={inverterLimitKw}
@@ -386,10 +386,10 @@ function PvProductionPage({ selectedLocation }) {
             {/* Irradiance chart */}
             <div className="glass border border-border rounded-2xl p-5">
               <p className="text-xs text-muted-foreground mb-1">
-                Irradiance — GHI vs POA (W/m²)
+                Irradiance   GHI vs POA (W/m²)
               </p>
               <p className="text-xs text-subtle mb-4">
-                POA is the irradiance hitting your tilted panels —
+                POA is the irradiance hitting your tilted panels  
                 higher than GHI when panels face the sun optimally
               </p>
 

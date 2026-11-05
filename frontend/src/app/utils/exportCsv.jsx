@@ -2,7 +2,7 @@
   This file contains one utility function that converts analysis data
   to a CSV file and triggers a browser download.
 
-  We put it in src/utils/ because it is pure logic with no React in it —
+  We put it in src/utils/ because it is pure logic with no React in it  
   it does not render anything, it does not use hooks, it just takes data
   and produces a side effect (a file download). This separation makes it
   easy to test and reuse.
@@ -41,7 +41,7 @@ function arrayToCsv(rows) {
   4. Immediately removing the temporary tag
 
   This is the standard browser pattern for triggering downloads
-  from data that exists in memory — no server needed.
+  from data that exists in memory   no server needed.
 */
 function downloadCsv(content, filename) {
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
@@ -61,7 +61,7 @@ function downloadCsv(content, filename) {
   one for temperature comparison, one for rain, one for sunshine.
 
   We export three separate files rather than one combined file because
-  each section has a different shape — mixing them in one file would
+  each section has a different shape   mixing them in one file would
   produce an awkward structure that is hard to work with in Excel or Python.
 
   stationName and runTime are included in the filename so the user

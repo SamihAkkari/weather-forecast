@@ -68,7 +68,7 @@ class GribProcessor:
     ) -> dict[str, xr.DataArray]:
         """
         Flatten list of datasets into a direct variable-name → DataArray mapping.
-        No implicit grouping — every variable is a first-class citizen.
+        No implicit grouping   every variable is a first-class citizen.
         
         If variables is provided, only extract those (e.g. BronzeForecastRecords columns).
         """
@@ -157,7 +157,7 @@ class GribProcessor:
             if missing:
                 logger.warning(
                     f"Variable '{var}' missing {len(missing)} timesteps: "
-                    f"{sorted(missing)} — will be filled with None"
+                    f"{sorted(missing)}   will be filled with None"
                 )
 
         # --- 4. Build records over union of times ---

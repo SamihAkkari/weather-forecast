@@ -25,7 +25,7 @@ export function useAnalysis() {
     try {
       const params = { days }
       /*
-        lat and lng are optional — if null we omit them
+        lat and lng are optional   if null we omit them
         and the backend aggregates over all stations.
       */
       if (lat !== null && lng !== null) {

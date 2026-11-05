@@ -69,7 +69,7 @@ def find_nearest_grid_indices(
 ) -> list[StationNearestGrid]:
     """
     Vectorized nearest-neighbour lookup on a regular lat/lon grid.
-    Pure spatial logic — no variable or schema knowledge.
+    Pure spatial logic   no variable or schema knowledge.
     """
     lats = np.array([s.latitude  for s in stations])
     lons = np.array([s.longitude for s in stations])

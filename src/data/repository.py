@@ -249,7 +249,7 @@ class DatabaseRepository:
 
     # @staticmethod
     # def get_stations() -> list[dict]:
-    #     """Fetch active stations — used by forecast extractor."""
+    #     """Fetch active stations   used by forecast extractor."""
     #     try:
     #         with DatabaseConnection() as conn:
     #             with conn.cursor() as cur:

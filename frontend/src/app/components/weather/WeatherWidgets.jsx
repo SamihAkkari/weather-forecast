@@ -5,7 +5,7 @@ import { useNavigate } from '../../router-compat'
   to its detail page when clicked.
   The full widgets object is passed via router state so
   WidgetDetailPage can find the right widget by id
-  without a separate API call — same pattern as activities.
+  without a separate API call   same pattern as activities.
 */
 
 function ProgressBar({ percent, color }) {
@@ -82,7 +82,7 @@ function Widget({ label, icon, value, unit, message, visual, onClick }) {
       className="glass border border-border rounded-2xl p-4 glass cursor-pointer lift transition-colors relative group"
     >
       {/*
-        Small arrow indicator — visible on hover.
+        Small arrow indicator   visible on hover.
         Tells the user the card is clickable without being intrusive.
       */}
       <span className="absolute top-3 right-3 text-xs text-subtle group-hover:text-primary transition-colors inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 glass">
@@ -161,7 +161,7 @@ function WeatherWidgets({ widgets }) {
         />
 
         {/*
-          Sunrise widget is NOT clickable — no hourly data to show.
+          Sunrise widget is NOT clickable   no hourly data to show.
           No onClick passed, no ↗ arrow rendered.
         */}
         {/* <Widget

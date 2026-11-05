@@ -7,7 +7,7 @@ const FEATURES = [
     to: '/viewer',
     icon: '🌤',
     title: 'Weather viewer',
-    text: 'Pick any spot in France and see hourly and daily forecasts — temperature, rain, wind and more.',
+    text: 'Pick any spot in France and see hourly and daily forecasts   temperature, rain, wind and more.',
     cta: 'Open viewer',
   },
   {

@@ -45,13 +45,13 @@ export const mockWeatherDetails = {
       direction: "NW",
       variable_description: "Wind speed measured at the station; direction indicates where the wind is coming from.",
       hourly_values: [
-        { time_step_fr: "2026-10-22T00:00:00+00:00", value: 10.8 },
-        { time_step_fr: "2026-10-22T01:00:00+00:00", value: 11.2 },
-        { time_step_fr: "2026-10-22T02:00:00+00:00", value: 12 },
-        { time_step_fr: "2026-10-22T03:00:00+00:00", value: 12.4 },
-        { time_step_fr: "2026-10-22T04:00:00+00:00", value: 12.1 },
-        { time_step_fr: "2026-10-22T05:00:00+00:00", value: 11.7 },
-        { time_step_fr: "2026-10-22T06:00:00+00:00", value: 11.3 },
+        { time_step_fr: "2026-10-22T00:00:00+00:00", value: 10.8, gust_value: 14.2 },
+        { time_step_fr: "2026-10-22T01:00:00+00:00", value: 11.2, gust_value: 15.1 },
+        { time_step_fr: "2026-10-22T02:00:00+00:00", value: 12, gust_value: 16.4 },
+        { time_step_fr: "2026-10-22T03:00:00+00:00", value: 12.4, gust_value: 17.8 },
+        { time_step_fr: "2026-10-22T04:00:00+00:00", value: 12.1, gust_value: 16.9 },
+        { time_step_fr: "2026-10-22T05:00:00+00:00", value: 11.7, gust_value: 15.3 },
+        { time_step_fr: "2026-10-22T06:00:00+00:00", value: 11.3, gust_value: 14.6 },
       ],
     },
     sunrise: {
@@ -64,7 +64,7 @@ export const mockWeatherDetails = {
     uv_index: {
       value: 3,
       unit: "",
-      message: "Moderate — no protection needed",
+      message: "Moderate   no protection needed",
       variable_description: "The ultraviolet index estimates the strength of the sun's UV radiation.",
       hourly_values: [
         { time_step_fr: "2026-10-22T00:00:00+00:00", value: 2.4 },
@@ -165,7 +165,7 @@ export const mockActivities = [
     id:    "cycling",
     icon:  "🚴",
     label: "Cycling",
-    // Summary fields for LifestyleWidget — derived from current_status
+    // Summary fields for LifestyleWidget   derived from current_status
     status:  "green",
     message: "Good conditions right now",
     current_status: {
@@ -261,7 +261,7 @@ export const mockActivities = [
       }
     },
     best_window: [
-      { from: "2026-10-20T07:00:00+00:00", to: "2026-10-20T09:00:00+00:00", reason: "Cool and dry — ideal for running" }
+      { from: "2026-10-20T07:00:00+00:00", to: "2026-10-20T09:00:00+00:00", reason: "Cool and dry   ideal for running" }
     ],
     hourly: [
       { time: "2026-10-20T07:00:00+00:00", status: "green",  score: 1.0, parameters: { temperature: { score: 1.0, status: "green",  description: "Perfect running temperature" }, wind: { score: 0.9, status: "green", description: "Light wind" }, rain: { score: 1.0, status: "green", description: "Dry" } } },
@@ -275,21 +275,21 @@ export const mockActivities = [
     icon:  "🎣",
     label: "Fishing",
     status:  "yellow",
-    message: "Moderate wind — check conditions",
+    message: "Moderate wind   check conditions",
     current_status: {
       time:   "2026-10-20T02:00:00+00:00",
       status: "yellow",
       score:  0.6,
       parameters: {
-        wind: { score: 0.6, status: "yellow", description: "Moderate wind — fishing possible but not ideal" },
-        rain: { score: 0.8, status: "green",  description: "Light rain — fish may be active" },
+        wind: { score: 0.6, status: "yellow", description: "Moderate wind   fishing possible but not ideal" },
+        rain: { score: 0.8, status: "green",  description: "Light rain   fish may be active" },
       }
     },
     best_window: [
-      { from: "2026-10-20T06:00:00+00:00", to: "2026-10-20T09:00:00+00:00", reason: "Calm morning · Overcast — fish feed well" }
+      { from: "2026-10-20T06:00:00+00:00", to: "2026-10-20T09:00:00+00:00", reason: "Calm morning · Overcast   fish feed well" }
     ],
     hourly: [
-      { time: "2026-10-20T06:00:00+00:00", status: "green",  score: 0.9, parameters: { wind: { score: 0.9, status: "green",  description: "Calm — ideal fishing conditions" }, rain: { score: 0.9, status: "green", description: "Dry" } } },
+      { time: "2026-10-20T06:00:00+00:00", status: "green",  score: 0.9, parameters: { wind: { score: 0.9, status: "green",  description: "Calm   ideal fishing conditions" }, rain: { score: 0.9, status: "green", description: "Dry" } } },
       { time: "2026-10-20T10:00:00+00:00", status: "yellow", score: 0.5, parameters: { wind: { score: 0.5, status: "yellow", description: "Moderate wind picking up" },          rain: { score: 0.9, status: "green", description: "Dry" } } },
       { time: "2026-10-20T14:00:00+00:00", status: "red",    score: 0.2, parameters: { wind: { score: 0.2, status: "red",    description: "Too windy for fishing" },             rain: { score: 0.4, status: "yellow", description: "Rain making conditions worse" } } },
     ]
@@ -305,7 +305,7 @@ export const mockActivities = [
       status: "red",
       score:  0.2,
       parameters: {
-        cloud:    { score: 0.2, status: "red",   description: "Heavy overcast — no visibility" },
+        cloud:    { score: 0.2, status: "red",   description: "Heavy overcast   no visibility" },
         humidity: { score: 0.5, status: "yellow", description: "High humidity reduces clarity" },
       }
     },
@@ -334,7 +334,7 @@ export const mockActivities = [
       }
     },
     best_window: [
-      { from: "2026-10-20T11:00:00+00:00", to: "2026-10-20T15:00:00+00:00", reason: "Warm and sunny — perfect picnic window" }
+      { from: "2026-10-20T11:00:00+00:00", to: "2026-10-20T15:00:00+00:00", reason: "Warm and sunny   perfect picnic window" }
     ],
     hourly: [
       { time: "2026-10-20T11:00:00+00:00", status: "green",  score: 1.0, parameters: { temperature: { score: 1.0, status: "green", description: "Perfect picnic temperature" }, wind: { score: 0.9, status: "green", description: "Light breeze" }, rain: { score: 1.0, status: "green", description: "Dry" } } },
@@ -353,17 +353,17 @@ export const mockActivities = [
       status: "yellow",
       score:  0.6,
       parameters: {
-        temperature: { score: 0.6, status: "yellow", description: "14°C — jacket recommended" },
+        temperature: { score: 0.6, status: "yellow", description: "14°C   jacket recommended" },
         wind:        { score: 0.8, status: "green",  description: "Light wind" },
         rain:        { score: 0.9, status: "green",  description: "Dry" },
       }
     },
     best_window: [],
     hourly: [
-      { time: "2026-10-20T09:00:00+00:00", status: "green",  score: 0.9, parameters: { temperature: { score: 0.9, status: "green",  description: "Comfortable — no jacket needed" }, wind: { score: 0.9, status: "green", description: "Calm" } } },
-      { time: "2026-10-20T14:00:00+00:00", status: "green",  score: 1.0, parameters: { temperature: { score: 1.0, status: "green",  description: "Warm — T-shirt weather" },          wind: { score: 0.9, status: "green", description: "Calm" } } },
-      { time: "2026-10-20T18:00:00+00:00", status: "yellow", score: 0.6, parameters: { temperature: { score: 0.6, status: "yellow", description: "Cooling — light jacket useful" },    wind: { score: 0.7, status: "green", description: "Light wind" } } },
-      { time: "2026-10-20T21:00:00+00:00", status: "red",    score: 0.3, parameters: { temperature: { score: 0.3, status: "red",    description: "Cold — warm jacket needed" },         wind: { score: 0.5, status: "yellow", description: "Cool wind" } } },
+      { time: "2026-10-20T09:00:00+00:00", status: "green",  score: 0.9, parameters: { temperature: { score: 0.9, status: "green",  description: "Comfortable   no jacket needed" }, wind: { score: 0.9, status: "green", description: "Calm" } } },
+      { time: "2026-10-20T14:00:00+00:00", status: "green",  score: 1.0, parameters: { temperature: { score: 1.0, status: "green",  description: "Warm   T-shirt weather" },          wind: { score: 0.9, status: "green", description: "Calm" } } },
+      { time: "2026-10-20T18:00:00+00:00", status: "yellow", score: 0.6, parameters: { temperature: { score: 0.6, status: "yellow", description: "Cooling   light jacket useful" },    wind: { score: 0.7, status: "green", description: "Light wind" } } },
+      { time: "2026-10-20T21:00:00+00:00", status: "red",    score: 0.3, parameters: { temperature: { score: 0.3, status: "red",    description: "Cold   warm jacket needed" },         wind: { score: 0.5, status: "yellow", description: "Cool wind" } } },
     ]
   },
   {
@@ -371,14 +371,14 @@ export const mockActivities = [
     icon:  "📷",
     label: "Photography",
     status:  "green",
-    message: "Soft light — ideal for photos",
+    message: "Soft light   ideal for photos",
     current_status: {
       time:   "2026-10-20T02:00:00+00:00",
       status: "green",
       score:  0.9,
       parameters: {
-        cloud: { score: 0.8, status: "green", description: "Overcast — soft diffused light" },
-        rain:  { score: 1.0, status: "green", description: "No rain — equipment safe" },
+        cloud: { score: 0.8, status: "green", description: "Overcast   soft diffused light" },
+        rain:  { score: 1.0, status: "green", description: "No rain   equipment safe" },
       }
     },
     best_window: [
@@ -388,7 +388,7 @@ export const mockActivities = [
     hourly: [
       { time: "2026-10-20T07:00:00+00:00", status: "green",  score: 1.0, parameters: { cloud: { score: 1.0, status: "green", description: "Golden hour" },          rain: { score: 1.0, status: "green", description: "Dry" } } },
       { time: "2026-10-20T12:00:00+00:00", status: "yellow", score: 0.6, parameters: { cloud: { score: 0.6, status: "yellow", description: "Harsh midday light" },  rain: { score: 1.0, status: "green", description: "Dry" } } },
-      { time: "2026-10-20T15:00:00+00:00", status: "red",    score: 0.2, parameters: { cloud: { score: 0.9, status: "green",  description: "Soft light" },          rain: { score: 0.2, status: "red",   description: "Rain — equipment risk" } } },
+      { time: "2026-10-20T15:00:00+00:00", status: "red",    score: 0.2, parameters: { cloud: { score: 0.9, status: "green",  description: "Soft light" },          rain: { score: 0.2, status: "red",   description: "Rain   equipment risk" } } },
       { time: "2026-10-20T18:00:00+00:00", status: "green",  score: 1.0, parameters: { cloud: { score: 1.0, status: "green",  description: "Golden hour evening" }, rain: { score: 1.0, status: "green", description: "Dry" } } },
     ]
   },
@@ -404,12 +404,12 @@ export const mockActivities = [
       score:  0.9,
       parameters: {
         temperature: { score: 0.9, status: "green", description: "Mild and comfortable" },
-        rain:        { score: 0.9, status: "green", description: "Dry — good for digging" },
+        rain:        { score: 0.9, status: "green", description: "Dry   good for digging" },
         wind:        { score: 0.9, status: "green", description: "Light breeze" },
       }
     },
     best_window: [
-      { from: "2026-10-20T09:00:00+00:00", to: "2026-10-20T12:00:00+00:00", reason: "Cool and dry — ideal for gardening" }
+      { from: "2026-10-20T09:00:00+00:00", to: "2026-10-20T12:00:00+00:00", reason: "Cool and dry   ideal for gardening" }
     ],
     hourly: [
       { time: "2026-10-20T09:00:00+00:00", status: "green",  score: 1.0, parameters: { temperature: { score: 1.0, status: "green", description: "Perfect gardening temperature" }, rain: { score: 1.0, status: "green", description: "Dry" }, wind: { score: 0.9, status: "green", description: "Calm" } } },
@@ -484,6 +484,6 @@ export const mockAnalysis = {
   rain: {
     tp: 3103, fp: 5160, fn: 78, tn: 1876,
     precision: 0.376, recall: 0.975, f1: 0.543,
-    insight: 'Rain detection is moderate — the model catches most rain events but produces too many false alarms.',
+    insight: 'Rain detection is moderate   the model catches most rain events but produces too many false alarms.',
   },
 }

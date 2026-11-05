@@ -1,5 +1,5 @@
 """
-Analysis processor — computes forecast accuracy metrics by joining
+Analysis processor   computes forecast accuracy metrics by joining
 silver.forecast_arome with silver.observations_hourly.
 
 All heavy computation happens in SQL (indexed join + GROUP BY).
@@ -23,7 +23,7 @@ from sklearn.metrics import (
 
 logger = logging.getLogger(__name__)
 
-# Rain detection threshold — standard WMO definition
+# Rain detection threshold   standard WMO definition
 RAIN_THRESHOLD_MM = 0.1
 
         # fw.step,
@@ -243,16 +243,16 @@ def _rain_insight(tp, fp, fn, f1):
 #         return "No rain events observed in this period."
 #     if f1 >= 80:
 #         return (
-#             f"Rain detection is strong — the model correctly identified "
+#             f"Rain detection is strong   the model correctly identified "
 #             f"{tp} out of {total_actual} rainy hours with only {fp} false alarms."
 #         )
 #     elif f1 >= 55:
 #         return (
-#             f"Rain detection is moderate — {tp} of {total_actual} rainy hours "
+#             f"Rain detection is moderate   {tp} of {total_actual} rainy hours "
 #             f"caught correctly, but {fp} false alarms and {fn} misses."
 #         )
 #     return (
-#         f"Rain detection is poor — the model missed {fn} of {total_actual} "
+#         f"Rain detection is poor   the model missed {fn} of {total_actual} "
 #         f"rainy hours and produced {fp} false alarms."
 #     )
 
@@ -353,7 +353,7 @@ def _build_wind(rows: list[dict]) -> dict:
 
 def _build_rain(rows: list[dict]) -> dict:
     """
-    Rain metrics are summed across all steps — not averaged.
+    Rain metrics are summed across all steps   not averaged.
     We want total confusion matrix counts for the whole period.
     """
 
@@ -504,7 +504,7 @@ def compute_analysis(
             "date_from":  date_from.isoformat(),
             "date_to":    date_to.isoformat(),
             # "n_runs":     len(set(
-            #     # approximate — we don't have run_time in aggregated rows
+            #     # approximate   we don't have run_time in aggregated rows
             #     # the frontend shows days instead
             #     []
             # )),

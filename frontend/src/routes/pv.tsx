@@ -8,9 +8,9 @@ const Page = lazy(() => import("../app/pages/PvProductionPage"));
 export const Route = createFileRoute("/pv")({
   head: () => ({
     meta: [
-      { title: "PV production — MeteoApp" },
+      { title: "PV production   MeteoApp" },
       { name: "description", content: "Estimate solar panel production from the local forecast." },
-      { property: "og:title", content: "PV production — MeteoApp" },
+      { property: "og:title", content: "PV production   MeteoApp" },
       { property: "og:description", content: "Solar production estimates from weather forecasts." },
     ],
   }),

@@ -20,7 +20,7 @@ function TemperatureChart({ forecast }) {
 
   return (
     <div className="glass border border-border rounded-2xl p-5 mb-6">
-      <p className="text-xs text-muted-foreground mb-4">Temperature — next 48h</p>
+      <p className="text-xs text-muted-foreground mb-4">Temperature   next 48h</p>
       <ResponsiveContainer width="100%" height={200}>
         <AreaChart data={data}>
           <XAxis

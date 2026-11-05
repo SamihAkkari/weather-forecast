@@ -52,6 +52,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      init:
+        condition: service_completed_successfully
 
   api:
     build: .
@@ -67,6 +69,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      init:
+        condition: service_completed_successfully
 
   pgadmin:
     image: dpage/pgadmin4

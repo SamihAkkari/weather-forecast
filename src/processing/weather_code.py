@@ -85,7 +85,7 @@ def _thunderstorm_probability(
     because we track accumulatedScore / totalWeight.
     """
 
-    # Hard blockers — same as open-meteo
+    # Hard blockers   same as open-meteo
     if cape <= 10.0:
         return 0.0
     if cloud_cover < 30.0:
@@ -136,12 +136,12 @@ def compute_hourly_code(entry: dict) -> int:
 
     Logic follows open-meteo WeatherCode.calculate() order:
         1. Thunderstorm
-        2. (Freezing rain — skipped, no data)
+        2. (Freezing rain   skipped, no data)
         3. Convective snow showers
         4. Rain showers (convective)
         5. Stratiform snowfall
         6. Stratiform rain / drizzle
-        7. (Fog — skipped, no visibility data)
+        7. (Fog   skipped, no visibility data)
         8. Cloud cover
     """
 
@@ -165,9 +165,9 @@ def compute_hourly_code(entry: dict) -> int:
         if prob > 60:
             return 95   # thunderstorm slight or moderate
 
-    # ── 2. Freezing rain — skipped (no categoricalFreezingRain) ───────────
+    # ── 2. Freezing rain   skipped (no categoricalFreezingRain) ───────────
 
-    # ── 3 & 4. Convective precipitation — showers ─────────────────────────
+    # ── 3 & 4. Convective precipitation   showers ─────────────────────────
     # open-meteo condition: convectivePrecipitation > 0 OR cape >= 800
     # We use cape >= 800 as proxy since we have no convective precip field
     is_convective = _ok(cape) and cape >= 800
@@ -220,7 +220,7 @@ def compute_hourly_code(entry: dict) -> int:
         if precip_rate >= 7.6:
             return 65   # heavy rain
 
-    # ── 7. Fog — skipped (no visibility data) ─────────────────────────────
+    # ── 7. Fog   skipped (no visibility data) ─────────────────────────────
 
     # ── 8. Cloud cover ─────────────────────────────────────────────────────
     # open-meteo thresholds: 0–20 clear, 20–50 mainly clear,

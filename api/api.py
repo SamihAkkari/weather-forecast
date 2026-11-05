@@ -26,6 +26,7 @@ app = FastAPI(title="Weather Forecast API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    # allow_origins=["http://127.0.0.1:5173"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -150,7 +151,7 @@ def get_pv_production(
 #     stations = DatabaseGetter.get_stations()
 #     nearest_station = spatial.find_nearest_station(stations, lat, lng)
 
-#     # Step 2 — Get data for the nearest station and the current time  
+#     # Step 2 Get data for the nearest station and the current time  
 #     data = DatabaseGetter.get_frontend_formatted_data_for_analysis(nearest_station, int(days))
 #     return data
 
@@ -162,7 +163,7 @@ def get_analysis(
     days: int = 7,
 ):
     """
-    lat, lng : optional — if provided, finds nearest station.
+    lat, lng : optional   if provided, finds nearest station.
                if omitted, aggregates over all stations.
     days     : how many past days to include in the analysis.
     """
