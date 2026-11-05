@@ -12,10 +12,11 @@ logging.basicConfig(
 
 if __name__ == "__main__":
     dry_run = "--dry-run" in sys.argv
+    full = "--full-vacuum" in sys.argv
     try:
-        thin_forecast_runs(dry_run=dry_run)   # 1) thin first
+        thin_forecast_runs(dry_run=dry_run, full_vacuum=full)   # 1) thin first
         if not dry_run:
-            purge_old_bronze(keep_days=3)     # 2) then purge bronze
+            purge_old_bronze(keep_days=3, full_vacuum=full)     # 2) then purge bronze
     except Exception:
         logging.getLogger("maintenance").exception("Maintenance failed")
         sys.exit(1)

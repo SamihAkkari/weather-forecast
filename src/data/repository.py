@@ -133,6 +133,8 @@ class DatabaseRepository:
     
     @staticmethod
     def _this_date_is_already_ingested(date, target_table_name: str):
+        # import pdb
+        # pdb.set_trace()
         try:
             with DatabaseConnection() as conn:
                 with conn.cursor() as cur:

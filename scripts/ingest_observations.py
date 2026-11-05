@@ -5,20 +5,27 @@ from src.ingestion.ingestor import ObservationsIngestor
 import logging
 from logging.handlers import RotatingFileHandler
 
-handler = RotatingFileHandler(
-    "/app/logs/app.log",
-    maxBytes=5 * 1024 * 1024,  # 5 MB
-    backupCount=5,
-)
+# handler = RotatingFileHandler(
+#     "/app/logs/app.log",
+#     maxBytes=5 * 1024 * 1024,  # 5 MB
+#     backupCount=5,
+# )
+
+# logging.basicConfig(
+#     level=logging.INFO,
+#     format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
+#     handlers=[
+#         logging.StreamHandler(sys.stdout),
+#         handler,
+#     ],
+#     force = True
+# )
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        handler,
-    ],
-    force = True
+    stream=sys.stdout,
+    force=True,
 )
 
 if __name__ == "__main__":

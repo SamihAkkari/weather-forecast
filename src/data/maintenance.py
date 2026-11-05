@@ -16,7 +16,20 @@ BRONZE_FORECAST_TABLES = [Config.BRONZE_SP1_FORECAST_TABLE_NAME, Config.BRONZE_S
 SILVER_FORECAST = Config.SILVER_FORECAST_AROME_TABLE_NAME
 
 
-def thin_forecast_runs(dry_run: bool = False, lookback_days: int = 30) -> None:
+def _vacuum(tables: list[tuple[str, str]], full: bool = False) -> None:
+    """tables = [(schema, table), ...]. VACUUM cannot run inside a transaction."""
+    options = "FULL, ANALYZE" if full else "ANALYZE"
+    with DatabaseConnection() as conn:
+        conn.autocommit = True
+        try:
+            with conn.cursor() as cur:
+                for schema, table in tables:
+                    cur.execute(f'VACUUM ({options}) "{schema}"."{table}"')
+                    logger.info("%s.%s: VACUUM (%s) done", schema, table, options)
+        finally:
+            conn.autocommit = False      # the connection goes back to the pool
+
+def thin_forecast_runs(dry_run: bool = False, lookback_days: int = 30, full_vacuum: bool = False) -> None:
     """
     For every COMPLETED day (Paris date < today), keep ONE random forecast run and
     delete the other runs of that day from silver AND bronze.
@@ -74,29 +87,12 @@ def thin_forecast_runs(dry_run: bool = False, lookback_days: int = 30) -> None:
                     logger.info("  bronze.%s: %d rows deleted", table, cur.rowcount)
 
     # Deletions are committed when the first DatabaseConnection closes.
-    if dry_run:
-        logger.info("Dry run: skipping disk compaction")
-        return
-
-    # VACUUM FULL must run outside a transaction.
-    with DatabaseConnection() as conn:
-        conn.autocommit = True
-
-        with conn.cursor() as cur:
-            for table in tables_to_compact:
-                schema = SILVER if table == SILVER_FORECAST else BRONZE
-
-                cur.execute(
-                    f'VACUUM (FULL, ANALYZE) "{schema}"."{table}"'
-                )
-
-                logger.info(
-                    "%s.%s: disk compaction completed",
-                    schema, table,
-                )
+    _vacuum([(SILVER, SILVER_FORECAST), 
+             (BRONZE, Config.BRONZE_SP1_FORECAST_TABLE_NAME),
+             (BRONZE, Config.BRONZE_SP2_FORECAST_TABLE_NAME)], full = full_vacuum)
 
 
-def purge_old_bronze(keep_days: int = 3) -> None:
+def purge_old_bronze(keep_days: int = 3, full_vacuum:bool = False) -> None:
     """Delete bronze rows older than keep_days. Silver is NOT touched."""
     with DatabaseConnection() as conn:
         with conn.cursor() as cur:
@@ -114,11 +110,6 @@ def purge_old_bronze(keep_days: int = 3) -> None:
             logger.info("bronze.observations_hourly: %d old rows deleted", cur.rowcount)
     
     # Second: physically compact the tables.
-    with DatabaseConnection() as conn:
-        conn.autocommit = True
-        with conn.cursor() as cur:
-            for table in BRONZE_FORECAST_TABLES + [Config.OBSERVATIONS_TABLE_NAME_HOURLY]:
-                cur.execute(
-                    f'VACUUM (FULL, ANALYZE) "{BRONZE}"."{table}"'
-                )
-                logger.info("bronze.%s: disk space reclaimed", table)
+    _vacuum([(BRONZE, Config.OBSERVATIONS_TABLE_NAME_HOURLY), 
+             (BRONZE, Config.BRONZE_SP1_FORECAST_TABLE_NAME),
+             (BRONZE, Config.BRONZE_SP2_FORECAST_TABLE_NAME)], full = full_vacuum)

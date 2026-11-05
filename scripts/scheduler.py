@@ -29,21 +29,27 @@ def main():
     #     stream=sys.stdout,
     # )
 
-    handler = RotatingFileHandler(
-        "/app/logs/app.log",
-        maxBytes=5 * 1024 * 1024,  # 5 MB
-        backupCount=5,
-    )
+    # handler = RotatingFileHandler(
+    #     "/app/logs/app.log",
+    #     maxBytes=5 * 1024 * 1024,  # 5 MB
+    #     backupCount=5,
+    # )
 
+    # logging.basicConfig(
+    #     level=logging.INFO,
+    #     format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
+    #     handlers=[
+    #         logging.StreamHandler(sys.stdout),
+    #         handler,
+    #     ],
+    #     force = True
+    # )
     logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-            handler,
-        ],
-        force = True
-    )
+    level=logging.INFO,
+    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
+    stream=sys.stdout,
+    force=True,
+)
 
     test_mode = os.getenv("SCHEDULER_TEST") == "1"
     obs_every = "*/1" if test_mode else "*/10"    # minutes
