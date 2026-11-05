@@ -32,8 +32,7 @@ VARIABLE_DESCRIPTIONS = {
         "The apparent temperature estimates how warm or cold the air feels to a person once humidity and wind "
         "are taken into account: humid air makes warm weather feel hotter, while wind makes it feel cooler. "
         "It is computed with the Steadman formula (used by the Australian Bureau of Meteorology) for a person "
-        "in the shade, so direct sunshine, which feels warmer, is not included. It is an estimate and may "
-        "differ from the 'ressentie' values published by other services."
+        "in the shade, so direct sunshine, which feels warmer, is not included."
     ),
     "wind": (
         "Mean wind speed over the hour at 10 m above ground, in metres per second (1 m/s = 3.6 km/h). The "
@@ -61,12 +60,12 @@ def get_viewer_data(lat: float, lng: float) -> dict:
     shaped exactly like mockWeatherDetails on the frontend.
     """
 
-    # Step 1 — find the nearest station to the clicked location
+    # Step 1   find the nearest station to the clicked location
     stations = DatabaseGetter.get_stations()
     nearest_station = find_nearest_station(stations, lat, lng)
     logger.info(f"Nearest station found: {nearest_station.station_id} - {nearest_station.location_name}")
 
-    # Step 2 — get current time truncated to the hour
+    # Step 2   get current time truncated to the hour
     # This is used to fetch the current observation and forecast from now onward
     # current_time = TimeManager.current_france_time_iso(time_truncation="hour")
     current_time = TimeManager.current_utc_iso("hour")
@@ -79,7 +78,7 @@ def get_viewer_data(lat: float, lng: float) -> dict:
     today_obs_raw, cur = DatabaseGetter.get_observations(station_id=nearest_station.station_id, fromm=Config.OBSERVATIONS_TABLE_NAME_HOURLY, time = today )
     today_obs = DatabaseGetter.transform_data_to_list_of_dict(today_obs_raw, cur)
     
-    # Fetch only forecast — no observation call
+    # Fetch only forecast   no observation call
     forecast_raw, cur = DatabaseGetter.get_forecasts_at_time_step(
         station_id=nearest_station.station_id,
         fromm=Config.SILVER_FORECAST_AROME_TABLE_NAME,
@@ -160,7 +159,7 @@ def _build_station(station_info: dict) -> dict:
 
 def _build_hourly_forecast(current: dict, forecast: list[dict]) -> list[dict]:
     """
-    Builds the hourly cards data — one entry per forecast timestep.
+    Builds the hourly cards data   one entry per forecast timestep.
     We limit to 48 hours maximum.
     """
     hourly = [{
@@ -297,14 +296,16 @@ def _build_daily_forecast(today_obs: list[dict], forecast: list[dict], today_for
     
     data = discard_last_day_if_not_worth(data, last_day) # should retrun the data either as it is if more than half the hours of th elast day are present or without any timetep of the last day if less
 
+
     days = defaultdict(list)
     for entry in data:
         time_str = entry.get("time_step_fr", "")
         if not time_str:
             continue
-        # Extract date part — works for both "2026-04-21T14:00:00" and datetime objects
+        # Extract date part   works for both "2026-04-21T14:00:00" and datetime objects
         # date_key = str(time_str)[:10]
-        date_key = TimeManager.iso_to_france_date(time_str)
+        # date_key = TimeManager.iso_to_france_date(time_str)
+        date_key = time_str[0:10]
         days[date_key].append(entry)
 
 
@@ -343,7 +344,7 @@ def _build_widgets(current, forecast: list[dict]) -> dict:
     if not in observations).
 
     For now we use conditions for what we have and leave
-    derived fields as placeholders — you can enrich these
+    derived fields as placeholders   you can enrich these
     as your data model grows.
     """
     temp    = current.get("temperature_celsius") if current and current != 0 else None
@@ -357,7 +358,7 @@ def _build_widgets(current, forecast: list[dict]) -> dict:
 
     hourly_humidity = [{"time_step_fr": entry.get("time_step_fr"), "value": entry.get("humidity_percentage")} for entry in forecast[:48]]
     # hourly_wind_dir = [{"time_step_fr": entry.get("time_step_fr"), "value": _wind_direction(entry.get("wind_direction_degree"))} for entry in forecast[:48]]
-    hourly_wind_speed = [{"time_step_fr": entry.get("time_step_fr"), "value":entry.get("wind_speed_m_per_s")} for entry in forecast[:48]]
+    hourly_wind_speed = [{"time_step_fr": entry.get("time_step_fr"), "value":entry.get("wind_speed_m_per_s"), "gust_value": entry.get("wind_gust_m_per_s")} for entry in forecast[:48]]
     # hourly_pressure = [{"time_step_fr": entry.get("time_step_fr"), "value":round(entry.get("mean_sea_level_pressure")/100, 1)} for entry in forecast[:48]]
     hourly_feels = [{"time_step_fr": entry.get("time_step_fr"), "value":_compute_feels_like(entry.get("temperature_celsius"), entry.get("humidity_percentage"), entry.get("wind_speed_m_per_s"))} for entry in forecast[:48]]
 
@@ -415,7 +416,7 @@ def _build_widgets(current, forecast: list[dict]) -> dict:
                        if current and current != 0 and pressure
                        else None,
             "unit":    "hPa",
-            "message": "k",
+            "message": "",
             "variable_description": VARIABLE_DESCRIPTIONS["pressure"],
             "hourly_values": hourly_pressure
         },
@@ -432,18 +433,18 @@ def _build_lifestyle(current: dict, forecast: list[dict]) -> list:
         utils._build_activity(current, forecast, "running"),
         utils._build_activity(current, forecast, "hiking"),
         utils._build_activity(current, forecast, "picnic"),
-        utils._build_activity(current, forecast, "fishing"),
+        # utils._build_activity(current, forecast, "fishing"),
         # utils._build_activity(current, forecast, "photography"),
         utils._build_activity(current, forecast, "stargazing"),
         utils._build_activity(current, forecast, "gardening"),
         utils._build_activity(current, forecast, "clothing"),
         utils._build_activity(current, forecast, "driving"),
-        utils._build_activity(current, forecast, "dogwalking"),
+        # utils._build_activity(current, forecast, "dogwalking"),
     ]
 
 # ── Insight message helpers ────────────────────────────────────────────────────
 # Each helper returns a short human-readable sentence based on the value.
-# These are pure functions — easy to test and extend.
+# These are pure functions   easy to test and extend.
 
 import math
 

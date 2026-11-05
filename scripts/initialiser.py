@@ -415,6 +415,29 @@ def make_silver_forecast_arome_table_without_data(SCHEMA, TABLE):
     cur.close()
     conn.close()
 
+def make_indexes_and_policies():
+    """Idempotent: safe to run on every start."""
+    statements = [
+        # bronze: speeds up the 'already ingested?' checks and dbt NOT EXISTS
+        f"CREATE INDEX IF NOT EXISTS ix_b_sp1 ON {Config.BRONZE_SCHEMA}.{Config.BRONZE_SP1_FORECAST_TABLE_NAME} (run_time, valid_time)",
+        f"CREATE INDEX IF NOT EXISTS ix_b_sp2 ON {Config.BRONZE_SCHEMA}.{Config.BRONZE_SP2_FORECAST_TABLE_NAME} (run_time, valid_time)",
+        f"CREATE INDEX IF NOT EXISTS ix_b_obs ON {Config.BRONZE_SCHEMA}.{Config.OBSERVATIONS_TABLE_NAME_HOURLY} (validity_time)",
+        # silver: speeds up DISTINCT ON (station_id, time_step_fr) ... ORDER BY run_time DESC
+        f"CREATE INDEX IF NOT EXISTS ix_s_fc ON {Config.SILVER_SCHEMA}.{Config.SILVER_FORECAST_AROME_TABLE_NAME} (station_id, time_step_fr, run_time DESC)",
+        # long safety net only (silver is meant to be kept); drops whole 7-day chunks
+        f"SELECT add_retention_policy('{Config.SILVER_SCHEMA}.{Config.SILVER_FORECAST_AROME_TABLE_NAME}', INTERVAL '365 days', if_not_exists => true)",
+    ]
+    conn = psycopg2.connect(
+        dbname=Config.POSTGRES_DB, user=Config.POSTGRES_USER,
+        password=Config.POSTGRES_PASSWORD, host=Config.POSTGRES_HOST,
+        port=Config.POSTGRES_PORT,
+    )
+    cur = conn.cursor()
+    for sql in statements:
+        cur.execute(sql)
+    conn.commit()
+    cur.close()
+    conn.close()
 
 if __name__ == "__main__":
     make_stations_table("data/liste-stations-obs-metropole-om_completed.csv", 
@@ -430,4 +453,4 @@ if __name__ == "__main__":
     make_bronze_sp1_arome_forecast_table_without_data(Config.BRONZE_SCHEMA, Config.BRONZE_SP1_FORECAST_TABLE_NAME)
     make_bronze_sp2_arome_forecast_table_without_data(Config.BRONZE_SCHEMA, Config.BRONZE_SP2_FORECAST_TABLE_NAME)
     make_silver_forecast_arome_table_without_data(Config.SILVER_SCHEMA, Config.SILVER_FORECAST_AROME_TABLE_NAME)
- 
+    make_indexes_and_policies()

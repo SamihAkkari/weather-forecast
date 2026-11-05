@@ -1,0 +1,3 @@
+- Migrated MeteoApp pages live in `src/app/` as JSX; navigation goes through `src/app/router-compat.jsx` (TanStack adapter). Why: keeps the original code intact while using TanStack Router.
+- Map/chart pages are lazy-loaded behind `ClientPage` (ClientOnly). Why: Leaflet touches `window` at import, breaking SSR.
+- The frontend calls the local backend at `127.0.0.1:8001`; `src/app/data/mockData.js` provides fallback data.

@@ -47,25 +47,32 @@ def group_datasets(datasets: list[xr.Dataset]) -> dict[str, xr.Dataset]:
             try:
                 result[group] = xr.merge(ds_list)
             except Exception:
-                # If merge fails, keep as list — don't force incompatible data
+                # If merge fails, keep as list   don't force incompatible data
                 result[group] = ds_list
     
     return result
 
 
-handler = RotatingFileHandler(
-    "/app/logs/app.log",
-    maxBytes=5 * 1024 * 1024,  # 5 MB
-    backupCount=5,
-)
+# handler = RotatingFileHandler(
+#     "/app/logs/app.log",
+#     maxBytes=5 * 1024 * 1024,  # 5 MB
+#     backupCount=5,
+# )
+
+# logging.basicConfig(
+#     level=logging.INFO,
+#     format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
+#     handlers=[
+#         logging.StreamHandler(sys.stdout),
+#         handler,
+#     ],
+# )
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        handler,
-    ],
+    stream=sys.stdout,
+    force=True,
 )
 
 api = APIFactory.create("meteofrance_observations", "stations_infrahoraire-6m")

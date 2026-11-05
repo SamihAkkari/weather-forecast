@@ -1,35 +1,54 @@
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-app-env: &app-env
+  POSTGRES_HOST: db
+  POSTGRES_PORT: "5432"
+  POSTGRES_USER: "${POSTGRES_USER:?POSTGRES_USER is required}"
+  POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
+  POSTGRES_DB: "${POSTGRES_DB:?POSTGRES_DB is required}"
+
+x-dbt-env: &dbt-env
+  DBT_MODE: local
+  DBT_BIN: /opt/dbt-venv/bin/dbt
+  DBT_TARGET_PATH: /tmp/dbt/target
+  DBT_LOG_PATH: /tmp/dbt/logs
+
+x-api-env: &api-env
+  DB_STATEMENT_TIMEOUT_MS: "30000"
+  DB_POOL_MAX: "10"
 
 services:
   db:
-    image: timescale/timescaledb:latest-pg16
+    image: timescale/timescaledb:latest-pg16     # pin later: 2.x.y-pg16
     container_name: weather_db
     restart: unless-stopped
+    logging: *logging
     ports:
-      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"   # only reachable from this machine not exposed to internet
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5433}:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: "${POSTGRES_USER:?POSTGRES_USER is required}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}"
+      POSTGRES_DB: "${POSTGRES_DB:?POSTGRES_DB is required}"
     volumes:
-      - db_data:/var/lib/postgresql/data  # <--- persistent volume
+      - db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
-      retries: 5    
+      retries: 5
 
   init:
-    container_name: weather_init
     build: .
+    container_name: weather_init
+    restart: "no"
+    logging: *logging
     env_file: .env
     environment:
-      POSTGRES_HOST: db
-      POSTGRES_PORT: "5432"
-      DBT_MODE: local
-      DBT_BIN: /opt/dbt-venv/bin/dbt
-      DBT_TARGET_PATH: /tmp/dbt/target
-      DBT_LOG_PATH: /tmp/dbt/logs
-    restart: "no"             # run once, then stop
+      <<: [*app-env, *dbt-env]
     command: ["sh", "-c", "python -m scripts.initialiser && /opt/dbt-venv/bin/dbt run --select stations --project-dir dbt/weather_project --profiles-dir dbt"]
     depends_on:
       db:
@@ -39,43 +58,45 @@ services:
     build: .
     container_name: weather_scheduler
     restart: unless-stopped
+    logging: *logging
+    mem_limit: 6g            # GRIB processing is hungry; if it OOMs, only this container dies
     env_file: .env
     environment:
-      POSTGRES_HOST: db
-      POSTGRES_PORT: "5432"
-      DBT_MODE: local
-      DBT_BIN: /opt/dbt-venv/bin/dbt
-      DBT_TARGET_PATH: /tmp/dbt/target
-      DBT_LOG_PATH: /tmp/dbt/logs
-    volumes:
-      - ./logs:/app/logs
+      <<: [*app-env, *dbt-env]
     depends_on:
       db:
         condition: service_healthy
+      init:
+        condition: service_completed_successfully
 
   api:
     build: .
     container_name: weather_api
     restart: unless-stopped
+    logging: *logging
+    mem_limit: 2g
     env_file: .env
     environment:
-      POSTGRES_HOST: db
-      POSTGRES_PORT: "5432"
-    command: ["python", "-m", "api.main"]
+      <<: [*app-env, *api-env]
+    command: ["uvicorn", "api.api:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "2"]
     ports:
-      - "127.0.0.1:8001:8001"
+      - "127.0.0.1:8001:8001" 
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     depends_on:
       db:
         condition: service_healthy
+      init:
+        condition: service_completed_successfully
 
   pgadmin:
     image: dpage/pgadmin4
     restart: unless-stopped
-    # healthcheck:
-    #   test: ["CMD-SHELL", "curl --fail http://localhost:80 || exit 1"]
-    #   interval: 10s
-    #   retries: 5
-    #   start_period: 5s
+    logging: *logging
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
@@ -86,19 +107,34 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
-  # dbt:
-  #   image: ghcr.io/dbt-labs/dbt-postgres:1.7.9
-  #   container_name: dbt_runner
-  #   env_file: .env
-  #   ports:
-  #   - "8081:8080"   # <--- expose container port to host
-  #   volumes:
-  #     - ./dbt:/usr/app/dbt
-  #   working_dir: /usr/app/dbt
-  #   environment:
-  #     DBT_PROFILES_DIR: /usr/app/dbt
-  #   entrypoint: ["tail", "-f", "/dev/null"]
+  frontend:
+    profiles: ["prod"]
+    build: ./frontend
+    container_name: weather_frontend
+    restart: unless-stopped
+    logging: *logging
+
+  caddy:
+    profiles: ["prod"]
+    image: caddy:2
+    container_name: weather_caddy
+    restart: unless-stopped
+    logging: *logging
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    depends_on:
+      - api
+      - frontend
 
 volumes:
   db_data:
   pgadmin_data:
+  caddy_data:
+  caddy_config:

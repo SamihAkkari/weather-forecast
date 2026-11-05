@@ -434,7 +434,7 @@ class DatabaseGetter:
             forecast_data = DatabaseGetter.get_forecast_run(station.station_id, Config.SILVER_FORECAST_AROME_TABLE_NAME, run_time)
             time_range = (forecast_data[0].time_step_fr, forecast_data[-1].time_step_fr)
             
-            # Step 2 — fetch observations for the same time window
+            # Step 2   fetch observations for the same time window
             observations_data, cur = DatabaseGetter.get_observations(
                 station.station_id, Config.OBSERVATIONS_TABLE_NAME_HOURLY, time_range
             )

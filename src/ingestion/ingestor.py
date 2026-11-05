@@ -70,7 +70,7 @@ class BaseIngestor(ABC):
         self.logger.info(f"Ingested {count} records for {identifier}")
 
     def _log_skip(self, reason):
-        self.logger.info(f"Skipped — {reason}")
+        self.logger.info(f"Skipped   {reason}")
 
     def _log_error(self, context, error):
         self.logger.error(f"{context}: {error}")
@@ -179,7 +179,7 @@ class ObservationsIngestor(BaseIngestor):
 class ForecastIngestor(BaseIngestor):
     """
     Ingest one AROME forecast run per call.
-    Trigger externally (cron, scheduler) — this class does not manage timing.
+    Trigger externally (cron, scheduler)   this class does not manage timing.
     """
 
     def __init__(self, data_api_clients, description_api_client):
@@ -350,7 +350,7 @@ class ForecastIngestor(BaseIngestor):
                         target_table_name=client.api.bronze_table):
                     self._log_skip(
                         f"Run {run_time}, interval {interval} "
-                        "already ingested — skipping"
+                        "already ingested   skipping"
                     )
                     continue
     
@@ -412,7 +412,7 @@ class ForecastIngestor(BaseIngestor):
 
         
         # if DatabaseRepository.forecast_run_already_ingested(params.get("referencetime"), self.data_base_target_table):
-        #     self._log_skip(f"Forecast run {params.get("referencetime")} already ingested — skipping")
+        #     self._log_skip(f"Forecast run {params.get("referencetime")} already ingested   skipping")
         # else:
         #     parameters = copy.deepcopy(params)       
         #     for value in params.get("time"):

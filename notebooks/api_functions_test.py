@@ -61,7 +61,7 @@ result = compute_pv_production(
 )
 
 
-get_viewer_page_data(lat, lng)
+d = get_viewer_page_data(lat, lng)
 
 lat = 48.4638
 lng = -3.6673

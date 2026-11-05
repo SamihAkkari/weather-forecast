@@ -42,7 +42,8 @@ class TokenManager:
                 self.TOKEN_URL, 
                 data=self.TOKEN_DATA, 
                 allow_redirects=False, 
-                headers=self.TOKEN_HEADERS
+                headers=self.TOKEN_HEADERS,
+                timeout= 30
             )
             access_token_response.raise_for_status()
             self.token = access_token_response.json()['access_token']
