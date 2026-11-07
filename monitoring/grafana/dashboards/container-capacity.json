@@ -1,0 +1,351 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 2,
+          "unit": "decmbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "max"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "expr": "(container_memory_working_set_bytes{id=\"/\"} - scalar(sum(container_memory_working_set_bytes{compose_project=\"$project\",container=~\"cadvisor|prometheus|grafana\"}))) / 1000000",
+          "legendFormat": "VM without monitoring (estimate)",
+          "refId": "A"
+        }
+      ],
+      "title": "Peak estimated VM memory without monitoring (MB)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 2,
+          "unit": "cores"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "max"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "expr": "rate(container_cpu_usage_seconds_total{id=\"/\",cpu=\"total\"}[5m]) - scalar(sum(rate(container_cpu_usage_seconds_total{compose_project=\"$project\",container=~\"cadvisor|prometheus|grafana\",cpu=\"total\"}[5m])))",
+          "legendFormat": "VM without monitoring (estimate)",
+          "refId": "A"
+        }
+      ],
+      "title": "Peak estimated VM CPU without monitoring (vCPU cores)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 2,
+          "unit": "decmbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 0,
+        "y": 5
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "max"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{compose_project=\"$project\",container!~\"cadvisor|prometheus|grafana\"}) / 1000000",
+          "legendFormat": "Application services",
+          "refId": "A"
+        }
+      ],
+      "title": "Peak application services memory in range (MB)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 2,
+          "unit": "cores"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 12,
+        "y": 5
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "max"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{compose_project=\"$project\",container!~\"cadvisor|prometheus|grafana\",cpu=\"total\"}[5m]))",
+          "legendFormat": "Application services",
+          "refId": "A"
+        }
+      ],
+      "title": "Peak application services CPU in range (vCPU cores)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 2,
+          "unit": "decmbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 10
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (container) (container_memory_working_set_bytes{compose_project=\"$project\",container=~\"$container\",container!~\"cadvisor|prometheus|grafana\"}) / 1000000 or label_replace(container_memory_working_set_bytes{id=\"/\"} / 1000000, \"container\", \"Linux VM (with monitoring)\", \"id\", \"/\") or label_replace((container_memory_working_set_bytes{id=\"/\"} - scalar(sum(container_memory_working_set_bytes{compose_project=\"$project\",container=~\"cadvisor|prometheus|grafana\"}))) / 1000000, \"container\", \"VM without monitoring (estimate)\", \"id\", \"/\")",
+          "legendFormat": "{{container}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Memory by service and Linux VM (MB)",
+      "description": "VM without monitoring is estimated by subtracting cAdvisor, Prometheus, and Grafana from Linux VM memory. Container lines exclude those monitoring services.",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "decimals": 2,
+          "unit": "cores"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 10
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (container) (rate(container_cpu_usage_seconds_total{compose_project=\"$project\",container=~\"$container\",container!~\"cadvisor|prometheus|grafana\",cpu=\"total\"}[5m])) or label_replace(rate(container_cpu_usage_seconds_total{id=\"/\",cpu=\"total\"}[5m]), \"container\", \"Linux VM (with monitoring)\", \"id\", \"/\") or label_replace((rate(container_cpu_usage_seconds_total{id=\"/\",cpu=\"total\"}[5m]) - scalar(sum(rate(container_cpu_usage_seconds_total{compose_project=\"$project\",container=~\"cadvisor|prometheus|grafana\",cpu=\"total\"}[5m])))), \"container\", \"VM without monitoring (estimate)\", \"id\", \"/\")",
+          "legendFormat": "{{container}}",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU by service and Linux VM (vCPU cores)",
+      "description": "VM without monitoring is estimated by subtracting cAdvisor, Prometheus, and Grafana from Linux VM CPU. Container lines exclude those monitoring services.",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "15s",
+  "schemaVersion": 39,
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(container_memory_working_set_bytes, compose_project)",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Compose project",
+        "name": "project",
+        "options": [],
+        "query": {
+          "query": "label_values(container_memory_working_set_bytes, compose_project)",
+          "refId": "Prometheus-project-Variable-Query"
+        },
+        "refresh": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "definition": "label_values(container_memory_working_set_bytes{compose_project=\"$project\",container!~\"cadvisor|prometheus|grafana\"}, container)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Application service",
+        "multi": true,
+        "name": "container",
+        "options": [],
+        "query": {
+          "query": "label_values(container_memory_working_set_bytes{compose_project=\"$project\",container!~\"cadvisor|prometheus|grafana\"}, container)",
+          "refId": "Prometheus-container-Variable-Query"
+        },
+        "refresh": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "title": "Weather project capacity",
+  "uid": "weather-project-capacity",
+  "version": 1,
+  "weekStart": ""
+}

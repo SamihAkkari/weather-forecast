@@ -26,6 +26,7 @@ services:
     image: timescale/timescaledb:2.31.0-pg16
     # container_name: weather_db
     restart: unless-stopped
+    mem_limit: 0.5g            # GRIB processing is hungry; if it OOMs, only this container dies
     logging: *logging
     ports:
       - "127.0.0.1:${POSTGRES_HOST_PORT:-5433}:5432"
@@ -59,7 +60,7 @@ services:
     # container_name: weather_scheduler
     restart: unless-stopped
     logging: *logging
-    mem_limit: 6g            # GRIB processing is hungry; if it OOMs, only this container dies
+    mem_limit: 1g            # GRIB processing is hungry; if it OOMs, only this container dies
     env_file: .env
     environment:
       <<: [*app-env, *dbt-env]
@@ -74,7 +75,7 @@ services:
     # container_name: weather_api
     restart: unless-stopped
     logging: *logging
-    mem_limit: 2g
+    mem_limit: 0.5g
     env_file: .env
     environment:
       <<: [*app-env, *api-env]
@@ -133,8 +134,60 @@ services:
       - api
       - frontend
 
+
+  cadvisor:
+    profiles: ["monitoring"]
+    image: ghcr.io/google/cadvisor:v0.57.0
+    restart: unless-stopped
+    privileged: true
+    command:
+      - --store_container_labels=false
+      - --whitelisted_container_labels=com.docker.compose.service,com.docker.compose.project
+      - --docker_only=true
+    ports:
+      - "127.0.0.1:8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /run/containerd/containerd.sock:/run/containerd/containerd.sock:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+
+  prometheus:
+    profiles: ["monitoring"]
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+
+  grafana:
+    profiles: ["monitoring"]
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: weather-admin
+      GF_SECURITY_ADMIN_PASSWORD: 123456789
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+
+
 volumes:
   db_data:
   pgadmin_data:
   caddy_data:
   caddy_config:
+  grafana_data:
+  prometheus_data:
