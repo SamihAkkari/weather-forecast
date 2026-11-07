@@ -23,8 +23,8 @@ x-api-env: &api-env
 
 services:
   db:
-    image: timescale/timescaledb:latest-pg16     # pin later: 2.x.y-pg16
-    container_name: weather_db
+    image: timescale/timescaledb:2.31.0-pg16
+    # container_name: weather_db
     restart: unless-stopped
     logging: *logging
     ports:
@@ -43,7 +43,7 @@ services:
 
   init:
     build: .
-    container_name: weather_init
+    # container_name: weather_init
     restart: "no"
     logging: *logging
     env_file: .env
@@ -56,7 +56,7 @@ services:
 
   scheduler:
     build: .
-    container_name: weather_scheduler
+    # container_name: weather_scheduler
     restart: unless-stopped
     logging: *logging
     mem_limit: 6g            # GRIB processing is hungry; if it OOMs, only this container dies
@@ -71,7 +71,7 @@ services:
 
   api:
     build: .
-    container_name: weather_api
+    # container_name: weather_api
     restart: unless-stopped
     logging: *logging
     mem_limit: 2g
@@ -80,7 +80,7 @@ services:
       <<: [*app-env, *api-env]
     command: ["uvicorn", "api.api:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "2"]
     ports:
-      - "127.0.0.1:8001:8001" 
+      - "127.0.0.1:${API_PORT:-8001}:8001"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health', timeout=3)"]
       interval: 30s
@@ -110,14 +110,14 @@ services:
   frontend:
     profiles: ["prod"]
     build: ./frontend
-    container_name: weather_frontend
+    # container_name: weather_frontend
     restart: unless-stopped
     logging: *logging
 
   caddy:
     profiles: ["prod"]
     image: caddy:2
-    container_name: weather_caddy
+    # container_name: weather_caddy
     restart: unless-stopped
     logging: *logging
     ports:
