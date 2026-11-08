@@ -99,7 +99,7 @@ def compute_pv_production(
 
     Parameters
     ----------
-    forecast : list of forecast dicts from DatabaseGetter
+    forecast : list of forecast dictionaries from the query layer
     lat, lng : location coordinates (from map click)
     altitude : station altitude in metres
     system_capacity_kw : installed PV capacity in kW (e.g. 3.0 for a 3kWp system)

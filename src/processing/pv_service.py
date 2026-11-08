@@ -1,6 +1,5 @@
 from src import time_utils
-from src.config.config import Config
-from src.data.getter import DatabaseGetter
+from src.data import queries
 from src.processing.location_service import get_nearest_station
 from src.processing.pv_production import compute_pv_production
 
@@ -18,13 +17,7 @@ def get_pv_production_data(
     nearest_station = get_nearest_station(lat, lng)
     current_time = time_utils.current_utc_iso("hour")
 
-    forecast_raw, cursor = DatabaseGetter.get_forecasts_at_time_step(
-        station_id=nearest_station.station_id,
-        fromm=Config.SILVER_FORECAST_AROME_TABLE_NAME,
-        time=current_time,
-        exactly_at_time=False,
-    )
-    forecast = DatabaseGetter.transform_data_to_list_of_dict(forecast_raw, cursor)
+    forecast = queries.get_forecasts_after(nearest_station.station_id, current_time)
 
     if not forecast:
         raise LookupError(

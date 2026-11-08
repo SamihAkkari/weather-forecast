@@ -38,3 +38,11 @@ class DatabaseConnection:
         finally:
             # a broken connection is closed instead of being reused
             _get_pool().putconn(self.conn, close=bool(self.conn.closed))
+
+
+def fetch_dicts(sql: str, params: tuple | None = None) -> list[dict]:
+    """Run a SELECT query and return each row as a dictionary."""
+    with DatabaseConnection() as conn, conn.cursor() as cur:
+        cur.execute(sql, params)
+        columns = [description[0] for description in cur.description]
+        return [dict(zip(columns, row)) for row in cur.fetchall()]

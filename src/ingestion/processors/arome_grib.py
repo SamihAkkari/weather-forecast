@@ -7,7 +7,7 @@ import xarray as xr
 import tempfile
 from src.processing.spatial import extract_at_indices, find_nearest_grid_indices
 from src.data.models import BaseRecord
-from src.data.getter import DatabaseGetter
+from src.data import queries
 import logging
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class GribProcessor:
             grid_lats = self.reference_data.latitude.values
             grid_lons = self.reference_data.longitude.values
 
-            stations = DatabaseGetter.get_stations()
+            stations = queries.get_stations()
 
 
             variables = records_class.forecast_variables()  # all non-metadata fields

@@ -1,4 +1,4 @@
-from src.data.getter import DatabaseGetter
+from src.data import queries
 import logging
 
 logger = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ class ObservationProcessor:
         records = []
         if self.response_data == []:
             logger.error("The API did not return data for the current data")
-        stations = DatabaseGetter.get_stations()
+        stations = queries.get_stations()
         stations_ids = {station.station_id for station in stations}
         for observation in self.response_data:
             if observation["geo_id_insee"] in stations_ids:

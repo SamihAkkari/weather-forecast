@@ -16,8 +16,7 @@ import logging
 from datetime import datetime, timedelta
 
 from src import time_utils
-from src.config.config import Config
-from src.data.getter import DatabaseGetter
+from src.data import queries
 from src.processing.activity_recommendations import build_activity
 from src.processing.forecast.presentation import (
     build_daily_forecast,
@@ -56,35 +55,13 @@ def get_viewer_data(lat: float, lng: float) -> dict:
     current_time = time_utils.current_utc_iso("hour")
     today = time_utils.current_france_date_iso()
 
-    current_obs_raw, cur = DatabaseGetter.get_observations(
-        station_id=nearest_station.station_id,
-        fromm=Config.OBSERVATIONS_TABLE_NAME_HOURLY,
-        time=current_time,
+    current_obs = queries.get_observations_at(
+        nearest_station.station_id, current_time
     )
-    current_obs = DatabaseGetter.transform_data_to_list_of_dict(current_obs_raw, cur)
-
-    today_obs_raw, cur = DatabaseGetter.get_observations(
-        station_id=nearest_station.station_id,
-        fromm=Config.OBSERVATIONS_TABLE_NAME_HOURLY,
-        time=today,
-    )
-    today_obs = DatabaseGetter.transform_data_to_list_of_dict(today_obs_raw, cur)
-
-    forecast_raw, cur = DatabaseGetter.get_forecasts_at_time_step(
-        station_id=nearest_station.station_id,
-        fromm=Config.SILVER_FORECAST_AROME_TABLE_NAME,
-        time=current_time,
-        exactly_at_time=False,
-    )
-    forecast = DatabaseGetter.transform_data_to_list_of_dict(forecast_raw, cur)
-
-    today_forecast_raw, cur = DatabaseGetter.get_forecasts_for_day(
-        station_id=nearest_station.station_id,
-        fromm=Config.SILVER_FORECAST_AROME_TABLE_NAME,
-        day=today,
-    )
-    today_forecast = DatabaseGetter.transform_data_to_list_of_dict(
-        today_forecast_raw, cur
+    today_obs = queries.get_observations_for_day(nearest_station.station_id, today)
+    forecast = queries.get_forecasts_after(nearest_station.station_id, current_time)
+    today_forecast = queries.get_forecasts_for_day(
+        nearest_station.station_id, today
     )
 
     station_info = nearest_station.__dict__
