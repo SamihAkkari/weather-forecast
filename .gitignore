@@ -3,9 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Environment files
+# Environment files (keep the template)
 .env
 .env.*
+!.env.example
 
 # Logs
 logs/
@@ -26,9 +27,15 @@ Thumbs.db
 # Keep override docker compose only for dev
 docker-compose.override.yaml
 
-#
+# Data: ignore CSVs except the one needed by the initialiser
 *.xlsx
 *.csv
-!data/liste-stations-obs-metropole-om_completed.csv  # I keep track to this file because it is used during intialisation
+!data/liste-stations-obs-metropole-om_completed.csv
 
 *.dump
+
+# dbt local artefacts
+dbt/.user.yml
+dbt/weather_project/target/
+dbt/weather_project/dbt_packages/
+dbt/weather_project/logs/
