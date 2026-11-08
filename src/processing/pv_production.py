@@ -33,7 +33,6 @@ Why Haydavies transposition?
 import logging
 import pandas as pd
 import pvlib
-from pvlib.location import Location
 from pvlib.irradiance import erbs, get_extra_radiation
 from pvlib.solarposition import get_solarposition
 
@@ -131,25 +130,16 @@ def compute_pv_production(
     # ── 2. Build time index ───────────────────────────────────────────────
     times = build_time_index(forecast)
 
-    # ── 3. Build pvlib Location ───────────────────────────────────────────
-    location = Location(
-        latitude=lat,
-        longitude=lng,
-        tz="Europe/Paris",
-        altitude=altitude,
-        name="forecast_location",
-    )
-
-    # ── 4. Compute solar position ─────────────────────────────────────────
+    # ── 3. Compute solar position ─────────────────────────────────────────
     # Returns: apparent_zenith, azimuth, elevation etc. for each timestep
     solar_position = get_solarposition(times, lat, lng, altitude)
 
-    # ── 5. Extraterrestrial radiation ─────────────────────────────────────
+    # ── 4. Extraterrestrial radiation ─────────────────────────────────────
     # Radiation that would reach Earth's surface with no atmosphere.
     # Used by Erbs decomposition as a reference.
     dni_extra = get_extra_radiation(times)
 
-    # ── 6. Erbs decomposition: GHI → DNI + DHI ───────────────────────────
+    # ── 5. Erbs decomposition: GHI → DNI + DHI ───────────────────────────
     # erbs() takes GHI, solar zenith, and extraterrestrial radiation
     # Returns a DataFrame with 'dni' and 'dhi' columns
     ghi_series = pd.Series(ghi_wm2, index=times)
@@ -161,7 +151,7 @@ def compute_pv_production(
     dni = erbs_result["dni"]
     dhi = erbs_result["dhi"]
 
-    # ── 7. POA irradiance using Haydavies transposition ───────────────────
+    # ── 6. POA irradiance using Haydavies transposition ───────────────────
     # Converts horizontal irradiance to irradiance on the tilted panel surface
     poa_result = pvlib.irradiance.get_total_irradiance(
         surface_tilt=tilt,
@@ -179,7 +169,7 @@ def compute_pv_production(
     # poa_result is a Series of total POA irradiance in W/m²
     poa_global  = poa_result ["poa_global"].fillna(0).clip(lower=0)
 
-    # ── 8. PVWatts DC power model ─────────────────────────────────────────
+    # ── 7. PVWatts DC power model ─────────────────────────────────────────
     # PVWatts DC model: P_dc = capacity * (POA / 1000) * temp_correction
     # Temperature correction uses the Sandia cell temperature model.
     # We use the simplified approach: assume cell temp = air temp + 25°C
@@ -215,7 +205,7 @@ def compute_pv_production(
         gamma_pdc=temp_coeff,
     )
 
-    # ── 9. PVWatts AC power (apply losses) ───────────────────────────────
+    # ── 8. PVWatts AC power (apply losses) ───────────────────────────────
     # losses_pct covers: soiling, shading, wiring, mismatch, inverter etc.
     # PVWatts applies them as a single derate factor
     derate_factor = 1.0 - (losses_pct / 100.0)
@@ -250,7 +240,7 @@ def compute_pv_production(
     ).mul(100).clip(lower=0).fillna(0)
     
 
-    # ── 10. Build response ────────────────────────────────────────────────
+    # ── 9. Build response ────────────────────────────────────────────────
     # Since timestep = 1 hour, power in W == energy in Wh for that hour
     hourly = []
     for i, (entry, power, clip_perc) in enumerate(zip(forecast, ac_power_w, clipping_perc)):

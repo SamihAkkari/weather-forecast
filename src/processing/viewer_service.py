@@ -28,6 +28,18 @@ from src.processing.forecast.widgets import build_weather_widgets
 
 logger = logging.getLogger(__name__)
 
+VIEWER_ACTIVITIES = (
+    "cycling",
+    "running",
+    "hiking",
+    "picnic",
+    "stargazing",
+    "gardening",
+    "clothing",
+    "driving",
+)
+
+
 def get_viewer_data(lat: float, lng: float) -> dict:
     """
     Main entry point called by the API layer.
@@ -136,12 +148,6 @@ def _build_lifestyle(current: dict, forecast: list[dict]) -> list:
     best window computation.
     """
     return [
-        build_activity(current, forecast, "cycling"),
-        build_activity(current, forecast, "running"),
-        build_activity(current, forecast, "hiking"),
-        build_activity(current, forecast, "picnic"),
-        build_activity(current, forecast, "stargazing"),
-        build_activity(current, forecast, "gardening"),
-        build_activity(current, forecast, "clothing"),
-        build_activity(current, forecast, "driving"),
+        build_activity(current, forecast, activity)
+        for activity in VIEWER_ACTIVITIES
     ]
