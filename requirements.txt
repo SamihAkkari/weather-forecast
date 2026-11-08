@@ -12,3 +12,4 @@ pvlib==0.16.1
 APScheduler==3.11.3
 shapely==2.2.0
 scikit-learn==1.5.1
+tzdata>=2024.1

@@ -1,6 +1,6 @@
+from src import time_utils
 from src.config.config import Config
 from src.data.getter import DatabaseGetter
-from src.ingestion.time_manager import TimeManager
 from src.processing.location_service import get_nearest_station
 from src.processing.pv_production import compute_pv_production
 
@@ -16,7 +16,7 @@ def get_pv_production_data(
     inverter_efficiency: float = 0.96,
 ) -> dict:
     nearest_station = get_nearest_station(lat, lng)
-    current_time = TimeManager.current_utc_iso("hour")
+    current_time = time_utils.current_utc_iso("hour")
 
     forecast_raw, cursor = DatabaseGetter.get_forecasts_at_time_step(
         station_id=nearest_station.station_id,

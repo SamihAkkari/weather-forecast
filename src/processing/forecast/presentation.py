@@ -2,7 +2,7 @@ from collections import defaultdict
 from datetime import datetime
 import logging
 
-from src.ingestion.time_manager import TimeManager
+from src import time_utils
 from src.processing.forecast.codes import compute_daily_code, compute_hourly_code
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ def build_hourly_forecast(current: dict, forecast: list[dict]) -> list[dict]:
 
 def _specify_today_past_hours(today: str) -> list[str]:
     """Return the past hourly timestamps for today that need coverage."""
-    now = TimeManager.current_utc_iso("hour")
+    now = time_utils.current_utc_iso("hour")
     time_steps = []
     for hour in range(0, 23):
         time_stamp = today + "T" + f"{hour:02d}" + ":00:00Z"
@@ -106,7 +106,7 @@ def build_daily_forecast(
 ) -> list[dict]:
     """Aggregate observed and forecast hours into daily min/max and condition."""
     daily = []
-    today = TimeManager.current_france_date_iso()
+    today = time_utils.current_france_date_iso()
     last_day = forecast[-1]["time_step_fr"][0:10]
 
     missing_past_hours = _specify_today_past_hours(today)

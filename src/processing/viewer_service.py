@@ -15,9 +15,9 @@ import copy
 import logging
 from datetime import datetime, timedelta
 
+from src import time_utils
 from src.config.config import Config
 from src.data.getter import DatabaseGetter
-from src.ingestion.time_manager import TimeManager
 from src.processing.activity_recommendations import build_activity
 from src.processing.forecast.presentation import (
     build_daily_forecast,
@@ -53,28 +53,39 @@ def get_viewer_data(lat: float, lng: float) -> dict:
 
     # Step 2   get current time truncated to the hour
     # This is used to fetch the current observation and forecast from now onward
-    # current_time = TimeManager.current_france_time_iso(time_truncation="hour")
-    current_time = TimeManager.current_utc_iso("hour")
-    # today = str(TimeManager.current_france_time_iso(time_truncation="day"))[:10]
-    today = TimeManager.current_france_date_iso()
-    
-    current_obs_raw, cur = DatabaseGetter.get_observations(station_id=nearest_station.station_id, fromm=Config.OBSERVATIONS_TABLE_NAME_HOURLY, time = current_time)
+    current_time = time_utils.current_utc_iso("hour")
+    today = time_utils.current_france_date_iso()
+
+    current_obs_raw, cur = DatabaseGetter.get_observations(
+        station_id=nearest_station.station_id,
+        fromm=Config.OBSERVATIONS_TABLE_NAME_HOURLY,
+        time=current_time,
+    )
     current_obs = DatabaseGetter.transform_data_to_list_of_dict(current_obs_raw, cur)
-    
-    today_obs_raw, cur = DatabaseGetter.get_observations(station_id=nearest_station.station_id, fromm=Config.OBSERVATIONS_TABLE_NAME_HOURLY, time = today )
+
+    today_obs_raw, cur = DatabaseGetter.get_observations(
+        station_id=nearest_station.station_id,
+        fromm=Config.OBSERVATIONS_TABLE_NAME_HOURLY,
+        time=today,
+    )
     today_obs = DatabaseGetter.transform_data_to_list_of_dict(today_obs_raw, cur)
-    
-    # Fetch only forecast   no observation call
+
     forecast_raw, cur = DatabaseGetter.get_forecasts_at_time_step(
         station_id=nearest_station.station_id,
         fromm=Config.SILVER_FORECAST_AROME_TABLE_NAME,
         time=current_time,
-        exactly_at_time=False
+        exactly_at_time=False,
     )
     forecast = DatabaseGetter.transform_data_to_list_of_dict(forecast_raw, cur)
 
-    today_forecast_raw, cur = DatabaseGetter.get_forecasts_for_day(station_id=nearest_station.station_id, fromm=Config.SILVER_FORECAST_AROME_TABLE_NAME, day=today)
-    today_forecast = DatabaseGetter.transform_data_to_list_of_dict(today_forecast_raw, cur)
+    today_forecast_raw, cur = DatabaseGetter.get_forecasts_for_day(
+        station_id=nearest_station.station_id,
+        fromm=Config.SILVER_FORECAST_AROME_TABLE_NAME,
+        day=today,
+    )
+    today_forecast = DatabaseGetter.transform_data_to_list_of_dict(
+        today_forecast_raw, cur
+    )
 
     station_info = nearest_station.__dict__
 
@@ -107,8 +118,8 @@ def validate_and_complete_current_obs(current_obs: list[dict], forecast: list[di
 
 def _build_response(station_info: dict, current_obs: list[dict], today_obs: list[dict], forecast: list[dict], today_forecast: list[dict]) -> dict:
     """
-    Takes the raw data dict from DatabaseGetter and transforms it
-    into the exact shape the frontend expects.
+    Takes station and weather data and transforms it into the exact shape the
+    frontend expects.
 
     raw_data shape coming in:
     {

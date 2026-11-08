@@ -16,7 +16,7 @@ from src.config.config import Config
 from src.data.repository import DatabaseRepository
 from src.ingestion.processors.arome_grib import GribProcessor
 from src.ingestion.processors.observations import ObservationProcessor
-from src.ingestion.time_manager import TimeManager
+from src import time_utils
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +106,7 @@ class ObservationsIngestor(BaseIngestor):
         """This can be used later with advanced schedulers"""        
         ingested_any = False
         for step_back in reversed(range(0, self.steps_back)):
-            date = TimeManager.last_interval_iso(self.time_steps_seconds, step_back)
+            date = time_utils.last_interval_iso(self.time_steps_seconds, step_back)
 
             if DatabaseRepository._this_date_is_already_ingested(date, self.data_base_target_table):
                 self._log_skip(f"The data of date: {date} has already been ingested")
@@ -255,7 +255,7 @@ class ForecastIngestor(BaseIngestor):
             if ref_time_iso_format is None:
                 continue
 
-            ref_time_datetime = TimeManager.convert_iso_datetime(ref_time_iso_format)
+            ref_time_datetime = time_utils.from_iso(ref_time_iso_format)
 
             if latest_run_time is None or ref_time_datetime > latest_run_time:
                 latest_run_time = ref_time_datetime
@@ -264,7 +264,7 @@ class ForecastIngestor(BaseIngestor):
             logger.error("No valid forecast run found in the api")
             raise ValueError("No valid forecast run found in the api")
         else:
-            return TimeManager.convert_to_iso(latest_run_time)
+            return time_utils.to_iso(latest_run_time)
         
 
     def run(self) -> None:
