@@ -13,35 +13,6 @@ logger = logging.getLogger(__name__)
 
 class DatabaseRepository:
 
-    # FORECAST_RUN_SQL = """
-    #     INSERT INTO forecast_runs (model, run_time, status, n_rows)
-    #     VALUES (%s, %s, %s, %s)
-    #     ON CONFLICT (model, run_time)
-    #     DO UPDATE SET
-    #         status     = EXCLUDED.status,
-    #         n_rows     = EXCLUDED.n_rows,
-    #         fetched_at = now()
-    # """
-
-
-    # # Stations table columns (for bulk inserts if needed)
-    # STATIONS_COLUMNS = [
-    #     'station_id',
-    #     'department_id',
-    #     'name',
-    #     'latitude',
-    #     'longitude',
-    #     'altitude',
-    #     'opening_date',
-    #     'pack'
-    # ]
-    
-    # STATIONS_INSERT_SQL = f"""
-    #     INSERT INTO {Config.CORE_SCHEMA}.{Config.STATIONS_TABLE_NAME}
-    #     ({', '.join(STATIONS_COLUMNS)})
-    #     VALUES ({', '.join(['%s'] * len(STATIONS_COLUMNS))})
-    # """
-
     @staticmethod
     def _build_insert_sql(model_cls, table: str) -> str:
         cols        = model_cls.columns()
@@ -109,26 +80,6 @@ class DatabaseRepository:
         except Exception as e:
             logger.error(f"Error checking if date {date} is already ingested: {e}")
             raise
-    # @staticmethod
-    # def forecast_run_already_ingested(reference_time, target_table_name: str):
-    #     """Mirrors _this_date_is_already_ingested() pattern."""
-    #     try:
-    #         with DatabaseConnection() as conn:
-    #             with conn.cursor() as cur:
-    #                 cur.execute(f"""
-    #                     SELECT 1 
-    #                     FROM {Config.BRONZE_SCHEMA}.{target_table_name}
-    #                     WHERE run_time = %s
-    #                     LIMIT 1
-    #                 """, (reference_time,))
-    #                 return cur.fetchone() is not None
-    #     except Exception as e:
-    #         logger.error(f"Error checking forecast run: {e}")
-    #         raise
-
-
-    
-    
     @staticmethod
     def forecast_interval_already_ingested(
         forecast_interval: str,
@@ -185,56 +136,4 @@ class DatabaseRepository:
                 forecast_interval,
                 target_table_name,
             )
-            raise    
-
-
-    # @staticmethod
-    # def get_stations() -> list[ObservationListeStationsRecords]:
-    #     cols = ', '.join(ObservationListeStationsRecords.columns()) 
-    #     try:
-    #         with DatabaseConnection() as conn:
-    #             with conn.cursor() as cur:
-    #                 cur.execute(f"""
-    #                     SELECT {cols}
-    #                     FROM {Config.BRONZE_SCHEMA}.{Config.STATIONS_TABLE_NAME}
-    #                     ORDER BY station_id
-    #                 """)
-    #                 return [
-    #                     ObservationListeStationsRecords(*row)   
-    #                     for row in cur.fetchall()
-    #                 ]
-    #     except Exception as e:
-    #         logger.error(f"Error fetching stations: {e}")
-    #         raise
-
-
-
-    # @staticmethod
-    # def get_stations() -> list[dict]:
-    #     """Fetch active stations   used by forecast extractor."""
-    #     try:
-    #         with DatabaseConnection() as conn:
-    #             with conn.cursor() as cur:
-    #                 cur.execute(f"""
-    #                     SELECT station_id, latitude, longitude
-    #                     FROM  {Config.BRONZE_SCHEMA}.{Config.STATIONS_TABLE_NAME}
-    #                     ORDER BY station_id
-    #                 """)
-    #                 cols = [desc[0] for desc in cur.description]
-    #                 return [dict(zip(cols, row)) for row in cur.fetchall()]
-    #     except Exception as e:
-    #         logger.error(f"Error fetching stations: {e}")
-    #         raise
-    
-    # @staticmethod
-    # def mark_forecast_run(model: str, run_time, status: str, n_rows: int = 0):
-    #     try:
-    #         with DatabaseConnection() as conn:
-    #             with conn.cursor() as cur:
-    #                 cur.execute(
-    #                     DatabaseRepository.FORECAST_RUN_SQL,
-    #                     (model, run_time, status, n_rows)
-    #                 )
-    #     except Exception as e:
-    #         logger.error(f"Error marking forecast run: {e}")
-    #         raise
+            raise

@@ -1,5 +1,4 @@
-from dataclasses import dataclass, field, fields as dc_fields
-from typing import Callable, Optional, Type
+from dataclasses import dataclass, fields as dc_fields
 from datetime import datetime
 
 
@@ -126,19 +125,6 @@ class SP1ForecastAromeRecord(BaseRecord):
     @classmethod
     def forecast_variables(cls) -> set[str]:
         return {f.name for f in dc_fields(cls) if f.name not in cls._METADATA_FIELDS}
-
-    # @classmethod
-    # def variables_2m(cls) -> set[str]:
-    #     return {f.name for f in fields(cls) if f.name in {'t2m', 'r2'}}
-
-    # @classmethod
-    # def variables_10m(cls) -> set[str]:
-    #     return {f.name for f in fields(cls) if f.name in {'si10', 'wdir10'}}
-
-    # @classmethod
-    # def variables_accumulation(cls) -> set[str]:
-    #     return {f.name for f in fields(cls) if f.name in {'ssrd', 'tp'}}
-
 
 @dataclass
 class SP2ForecastAromeRecord(BaseRecord):

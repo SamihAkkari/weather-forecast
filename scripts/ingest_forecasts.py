@@ -3,24 +3,6 @@ from src.api.api_factory import APIFactory
 from src.client.clients import ForecastAromeClient
 from src.ingestion.ingestor import ForecastIngestor
 import logging
-from logging.handlers import RotatingFileHandler
-
-
-# handler = RotatingFileHandler(
-#     "/app/logs/app.log",
-#     maxBytes=5 * 1024 * 1024,  # 5 MB
-#     backupCount=5,
-# )
-
-# logging.basicConfig(
-#     level=logging.INFO,
-#     format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
-#     handlers=[
-#         logging.StreamHandler(sys.stdout),
-#         handler,
-#     ],
-#     force = True
-# )
 
 logging.basicConfig(
     level=logging.INFO,
@@ -40,24 +22,3 @@ if __name__ == "__main__":
     except Exception:
         logging.getLogger("run_forecast").exception("Forecast run failed")
         sys.exit(1)
-
-
-
-
-# description_api= APIFactory.create("meteofrance_forecast_arome", "0025SP1_available_data")
-# description_client = ForecastAromeClient(description_api)
-
-# data_api_SP1 = APIFactory.create("meteofrance_forecast_arome", "0025SP1")
-# data_client_SP1 = ForecastAromeClient(data_api_SP1)
-
-# data_api_SP2 = APIFactory.create("meteofrance_forecast_arome", "0025SP2")
-# data_client_SP2 = ForecastAromeClient(data_api_SP2)
-
-# data_clients = [data_client_SP1, data_client_SP2]
-
-# # description_api= APIFactory.create("meteofrance_forecast_arome", "0025SP2_available_data")
-# # description_client = ForecastAromeClient(description_api)
-
-# ingestor = ForecastIngestor(data_clients, description_client)
-# # ingestor.run_once()
-# ingestor.run_loop()

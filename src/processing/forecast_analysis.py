@@ -12,7 +12,6 @@ import numpy as np
 import math
 from datetime import datetime, timedelta, timezone
 from src.data.db import DatabaseConnection
-import math
 from sklearn.metrics import (
     accuracy_score,
     balanced_accuracy_score,
@@ -25,14 +24,6 @@ logger = logging.getLogger(__name__)
 
 # Rain detection threshold   standard WMO definition
 RAIN_THRESHOLD_MM = 0.1
-
-        # fw.step,
-        # fw.temp_forecast,
-        # fw.wind_forecast,
-        # fw.rain_forecast,
-        # o.temperature_celsius   AS temp_observed,
-        # o.wind_speed_m_per_s    AS wind_observed,
-        # o.precipitation_mm      AS rain_observed
 
 # ── SQL ────────────────────────────────────────────────────────────────────────
 
@@ -145,8 +136,6 @@ def _fetch_step_metrics(
 
 def _safe(value, decimals=2):
     """Rounds a value safely, returns None if None or NaN."""
-    # if value is None:
-    #     return None
     try:
         f = float(value)
         return round(f, decimals) if math.isfinite(f) else None
@@ -154,22 +143,8 @@ def _safe(value, decimals=2):
         return None
 
 
-def _precision(tp, fp):
-    return round(tp / (tp + fp), 3) if (tp + fp) > 0 else 0.0
-
-def _recall(tp, fn):
-    return round(tp / (tp + fn), 3) if (tp + fn) > 0 else 0.0
-
-def _f1(precision, recall):
-    if (precision + recall) == 0:
-        return 0.0
-    return round(2 * precision * recall / (precision + recall), 3)
-
 def _specificity(tn, fp):
     return round(tn / (tn + fp), 3) if (tn + fp) > 0 else 0.0
-
-def _balanced_accuracy(recall, specificity):
-    return round((recall + specificity) / 2, 3)
 
 # ── Insight sentence generators ────────────────────────────────────────────────
 
@@ -237,26 +212,6 @@ def _rain_insight(tp, fp, fn, f1):
         "hour and forecast run counts as one sample."
     )
 
-# def _rain_insight(tp, fp, fn, f1):
-#     total_actual = tp + fn
-#     if total_actual == 0:
-#         return "No rain events observed in this period."
-#     if f1 >= 80:
-#         return (
-#             f"Rain detection is strong   the model correctly identified "
-#             f"{tp} out of {total_actual} rainy hours with only {fp} false alarms."
-#         )
-#     elif f1 >= 55:
-#         return (
-#             f"Rain detection is moderate   {tp} of {total_actual} rainy hours "
-#             f"caught correctly, but {fp} false alarms and {fn} misses."
-#         )
-#     return (
-#         f"Rain detection is poor   the model missed {fn} of {total_actual} "
-#         f"rainy hours and produced {fp} false alarms."
-#     )
-
-
 # ── Response builders ──────────────────────────────────────────────────────────
 
 def _build_temperature(rows: list[dict]) -> dict:
@@ -269,8 +224,6 @@ def _build_temperature(rows: list[dict]) -> dict:
         return {"degradation": {}, "mae": None, "rmse": None,
                 "bias": None, "insight": "No data available."}
 
-    # import pdb
-    # pdb.set_trace()
     # Weighted averages across steps
     total_n   = sum(r["n_temp_samples"] for r in rows)
     if total_n == 0:
@@ -297,10 +250,6 @@ def _build_temperature(rows: list[dict]) -> dict:
         w_rmse = weighted_average(rows, "temp_rmse")
         w_bias = weighted_average(rows, "temp_bias")
         
-        # w_mae     = sum(float(r["temp_mae"])  * r["n_temp_samples"] for r in rows) / total_n
-        # w_rmse    = sum(float(r["temp_rmse"]) * r["n_temp_samples"] for r in rows) / total_n
-        # w_bias    = sum(float(r["temp_bias"]) * r["n_temp_samples"] for r in rows) / total_n
-    
         degradation = {
             int(r["step"]): _safe(r["temp_mae"])
             for r in rows if r["temp_mae"] is not None
@@ -367,17 +316,12 @@ def _build_rain(rows: list[dict]) -> dict:
                 "precision": None, "recall": None, "f1": None,
                 "insight": "No data available."}
     else:
-        # import pdb
-        # pdb.set_trace()
         tp = sum(int(r["rain_tp"]) for r in rows)
         fp = sum(int(r["rain_fp"]) for r in rows)
         fn = sum(int(r["rain_fn"]) for r in rows)
         tn = sum(int(r["rain_tn"]) for r in rows)       
         
         # Reconstruct actual labels
-        nb_samples = tp + tn + fp + fn
-        
-        
         y_true = (
             [1] * tp +
             [0] * tn +
@@ -424,21 +368,9 @@ def _build_rain(rows: list[dict]) -> dict:
         if np.isnan(f1):
             f1 = None
 
-        # accuracy =  accuracy_score(y_true, y_pred) * 100
-        # balanced_accuracy = balanced_accuracy_score(y_true, y_pred) * 100
-        # prec   = round(precision_score(y_true, y_pred, zero_division=float("nan")) * 100)
-        # rec    = round(recall_score(y_true, y_pred, zero_division=float("nan")) * 100)
-        # f1     = round(f1_score(y_true, y_pred, zero_division=float("nan")) * 100)
-
-        # prec   = round(_precision(tp, fp) * 100)
-        # rec    = round(_recall(tp, fn) * 100)
-        # f1     = round(_f1(prec, rec))
         specificity = _specificity(tn, fp) * 100
         if np.isnan(specificity ):
             specificity  = None
-        # balanced_accuracy = _balanced_accuracy(rec, specificity)
-        # import pdb
-        # pdb.set_trace()
         return {
             "tp":        tp,
             "fp":        fp,
@@ -476,7 +408,6 @@ def compute_analysis(
     -------
     dict shaped for the frontend AnalysisPage
     """
-    # date_to   = datetime.utcnow()
     date_to   = datetime.now(timezone.utc)
     date_from = date_to - timedelta(days=days)
 
@@ -503,11 +434,6 @@ def compute_analysis(
             "station_id": station_id,
             "date_from":  date_from.isoformat(),
             "date_to":    date_to.isoformat(),
-            # "n_runs":     len(set(
-            #     # approximate   we don't have run_time in aggregated rows
-            #     # the frontend shows days instead
-            #     []
-            # )),
         },
         "temperature": _build_temperature(rows),
         "wind":        _build_wind(rows),

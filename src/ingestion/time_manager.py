@@ -1,8 +1,6 @@
-import logging
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 
-logger = logging.getLogger(__name__)
 
 class TimeManager:
     """Time utilities for ingestion"""
@@ -10,7 +8,7 @@ class TimeManager:
     @staticmethod
     def utc_now():
         return datetime.now(timezone.utc)
-    
+
     @staticmethod
     def utc_truncated(_time, to="minute"):
         if to == "day":
@@ -26,9 +24,7 @@ class TimeManager:
 
     @staticmethod
     def utc_to_france(dt: datetime) -> datetime:
-        """
-        Convert a UTC datetime to France local time (handles DST automatically).
-        """
+        """Convert an aware datetime to France local time, including DST."""
         if dt.tzinfo is None:
             raise ValueError("Datetime must be timezone-aware (UTC)")
 
@@ -46,20 +42,6 @@ class TimeManager:
             return TimeManager.utc_truncated(now, to="second")
         else:
             raise ValueError("Invalid value for 'to'. Use: 'hour', 'minute', or 'second'")
-
-
-    # @staticmethod
-    # def utc_now_minute():
-    #     return (
-    #         datetime.now(timezone.utc)
-    #         .replace(second=0, microsecond=0)
-    #     )
-
-    # @staticmethod
-    # def utc_now_iso():
-    #     return TimeManager.utc_now_minute().strftime(
-    #         "%Y-%m-%dT%H:%M:%SZ"
-    #     )
 
     @staticmethod
     def last_interval_minutes(time_step, steps_back):
@@ -95,53 +77,5 @@ class TimeManager:
         return TimeManager.convert_to_iso(TimeManager.utc_now_truncated(to=truncation))
 
     @staticmethod
-    def iso_to_france_date(time_str) -> str:
-        """'2026-10-30T23:00:00+00:00' -> '2026-10-31' (the Paris calendar date)."""
-        dt = datetime.fromisoformat(str(time_str).replace("Z", "+00:00"))
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(ZoneInfo("Europe/Paris")).date().isoformat()
-
-    @staticmethod
     def current_france_date_iso() -> str:
         return datetime.now(ZoneInfo("Europe/Paris")).date().isoformat()
-
-    # @staticmethod
-    # def current_france_time_iso(time_truncation = "hour"):
-    #     time = TimeManager.utc_now_truncated(to=time_truncation)
-    #     time = TimeManager.utc_to_france(time)
-    #     time = TimeManager.convert_to_iso(time)
-    #     return time
-
-    @staticmethod
-    def get_time_before(days):
-        now_utc = TimeManager.utc_now_truncated(to="hour")
-        now_france = TimeManager.utc_to_france(now_utc)
-        fr_time_before_specified_days = now_france - timedelta(days=days)
-        return fr_time_before_specified_days 
-
-
-
-
-    # def last_arome_forecast_run_time():
-    #     now = TimeManager.utc_now()
-    #     for update_time in reversed(Config.AROME_FORECAST_UPDATE_TIMES):           
-    #         update_dt = datetime.strptime(update_time, "%H:%M:%S").time()
-    #         candidate_dt = datetime.combine(now.date(), update_dt, tzinfo=timezone.utc)
-    #         if candidate_dt <= now:
-    #             return candidate_dt
-    #     # If no update time is before now, return the last one from yesterday
-    #     last_update_time = Config.AROME_FORECAST_UPDATE_TIMES[-1]
-    #     last_update_dt = datetime.strptime(last_update_time, "%H:%M:%S").time()
-    #     return datetime.combine(now.date() - timedelta(days=1), last_update_dt, tzinfo=timezone.utc)
-
-    # def last_arome_forecast_run_time_iso():
-    #     return TimeManager.last_arome_forecast_run_time().strftime(
-    #         "%Y-%m-%dT%H:%M:%SZ"
-    #     )
-    
-    # def last_arome_forecast_run_time(href):
-    #     parsed = urlparse(href)
-    #     query = parse_qs(parsed.query)
-    #     reference_time = query["referencetime"][0]
-    #     return reference_time
