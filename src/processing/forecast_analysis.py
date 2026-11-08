@@ -65,7 +65,7 @@ class RainResult:
     precision: int | None
     recall: int | None
     f1: int | None
-    specificity: float | None
+    specificity: int | None
     balanced_acc: int | None
     accuracy: int | None
     insight: str
@@ -441,7 +441,7 @@ def _build_rain(rows: Sequence[Mapping[str, object]]) -> RainResult:
     recall = _percentage(tp, tp + fn)
     f1 = _percentage(2 * tp, 2 * tp + fp + fn)
     accuracy = _percentage(tp + tn, tp + fp + fn + tn)
-    specificity = _specificity(tn, fp) * 100
+    specificity = _percentage(_specificity(tn, fp) * 100)
 
     # Balanced accuracy is undefined when the observed labels contain only
     # one class, matching the previous implementation's behaviour. Calculate
