@@ -3,7 +3,7 @@ from src.data.getter import DatabaseGetter
 from src.ingestion.time_manager import TimeManager
 from fastapi.middleware.cors import CORSMiddleware
 from src.processing import spatial
-from src.processing.analysis_processor import compute_analysis
+from src.processing.forecast_analysis import compute_analysis
 
 from src.processing.viewer_service import get_viewer_data
 from src.data.getter import DatabaseGetter
@@ -11,10 +11,10 @@ from fastapi import FastAPI, HTTPException
 
 from src.processing.spatial import find_nearest_station
 from src.config.config import Config
-from src.processing.pv_processor import compute_pv_production
+from src.processing.pv_production import compute_pv_production
 
 
-from src.processing.spatial import GeoUtils
+from src.processing.geography import is_inside_metropolitan_france
 
 import logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(name)s | %(levelname)s | %(message)s")
@@ -47,7 +47,7 @@ app.add_middleware(
 #         )
 #     return data
 def ensure_in_france(lat: float, lng: float):
-    if not GeoUtils.is_inside_france(lat, lng):
+    if not is_inside_metropolitan_france(lat, lng):
         raise HTTPException(
             status_code=422,
             detail="Only metropolitan France is currently supported. Please select a location in France.",

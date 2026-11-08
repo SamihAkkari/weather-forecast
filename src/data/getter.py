@@ -5,7 +5,7 @@ from src.data.models import SilverObservationListeStationsRecords, SilverForecas
 import logging
 from typing import Tuple, List
 from datetime import datetime
-import src.processing.analysis_processor as analyser
+import src.processing.forecast_analysis as analyser
 from src.ingestion.time_manager import TimeManager
 from datetime import date, datetime, timedelta
 from datetime import date, datetime, time, timedelta
@@ -484,4 +484,3 @@ class DatabaseGetter:
         except Exception as e:
             logger.error(f"Error fetching previous radiation: {e}")
             return 0.0
-

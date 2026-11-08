@@ -4,8 +4,8 @@ import time
 import subprocess
 
 from src.data.repository import DatabaseRepository
-from src.processing.arome_forecast_processor import GribProcessor
-from src.processing.observations_processor import ObservationProcessor
+from src.ingestion.processors.arome_grib import GribProcessor
+from src.ingestion.processors.observations import ObservationProcessor
 from src.ingestion.time_manager import TimeManager
 from datetime import timedelta
 from urllib.parse import urlparse, parse_qs

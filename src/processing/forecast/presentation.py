@@ -3,12 +3,12 @@ from datetime import datetime
 import logging
 
 from src.ingestion.time_manager import TimeManager
-from src.processing.weather_code import compute_daily_code, compute_hourly_code
+from src.processing.forecast.codes import compute_daily_code, compute_hourly_code
 
 logger = logging.getLogger(__name__)
 
 
-def _build_hourly_forecast(current: dict, forecast: list[dict]) -> list[dict]:
+def build_hourly_forecast(current: dict, forecast: list[dict]) -> list[dict]:
     """Build hourly forecast cards, limited to 48 forecast hours."""
     hourly = [
         {
@@ -31,7 +31,7 @@ def _build_hourly_forecast(current: dict, forecast: list[dict]) -> list[dict]:
     return hourly
 
 
-def specify_today_past_hours(today: str) -> list[str]:
+def _specify_today_past_hours(today: str) -> list[str]:
     """Return the past hourly timestamps for today that need coverage."""
     now = TimeManager.current_utc_iso("hour")
     time_steps = []
@@ -43,7 +43,7 @@ def specify_today_past_hours(today: str) -> list[str]:
     return time_steps
 
 
-def get_past_hours(
+def _get_past_hours(
     entries: list[dict],
     missing_hours: list[str],
 ) -> tuple[list[dict], list[str]]:
@@ -76,7 +76,7 @@ def get_past_hours(
     return matched, remaining
 
 
-def discard_last_day_if_not_worth(
+def _discard_last_day_if_not_worth(
     data: list[dict],
     last_day: str,
     minimum_hours: int = 12,
@@ -99,7 +99,7 @@ def discard_last_day_if_not_worth(
     return data
 
 
-def _build_daily_forecast(
+def build_daily_forecast(
     today_obs: list[dict],
     forecast: list[dict],
     today_forecast: list[dict],
@@ -109,11 +109,11 @@ def _build_daily_forecast(
     today = TimeManager.current_france_date_iso()
     last_day = forecast[-1]["time_step_fr"][0:10]
 
-    missing_past_hours = specify_today_past_hours(today)
-    today_past_hours_observed, missing_past_hours = get_past_hours(
+    missing_past_hours = _specify_today_past_hours(today)
+    today_past_hours_observed, missing_past_hours = _get_past_hours(
         today_obs, missing_past_hours
     )
-    forecasted_past_hours, missing_past_hours = get_past_hours(
+    forecasted_past_hours, missing_past_hours = _get_past_hours(
         today_forecast, missing_past_hours
     )
 
@@ -126,7 +126,7 @@ def _build_daily_forecast(
         )
 
     data = today_past_hours_observed + forecasted_past_hours + forecast
-    data = discard_last_day_if_not_worth(data, last_day)
+    data = _discard_last_day_if_not_worth(data, last_day)
 
     days = defaultdict(list)
     for entry in data:

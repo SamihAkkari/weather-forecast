@@ -19,15 +19,12 @@ from src.config.config import Config
 from src.data.getter import DatabaseGetter
 from src.ingestion.time_manager import TimeManager
 from src.processing.activity_recommendations import build_activity
-from src.processing.forecast_presentation import (
-    _build_daily_forecast,
-    _build_hourly_forecast,
-    discard_last_day_if_not_worth,
-    get_past_hours,
-    specify_today_past_hours,
+from src.processing.forecast.presentation import (
+    build_daily_forecast,
+    build_hourly_forecast,
 )
 from src.processing.spatial import find_nearest_station
-from src.processing.weather_widgets import build_weather_widgets
+from src.processing.forecast.widgets import build_weather_widgets
 
 logger = logging.getLogger(__name__)
 
@@ -118,8 +115,8 @@ def _build_response(station_info: dict, current_obs: list[dict], today_obs: list
     return {
         "station":    _build_station(station_info),
         # "conditions": _build_conditions(current),
-        "forecast":   _build_hourly_forecast(current_obs, forecast),
-        "daily":      _build_daily_forecast(today_obs, forecast, today_forecast),
+        "forecast":   build_hourly_forecast(current_obs, forecast),
+        "daily":      build_daily_forecast(today_obs, forecast, today_forecast),
         "widgets":    build_weather_widgets(current_obs, forecast),
         "activities": _build_lifestyle(current_obs, forecast)
     }
