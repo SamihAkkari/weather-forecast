@@ -12,7 +12,7 @@ from requests.exceptions import (
     Timeout,
 )
 
-from src.config.config import Config
+from src.config import Config
 from src.data.repository import DatabaseRepository
 from src.ingestion.processors.arome_grib import GribProcessor
 from src.ingestion.processors.observations import ObservationProcessor

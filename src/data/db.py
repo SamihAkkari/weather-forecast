@@ -1,7 +1,7 @@
 import os
 import threading
 from psycopg2 import pool
-from src.config.config import Config
+from src.config import Config
 
 _pool = None
 _lock = threading.Lock()

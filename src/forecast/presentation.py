@@ -3,7 +3,7 @@ from datetime import datetime
 import logging
 
 from src import time_utils
-from src.processing.forecast.codes import compute_daily_code, compute_hourly_code
+from src.forecast.codes import compute_daily_code, compute_hourly_code
 
 logger = logging.getLogger(__name__)
 

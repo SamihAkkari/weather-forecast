@@ -1,6 +1,6 @@
 from typing import TypedDict
 
-from src.processing.activity_config import ACTIVITIES_CFG, ActivityConfig
+from src.forecast.activities.activity_config import ACTIVITIES_CFG, ActivityConfig
 
 
 class ParameterScore(TypedDict):

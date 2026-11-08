@@ -17,13 +17,13 @@ from datetime import datetime, timedelta
 
 from src import time_utils
 from src.data import queries
-from src.processing.activity_recommendations import build_activity
-from src.processing.forecast.presentation import (
+from src.forecast.activities.activity_recommendations import build_activity
+from src.forecast.presentation import (
     build_daily_forecast,
     build_hourly_forecast,
 )
-from src.processing.location_service import get_nearest_station
-from src.processing.forecast.widgets import build_weather_widgets
+from src.geo.spatial import get_nearest_station
+from src.forecast.widgets import build_weather_widgets
 
 logger = logging.getLogger(__name__)
 

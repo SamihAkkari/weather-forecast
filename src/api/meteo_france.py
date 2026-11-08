@@ -1,4 +1,4 @@
-from src.config.config import Config
+from src.config import Config
 from dataclasses import dataclass, field
 from typing import Callable, Optional, Type
 import logging

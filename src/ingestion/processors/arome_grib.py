@@ -5,7 +5,7 @@ import pandas as pd
 import cfgrib
 import xarray as xr
 import tempfile
-from src.processing.spatial import extract_at_indices, find_nearest_grid_indices
+from geo.spatial import extract_at_indices, find_nearest_grid_indices
 from src.data.models import BaseRecord
 from src.data import queries
 import logging

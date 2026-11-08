@@ -2,8 +2,8 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
-import src.processing.activity_recommendations as recommendations
-from src.processing.activity_recommendations import ACTIVITIES_CFG, build_activity
+import src.forecast.activities.activity_recommendations as recommendations
+from src.forecast.activities.activity_recommendations import ACTIVITIES_CFG, build_activity
 
 
 class ActivityRecommendationsTests(unittest.TestCase):

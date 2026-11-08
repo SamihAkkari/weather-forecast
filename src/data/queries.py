@@ -1,7 +1,7 @@
 import time
 from datetime import date, datetime, timedelta
 
-from src.config.config import Config
+from src.config import Config
 from src.data.db import fetch_dicts
 from src.data.models import SilverObservationListeStationsRecords as Station
 

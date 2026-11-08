@@ -1,7 +1,7 @@
 from src import time_utils
 from src.data import queries
-from src.processing.location_service import get_nearest_station
-from src.processing.pv_production import compute_pv_production
+from src.geo.spatial import get_nearest_station
+from src.forecast.solar.pv_production import compute_pv_production
 
 
 def get_pv_production_data(

@@ -27,7 +27,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TypedDict
 
-from src.processing.activity_scoring import MessageBand, Scorer
+from src.forecast.activities.activity_scoring import MessageBand, Scorer
 
 INF = math.inf
 ScoreFunction = Callable[[float | int | None], tuple[float, str]]

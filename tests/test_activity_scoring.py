@@ -1,8 +1,8 @@
 import math
 import unittest
 
-from src.processing.activity_config import ACTIVITIES_CFG
-from src.processing.activity_scoring import DEFAULT_SCORE, MessageBand, Scorer, interpolate
+from src.forecast.activities.activity_config import ACTIVITIES_CFG
+from src.forecast.activities.activity_scoring import DEFAULT_SCORE, MessageBand, Scorer, interpolate
 
 
 class ActivityScoringTests(unittest.TestCase):

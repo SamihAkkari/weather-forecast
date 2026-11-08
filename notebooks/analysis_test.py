@@ -7,12 +7,12 @@ Created on Sat Oct 24 23:09:06 2026
 
 import os
 os.chdir('c:\\Users\\sakkari\\Code\\weather-forecast')
-from src.config.config import Config
+from src.config import Config
 from src.data.getter import DatabaseGetter
 import pandas as pd
 import numpy as np
-from src.processing import analysis_processor
-from src.processing.spatial import find_nearest_station
+from src.analysis import analysis_processor
+from src.geo.spatial import find_nearest_station
 
 
 lat = 49.0190

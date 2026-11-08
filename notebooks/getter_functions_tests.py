@@ -7,14 +7,14 @@ Created on Mon Mar 30 00:27:59 2026
 
 import os
 os.chdir('c:\\Users\\sakkari\\Code\\weather-forecast')
-from src.config.config import Config
+from src.config import Config
 from src.data.db import DatabaseConnection
 from src.data.getter import DatabaseGetter
-from src.processing import spatial
+from geo import spatial
 from src.ingestion.time_manager import TimeManager
-from src.processing.spatial import find_nearest_station
+from geo.spatial import find_nearest_station
 
-from src.processing.viewer_service import get_viewer_data
+from src.forecast.viewer_service import get_viewer_data
 
 
 # DatabaseGetter.get_previous_radiation_cumulative(

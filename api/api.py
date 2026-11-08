@@ -2,10 +2,10 @@ import logging
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from src.processing.analysis_service import get_analysis_data
-from src.processing.geography import is_inside_metropolitan_france
-from src.processing.pv_service import get_pv_production_data
-from src.processing.viewer_service import get_viewer_data
+from src.analysis.analysis_service import get_analysis_data
+from src.geo.geography import is_inside_metropolitan_france
+from src.forecast.solar.pv_service import get_pv_production_data
+from src.forecast.viewer_service import get_viewer_data
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(name)s | %(levelname)s | %(message)s")
 logger = logging.getLogger("api")

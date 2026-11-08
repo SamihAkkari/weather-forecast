@@ -9,13 +9,13 @@ from fastapi import FastAPI
 from src.data.getter import DatabaseGetter
 from src.ingestion.time_manager import TimeManager
 from fastapi.middleware.cors import CORSMiddleware
-from src.processing import spatial
-from src.processing.spatial import find_nearest_station
-from src.config.config import Config
-from src.processing.pv_processor import compute_pv_production
+from src.geo import spatial
+from src.geo.spatial import find_nearest_station
+from src.config import Config
+from src.forecast.solar.pv_processor import compute_pv_production
 from src.processing import utils
 
-from src.processing.viewer_service import get_viewer_data
+from src.forecast.viewer_service import get_viewer_data
 
 from api.api import get_viewer_page_data
 from api.api import get_analysis

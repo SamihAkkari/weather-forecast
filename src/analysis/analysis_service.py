@@ -1,6 +1,6 @@
-from src.config.config import Config
-from src.processing.forecast_analysis import compute_analysis
-from src.processing.location_service import get_nearest_station
+from src.config import Config
+from src.analysis.forecast_analysis import compute_analysis
+from src.geo.spatial import get_nearest_station
 
 
 def get_analysis_data(

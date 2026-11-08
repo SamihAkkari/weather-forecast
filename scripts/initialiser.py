@@ -1,4 +1,4 @@
-from src.config.config import Config
+from src.config import Config
 from src.data.db import DatabaseConnection
 
 

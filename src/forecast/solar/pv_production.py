@@ -2,7 +2,7 @@
 PV Production Estimator using pvlib PVWatts model.
 
 Pipeline:
-    1. De-accumulate GHI from cumulative J/m² → instantaneous W/m²
+    1. Convert GHI from J/m² → instantaneous W/m²
     2. Build a pvlib Location object from lat/lng/altitude
     3. Compute solar position for each timestep
     4. Decompose GHI into DNI and DHI using the Erbs model
@@ -10,18 +10,10 @@ Pipeline:
     6. Run PVWatts DC and AC power model
     7. Return hourly production (Wh) and total energy (kWh)
 
-Why de-accumulate?
-    AROME stores global_radiation_j_m2 as cumulative energy since run_time.
-    pvlib expects instantaneous GHI in W/m² (power, not energy).
-    Since our timestep is 1 hour:
-        GHI_wm2[i] = (cumulative[i] - cumulative[i-1]) / 3600
-    The first timestep has no previous value so we use cumulative[0] / 3600
-    which assumes the accumulation started cleanly at run_time.
-
 Why Erbs decomposition?
     We only have GHI (global horizontal irradiance) from AROME.
     pvlib needs DNI (direct normal) and DHI (diffuse horizontal) separately.
-    Erbs is the standard decomposition model when only GHI is available.
+    Erbs is a standard decomposition model when only GHI is available.
     It uses the clearness index (GHI vs extraterrestrial radiation) to split.
 
 Why Haydavies transposition?

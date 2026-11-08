@@ -1,6 +1,6 @@
 
 import logging
-from src.config.config import Config
+from src.config import Config
 from src.data.models import BaseRecord
 from src.data.db import DatabaseConnection
 import re

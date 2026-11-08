@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from src.data.models import SilverObservationListeStationsRecords
-
+from src.data import queries
 
 @dataclass
 class StationNearestGrid:
@@ -11,16 +11,17 @@ class StationNearestGrid:
     lon_nearest_grid_idx: int
 
 
-def find_nearest_station(
-    stations: list[SilverObservationListeStationsRecords],
+def get_nearest_station(
     lat: float,
-    long: float,
+    lng: float,
 ) -> SilverObservationListeStationsRecords:
+    stations = queries.get_stations()
+    
     min_distance = float('inf')
     nearest_station = None
 
     for station in stations:
-        distance = np.sqrt((station.latitude - lat) ** 2 + (station.longitude - long) ** 2)
+        distance = np.sqrt((station.latitude - lat) ** 2 + (station.longitude - lng) ** 2)
         if distance < min_distance:
             min_distance = distance
             nearest_station = station

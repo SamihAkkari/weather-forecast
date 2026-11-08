@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from src.config.config import Config
+from src.config import Config
 from src.data.db import DatabaseConnection
 
 logger = logging.getLogger(__name__)
