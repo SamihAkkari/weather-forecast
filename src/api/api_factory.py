@@ -8,7 +8,6 @@ class APIFactory:
     _registry = {
         'meteofrance_observations': MeteoFranceObservations,
         'meteofrance_forecast_arome': MeteoFranceForecastArome,
-        # 'meteofrance_radar': MeteoFranceRadar,
     }
     
     @classmethod

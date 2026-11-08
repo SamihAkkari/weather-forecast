@@ -30,7 +30,7 @@ class MeteoFranceBase:
                 token_url = Config.METEOFRANCE_TOKEN_URL,
                 token_data = Config.TOKEN_Data,
                 token_headers = Config.TOKEN_HEADERS,
-                timeout=30
+                timeout=60
                 ):
         
         if service not in self.endpoints:
@@ -182,8 +182,3 @@ class MeteoFranceForecastArome(MeteoFranceBase):
         super().__init__(service)
         """Return the endpoint path"""
         self.app_id = app_id
-
-class MeteoFranceRadar(MeteoFranceBase):
-    """MétéoFrance Observations API"""
-    def __init__(self):
-        raise NotImplementedError()

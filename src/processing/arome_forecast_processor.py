@@ -1,4 +1,3 @@
-from dataclasses import asdict
 import os
 import glob
 import numpy as np
@@ -10,7 +9,6 @@ from src.processing.spatial import extract_at_indices, find_nearest_grid_indices
 from src.data.models import BaseRecord
 from src.data.getter import DatabaseGetter
 import logging
-# from src.processing.grib_grouping_rules import GroupingRule
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +19,7 @@ class GribProcessor:
         self.tmp_path = None
         self.datasets = []
 
-    def load(self) -> dict[str, xr.Dataset]:
+    def load(self) -> None:
         tmp = tempfile.NamedTemporaryFile(suffix=".grib2", delete=False)
         tmp.write(self.grib_bytes)
         tmp.close()      
@@ -64,7 +62,7 @@ class GribProcessor:
     @staticmethod
     def extract_forecast_variables_data(
         datasets: list[xr.Dataset],
-        variables: set[str] = None
+        variables: set[str] | None = None,
     ) -> dict[str, xr.DataArray]:
         """
         Flatten list of datasets into a direct variable-name → DataArray mapping.
@@ -76,47 +74,10 @@ class GribProcessor:
 
         for ds in datasets:
             for var in ds.data_vars:
-                if var in variables:
+                if variables is None or var in variables:
                     result[var] = ds[var]
         return result
         
-
-    # @staticmethod
-    # def extract_data_at_stations_records(
-    #     data     : dict[str, xr.DataArray],   # flat dict from GribProcessor
-    #     stations : list[dict],
-    #     grid_lats : np.ndarray,
-    #     grid_lons : np.ndarray,
-    #     run_time : str
-    # ) -> list[dict]:
-        
-    #     indices = find_nearest_grid_indices(stations, grid_lats, grid_lons)
-    #     # Extract all variables at once
-    #     variables_forecasts_at_stations = {var: extract_at_indices(da.values, indices) for var, da in data.items()}
-
-    #     valid_times = next(iter(data.values())).valid_time.values  # assume all variables share the same valid_time dimension
-        
-    #     valid_times_ts = [pd.Timestamp(vt) for vt in valid_times]
-    #     run_time_ts    = pd.Timestamp(run_time)
-    #     ingestion_ts   = pd.Timestamp('now', tz='UTC')
-    #     station_ids    = [idx.station_id for idx in indices]
-
-    #     import pdb
-    #     pdb.set_trace()
-
-    #     records = []
-    #     for s_idx, station_id in enumerate(station_ids):
-    #         for t_idx, valid_time in enumerate(valid_times_ts):
-    #             records.append(BronzeForecastRecords(
-    #                 station_id     = station_id,
-    #                 run_time       = run_time_ts,
-    #                 valid_time     = valid_time,
-    #                 ingestion_time = ingestion_ts,
-    #                 **{var: float(arr[s_idx, t_idx]) for var, arr in variables_forecasts_at_stations.items()}
-    #             ))
-
-    #     return records
-
 
     @staticmethod
     def extract_data_at_stations_records(
@@ -133,8 +94,6 @@ class GribProcessor:
         ingestion_ts = pd.Timestamp('now', tz='UTC')
         station_ids  = [idx.station_id for idx in indices]
 
-        # import pdb
-        # pdb.set_trace()
         # --- 1. Build per-variable time index ---
         # { var: { pd.Timestamp: array(n_stations,) } }
         var_time_arrays: dict[str, dict[pd.Timestamp, np.ndarray]] = {}

@@ -88,12 +88,16 @@ class BaseClient(object):
             logger.info("No token found, generating a new one")
             self.token_manager.generate_token()
             self.update_headers_with_token()
-        self.response = self.session.request('GET', url, params=params)
+        self.response = self.session.request(
+            'GET', url, params=params, timeout=self.api.timeout
+        )
         if not self.token_manager.is_token_valid(self.response):
             logger.warning("Token expired, regenerating token and retrying request")
             self.token_manager.generate_token()
             self.update_headers_with_token()
-            self.response = self.session.request('GET', url, params=params)
+            self.response = self.session.request(
+                'GET', url, params=params, timeout=self.api.timeout
+            )
         logger.info("Request completed with status code %s", self.response.status_code)
         return self.response
     

@@ -13,7 +13,6 @@ from src.processing.spatial import find_nearest_station
 from src.config.config import Config
 from src.processing.pv_processor import compute_pv_production
 
-from src.processing import utils 
 
 from src.processing.spatial import GeoUtils
 
@@ -103,7 +102,6 @@ def get_pv_production(
         if not forecast:
             raise LookupError("No forecast data is available yet for this location. Please try again later.")
 
-        # forecast = utils.unaccumulate(forecast, "global_radiation_j_m2", nearest.station_id)
 
         # # Get the run_time of this forecast so we can find the previous entry
         # # run_time comes from the first forecast entry

@@ -34,22 +34,20 @@ import logging
 import pandas as pd
 import pvlib
 from pvlib.location import Location
-from pvlib.irradiance import erbs, haydavies, get_extra_radiation
+from pvlib.irradiance import erbs, get_extra_radiation
 from pvlib.solarposition import get_solarposition
 
 logger = logging.getLogger(__name__)
 
 
-def convert_ghi_from_to_instant(forecast: list[dict]) -> list[float]:
+def convert_ghi_to_wm2(forecast: list[dict]) -> list[float]:
     """
-    Converts GHI (J/m²) to
-    instantaneous GHI (W/m²) for each hourly timestep.
+    Convert hourly GHI energy (J/m²) to average irradiance (W/m²).
     """
-    ghi_wm2 = [
+    return [
         float(entry.get("global_radiation_j_m2") / 3600)
         for entry in forecast
     ]
-    return ghi_wm2
 
 # ── Step 2   Build time index ──────────────────────────────────────────────────
 
@@ -57,44 +55,12 @@ def build_time_index(forecast: list[dict]) -> pd.DatetimeIndex:
     """Timestamps are real UTC instants; pvlib needs tz-aware times."""
     times = pd.DatetimeIndex(pd.to_datetime([e["time_step_fr"] for e in forecast], utc=True))
     return times.tz_convert("Europe/Paris")
-    
-    # """
-    # Extracts timestamps from forecast entries and builds a
-    # timezone-aware DatetimeIndex that pvlib requires.
-
-    # time_step_fr is in French local time (Europe/Paris).
-    # We convert to UTC for pvlib solar position calculations
-    # since pvlib expects UTC or timezone-aware times.
-    # """  
-    
-    # times = pd.DatetimeIndex(
-    # pd.to_datetime([entry["time_step_fr"] for entry in forecast])
-    # ).tz_localize(None)
-    
-    # ambiguous = [True] * len(times)
-    
-    # times = times.tz_localize(
-    #     "Europe/Paris",
-    #     ambiguous=ambiguous
-    # )
-    
-    # # times = pd.to_datetime([
-    # #     entry["time_step_fr"] for entry in forecast
-    # # ]).tz_localize(None)
-
-    # # # If timestamps are naive (no timezone), localize to Paris time
-    # # if times.tz is None:
-    # #     times = times.tz_localize("Europe/Paris")
-    # # else:
-    # #     times = times.tz_convert("Europe/Paris")
-
-    # return times
 
 # Rounded, editable assumptions used only for the comparison sentence
 HOUSEHOLD_KWH_PER_DAY = 13.0   # roughly 4,700 kWh per year for an average French household
 EV_KM_PER_KWH = 6.0            # about 16-17 kWh per 100 km, mixed driving
 
-def buildInsight(total_kwh, capacity_kw, n_hours, clipping_pct):
+def build_insight(total_kwh, capacity_kw, n_hours, clipping_pct):
     if total_kwh < 0.05:
         return "Almost no production is expected over this period (night-time or very cloudy weather)."
     per_kwp = total_kwh / capacity_kw
@@ -159,11 +125,8 @@ def compute_pv_production(
         f"Computing PV production: {system_capacity_kw}kWp, "
         f"tilt={tilt}°, azimuth={azimuth}°, losses={losses_pct}%"
     )
-    # import pdb
-    # pdb.set_trace()
-    # ── 1. De-accumulate GHI ──────────────────────────────────────────────
-    # ghi_wm2 = deaccumulate_ghi(forecast, previous_cumulative)
-    ghi_wm2 = convert_ghi_from_to_instant(forecast)
+    # ── 1. Convert GHI energy to average irradiance ────────────────────────
+    ghi_wm2 = convert_ghi_to_wm2(forecast)
 
     # ── 2. Build time index ───────────────────────────────────────────────
     times = build_time_index(forecast)
@@ -209,26 +172,12 @@ def compute_pv_production(
         ghi=ghi_series,
         dhi=dhi,
         dni_extra=dni_extra,
-        albedo=0.25,
+        albedo=albedo,
         model="haydavies",
     )
     
-    # poa_result = haydavies(
-    #     surface_tilt=tilt,
-    #     surface_azimuth=azimuth,
-    #     dhi=dhi,
-    #     dni=dni,
-    #     dni_extra=dni_extra,
-    #     solar_zenith=solar_position["apparent_zenith"],
-    #     solar_azimuth=solar_position["azimuth"],
-    # )
-    
     # poa_result is a Series of total POA irradiance in W/m²
     poa_global  = poa_result ["poa_global"].fillna(0).clip(lower=0)
-    # poa_direct = poa_result ["poa_direct"].fillna(0).clip(lower=0)
-    # poa_diffuse = poa_result ["poa_diffuse"].fillna(0).clip(lower=0)
-    
-    # poa_global = poa_result.fillna(0).clip(lower=0)
 
     # ── 8. PVWatts DC power model ─────────────────────────────────────────
     # PVWatts DC model: P_dc = capacity * (POA / 1000) * temp_correction
@@ -255,20 +204,9 @@ def compute_pv_production(
         wind_speed=wind_speed ,
     )
 
-    # NOCT-based cell temperature approximation
-    # T_cell = T_air + (NOCT - 20) / 800 * POA
-    # Standard NOCT = 45°C
-    # noct = 45.0
-    # cell_temp = air_temp + (noct - 20.0) / 800.0 * poa_global
-
     # Temperature coefficient for power (typical silicon: -0.004 per °C)
     # Reference temperature is 25°C (STC)
     temp_coeff = -0.004
-
-    # DC power in watts
-    # temp_factor = 1 + temp_coeff * (cell_temp - 25.0)
-    # dc_power_w = system_capacity_w * (poa_global / 1000.0) * temp_factor
-    # dc_power_w = dc_power_w.clip(lower=0)
 
     dc_power_w = pvlib.pvsystem.pvwatts_dc(
         effective_irradiance=poa_global,
@@ -291,8 +229,6 @@ def compute_pv_production(
         eta_inv_nom=inverter_efficiency,
     )
 
-    # import pdb
-    # pdb.set_trace()
     # Hypothetical AC power without the AC clipping limit
     zeta = dc_power_w_after_losses_w / inverter_pdc0_w
     
@@ -349,7 +285,7 @@ def compute_pv_production(
 
     peak_entry = max(hourly, key=lambda h: h["power_w"])
 
-    insight = buildInsight(total_energy_kwh, system_capacity_kw, len(hourly), clipping_percentage_energy)
+    insight = build_insight(total_energy_kwh, system_capacity_kw, len(hourly), clipping_percentage_energy)
 
     return {
         "system": {

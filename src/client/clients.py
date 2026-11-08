@@ -1,6 +1,5 @@
 
 import logging
-from src.config.config import Config
 from src.client.base_client import BaseClient
 
 logger = logging.getLogger(__name__)
@@ -11,14 +10,12 @@ class ObservationsClient(BaseClient):
     
     def fetch_data(self, params):
         """Returns JSON response as dict"""
+        params = dict(params)
+        params.setdefault("format", "json")
+        if params["format"] != "json":
+            raise ValueError("The format requested is not available for get_json method")
+
         self.api.validate_params(params)
-        
-        if 'format' not in params.keys():
-            params['format'] = 'json'
-        elif params['format'] != 'json':
-            raise ValueError ("The format requested is not available for get_json method")
-        # import pdb
-        # pdb.set_trace()
         response = self.request(params)
         response.raise_for_status()
         return self.api.parse_response(response)
@@ -27,8 +24,8 @@ class ForecastAromeClient(BaseClient):
     def __init__(self, api):
         super().__init__(api)
     
-    def fetch_data(self, params: dict = {}):
-        
+    def fetch_data(self, params: dict | None = None):
+        params = {} if params is None else dict(params)
         self.api.validate_params(params)
 
         response = self.request(params = params)

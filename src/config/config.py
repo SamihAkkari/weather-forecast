@@ -38,7 +38,6 @@ class Config:
     FORECAST_AROME_PACKAGE_0025SP1_AVAILABLE_DATA_ENDPOINT = 'previnum/DPPaquetAROME/v1/models/AROME/grids/0.025/packages/SP1'
     FORECAST_AROME_PACKAGE_0025SP2_ENDPOINT = 'previnum/DPPaquetAROME/v1/models/AROME/grids/0.025/packages/SP2/productARO' #SP2 data with 0.025° resolution (2.5km resolution)
     FORECAST_AROME_PACKAGE_0025SP2_AVAILABLE_DATA_ENDPOINT = 'previnum/DPPaquetAROME/v1/models/AROME/grids/0.025/packages/SP2'
-    # RADAR_ENDPOINT = 'DPRadar/v1/radars'
 
     
     # Database Configuration
@@ -79,4 +78,3 @@ class Config:
     # Metropolitan France bounding box (slightly padded)
     FRANCE_BOUNDS = {"min_lat": 42.4, "max_lat": 51.14,
                      "min_lon": -5.14, "max_lon": 9.63}
-
