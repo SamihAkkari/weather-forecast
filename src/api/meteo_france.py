@@ -2,7 +2,7 @@ from src.config.config import Config
 from dataclasses import dataclass, field
 from typing import Callable, Optional, Type
 import logging
-from src.data import models as data_models
+from src.data import api_reference, models as data_models
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +101,7 @@ class MeteoFranceObservations(MeteoFranceBase):
             path=Config.OBSERVATIONS_LISTESTATION_ENDPOINT,
             return_response=lambda x: x.json(),
             bronze_table=Config.STATIONS_TABLE_NAME,
-            record_class = data_models.BronzeObservationListeStationsRecords
+            record_class = api_reference.BronzeObservationListeStationsRecords
         ),
         "stations_infrahoraire-6m": EndpointConfig(
             path=Config.OBSERVATIONS_STATIONS_INFRAHORAIRE6m_ENDPOINT,

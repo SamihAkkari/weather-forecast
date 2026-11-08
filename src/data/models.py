@@ -15,17 +15,6 @@ class BaseRecord:
 
 
 @dataclass
-class BronzeObservationListeStationsRecords(BaseRecord):
-    station_id:     int
-    department_id:  int
-    name:           str
-    latitude:       float
-    longitude:      float
-    altitude:       float
-    openning_date:  str
-    pack:           str
-
-@dataclass
 class SilverObservationListeStationsRecords(BaseRecord):
     station_id:     str
     department_id:  str
@@ -36,6 +25,19 @@ class SilverObservationListeStationsRecords(BaseRecord):
     openning_date:  datetime
     station_type:   str
     transfer_time_fr: datetime
+
+
+@dataclass
+class ForecastRecord(BaseRecord):
+    """Common behavior for bronze AROME forecast records."""
+
+    _METADATA_FIELDS = frozenset(
+        {"station_id", "run_time", "valid_time", "ingestion_time"}
+    )
+
+    @classmethod
+    def forecast_variables(cls) -> set[str]:
+        return {f.name for f in dc_fields(cls) if f.name not in cls._METADATA_FIELDS}
 
 
 @dataclass
@@ -104,7 +106,7 @@ class ObservationHoraireRecord(BaseRecord):
 
 
 @dataclass
-class SP1ForecastAromeRecord(BaseRecord):
+class SP1ForecastAromeRecord(ForecastRecord):
     station_id     : int
     run_time       : datetime # Time when the forecast model was run (e.g. 2026-03-05T12:00:00Z)
     valid_time     : datetime # Time for which the forecast is valid (e.g. 2026-03-05T15:00:00Z)
@@ -119,15 +121,8 @@ class SP1ForecastAromeRecord(BaseRecord):
     tsnowp         : float  # Total snow precipitation (kg/m2) accumulated from the first timestep
     ingestion_time : datetime # Time when the forecast was ingested into the database
 
-
-    _METADATA_FIELDS = {'station_id', 'run_time', 'valid_time', 'ingestion_time'}
-
-    @classmethod
-    def forecast_variables(cls) -> set[str]:
-        return {f.name for f in dc_fields(cls) if f.name not in cls._METADATA_FIELDS}
-
 @dataclass
-class SP2ForecastAromeRecord(BaseRecord):
+class SP2ForecastAromeRecord(ForecastRecord):
     station_id     : int
     run_time       : datetime # Time when the forecast model was run (e.g. 2026-03-05T12:00:00Z)
     valid_time     : datetime # Time for which the forecast is valid (e.g. 2026-03-05T15:00:00Z)
@@ -136,65 +131,3 @@ class SP2ForecastAromeRecord(BaseRecord):
     hcc: float  # high cloud cover (%)
     CAPE_INS: float  # Convective Available Potential Energy instantaneous (m2/s2)
     ingestion_time : datetime # Time when the forecast was ingested into the database
-
-    _METADATA_FIELDS = {'station_id', 'run_time', 'valid_time', 'ingestion_time'}
-
-    @classmethod
-    def forecast_variables(cls) -> set[str]:
-        return {f.name for f in dc_fields(cls) if f.name not in cls._METADATA_FIELDS}
-
-
-@dataclass
-class AllSP1ForecastAromeRecords(BaseRecord):
-    u10: float  # 10 metre u wind component (Eastward wind component)
-    v10: float  # 10 metre v wind component (Northward wind component)
-    si10: float  # 10 metre wind speed (m/s)
-    fg10: float  # Time-maximum 10 metre wind gust (m/s) (represents the absolute highest 3-second wind gust that occurred at a height of 10 meters over the hour timestep)
-    efg10: float  # Time-maximum 10 metre eastward wind gust (m/s)
-    nfg10: float  # Time-maximum 10 metre northward wind gust (m/s)
-    wdir10: float  # 10 metre wind direction (degrees)
-    t2m: float  # 2 metre temperature
-    r2: float  # Relative humidity
-    prmsl: float  # Mean sea level pressure (Pa)
-    ssrd: float  # Surface short-wave (solar) radiation downwards (J/m²)
-    tp: float  # Total precipitation (mm). This is accumulated not instant for the timestep
-    tgrp: float  # Graupel (snow pellets) precipitation (kg/m2 equiv to mm). Accumulated from the first timestep
-    tsnowp: float  # b 
-
-@dataclass
-class AllSP2ForecastAromeRecords(BaseRecord):
-    d2m: float  # 2 metre dewpoint temperature
-    sh2: float  # 2 metre specific humidity (kg/kg)
-    mx2t: float # 2 metre maximum temperature (K) since ...
-    mn2t: float # 2 metre minimum temperature (K) since ...
-    t: float  # surface air temperature (K)
-    sp: float  # surface pressure (Pa)
-    blh: float  # boundary layer height (m)
-    lcc: float  # low cloud cover (%)
-    mcc: float  # medium cloud cover (%)
-    hcc: float  # high cloud cover (%)
-    tirf: float  # time integral of rain flux (kg/m²) (equivelant to preciptation: 1 mm = 1 kg/m²) It is accumelated not instant
-    CAPE_INS: float  # Convective Available Potential Energy instantaneous (m2/s2)
-
-
-@dataclass
-class SilverForecastAromeRecords(BaseRecord):
-    station_id:     str
-    run_time:  datetime
-    time_step_fr:  datetime
-    forecast_step: int
-    temperature_celsius:       float
-    humidity_percentage:      float
-    wind_direction_degree:       float
-    wind_speed_m_per_s:  float
-    CUMUL_precipitation_mm:   float
-    CUMUL_global_radiation_j_m2: float
-    total_cloud_cover: float
-    cape_m2_s2: float
-    mean_sea_level_pressure: float
-    CUMUL_snow_precipitation_mm: float
-    wind_gust_m_per_s: float
-    transfer_time_fr: datetime
-    precipitation_mm: float
-    global_radiation_J_m2: float
-    snow_precipitation_mm: float
