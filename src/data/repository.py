@@ -43,7 +43,7 @@ class DatabaseRepository:
     # """
 
     @staticmethod
-    def _build_insert_sql(model_cls, table: str, conflict_columns: list[str] = None) -> str:
+    def _build_insert_sql(model_cls, table: str) -> str:
         cols        = model_cls.columns()
         placeholders = ', '.join(['%s'] * len(cols))
         col_names    = ', '.join(cols)
@@ -53,22 +53,12 @@ class DatabaseRepository:
             VALUES ({placeholders})
         """
 
-        # if conflict_columns:
-        #     updates = ', '.join(
-        #         f"{c} = EXCLUDED.{c}"
-        #         for c in cols
-        #         if c not in conflict_columns
-        #     )
-        #     conflict = ', '.join(conflict_columns)
-        #     sql += f"ON CONFLICT ({conflict}) DO UPDATE SET {updates}"
-
         return sql
     
     @staticmethod
     def _insert(
         records        : list,
-        table          : str,
-        conflict_cols  : list[str] | None = None
+        table          : str
     ):
         if not records:
             logger.warning(f"No records to insert into {table}")
@@ -76,8 +66,7 @@ class DatabaseRepository:
 
         sql = DatabaseRepository._build_insert_sql(
             type(records[0]),
-            table=table,
-            conflict_columns=conflict_cols
+            table=table
         )
 
         try:
@@ -105,36 +94,7 @@ class DatabaseRepository:
 
 
     @staticmethod
-    def _ensure_schema_exists():
-        """Create schema if it doesn't exist"""
-        try:
-            with DatabaseConnection() as conn:
-                with conn.cursor() as cur:
-                    cur.execute(f"CREATE SCHEMA IF NOT EXISTS {Config.CORE_SCHEMA}")
-                    cur.execute(f"CREATE SCHEMA IF NOT EXISTS {Config.BRONZE_SCHEMA}")
-                    logger.info(f"Schemas {Config.CORE_SCHEMA}, {Config.BRONZE_SCHEMA} ready")
-        except Exception as e:
-            logger.error(f"Error validating schemas: {e}")
-            raise
-
-    # @staticmethod
-    # def _ensure_tables_exist():
-    #     """Checks if bronze table exists"""
-    #     with DatabaseConnection() as conn:
-    #         with conn.cursor() as cur:
-    #             cur.execute(f"""
-    #                         SELECT to_regclass({Config.BRONZE_SCHEMA}.{Config.Data_TABLE_NAME})
-    #                         """)
-    #             table_exists = cur.fetchone()[0] is not None
-    #             if not table_exists:
-    #                 logger.error("Bronze table does not exist")
-    #             else:
-    #                 logger.info("Bronze tables is ready")
-    
-    @staticmethod
     def _this_date_is_already_ingested(date, target_table_name: str):
-        # import pdb
-        # pdb.set_trace()
         try:
             with DatabaseConnection() as conn:
                 with conn.cursor() as cur:

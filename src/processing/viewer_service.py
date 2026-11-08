@@ -23,7 +23,7 @@ from src.processing.forecast.presentation import (
     build_daily_forecast,
     build_hourly_forecast,
 )
-from src.processing.spatial import find_nearest_station
+from src.processing.location_service import get_nearest_station
 from src.processing.forecast.widgets import build_weather_widgets
 
 logger = logging.getLogger(__name__)
@@ -48,8 +48,7 @@ def get_viewer_data(lat: float, lng: float) -> dict:
     """
 
     # Step 1   find the nearest station to the clicked location
-    stations = DatabaseGetter.get_stations()
-    nearest_station = find_nearest_station(stations, lat, lng)
+    nearest_station = get_nearest_station(lat, lng)
     logger.info(f"Nearest station found: {nearest_station.station_id} - {nearest_station.location_name}")
 
     # Step 2   get current time truncated to the hour

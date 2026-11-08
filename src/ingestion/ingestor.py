@@ -1,29 +1,24 @@
-import copy
 import logging
 import time
-import subprocess
-
-from src.data.repository import DatabaseRepository
-from src.ingestion.processors.arome_grib import GribProcessor
-from src.ingestion.processors.observations import ObservationProcessor
-from src.ingestion.time_manager import TimeManager
-from datetime import timedelta
-from urllib.parse import urlparse, parse_qs
-from src.config.config import Config
-
 import random
+import subprocess
+from abc import ABC, abstractmethod
+from urllib.parse import parse_qs, urlparse
 
 from requests.exceptions import (
     ChunkedEncodingError,
     ConnectionError,
-    Timeout,
     HTTPError,
+    Timeout,
 )
 
-logger = logging.getLogger(__name__)
+from src.config.config import Config
+from src.data.repository import DatabaseRepository
+from src.ingestion.processors.arome_grib import GribProcessor
+from src.ingestion.processors.observations import ObservationProcessor
+from src.ingestion.time_manager import TimeManager
 
-from abc import ABC, abstractmethod
-import logging
+logger = logging.getLogger(__name__)
 
 class BaseIngestor(ABC):
     

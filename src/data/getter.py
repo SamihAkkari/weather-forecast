@@ -1,17 +1,15 @@
+import logging
+import time as T
+from datetime import date, datetime, time, timedelta
+from typing import Tuple, List
 
 from src.config.config import Config
 from src.data.db import DatabaseConnection
 from src.data.models import SilverObservationListeStationsRecords, SilverForecastAromeRecords
-import logging
-from typing import Tuple, List
-from datetime import datetime
 import src.processing.forecast_analysis as analyser
 from src.ingestion.time_manager import TimeManager
-from datetime import date, datetime, timedelta
-from datetime import date, datetime, time, timedelta
 logger = logging.getLogger(__name__)
 
-import time as T
 _STATIONS_CACHE = {"ts": 0.0, "rows": None}
 
 class DatabaseGetter:
