@@ -1,15 +1,4 @@
-"""
-This is the service layer for the weather viewer page.
-Its job is to orchestrate all the steps needed to build
-the full response the frontend expects when a user clicks
-a location on the map.
-
-It knows about:
-- What data to fetch and in what order
-- How to transform raw DB rows into frontend-friendly shapes
-- What the final response structure looks like
-
-"""
+"""Assemble the weather data and recommendations returned by the viewer API."""
 
 import copy
 import logging
@@ -40,18 +29,10 @@ VIEWER_ACTIVITIES = (
 
 
 def get_viewer_data(lat: float, lng: float) -> dict:
-    """
-    Main entry point called by the API layer.
-    Receives coordinates, returns the full response dict
-    shaped exactly like mockWeatherDetails on the frontend.
-    """
-
-    # Step 1   find the nearest station to the clicked location
+    """Build viewer data for the station nearest to the supplied coordinates."""
     nearest_station = get_nearest_station(lat, lng)
     logger.info(f"Nearest station found: {nearest_station.station_id} - {nearest_station.location_name}")
 
-    # Step 2   get current time truncated to the hour
-    # This is used to fetch the current observation and forecast from now onward
     current_time = time_utils.current_utc_iso("hour")
     today = time_utils.current_france_date_iso()
 
@@ -113,7 +94,6 @@ def _build_response(station_info: dict, current_obs: list[dict], today_obs: list
     
     return {
         "station":    _build_station(station_info),
-        # "conditions": _build_conditions(current),
         "forecast":   build_hourly_forecast(current_obs, forecast),
         "daily":      build_daily_forecast(today_obs, forecast, today_forecast),
         "widgets":    build_weather_widgets(current_obs, forecast),
@@ -129,11 +109,7 @@ def _build_station(station_info: dict) -> dict:
     }
 
 def _build_lifestyle(current: dict, forecast: list[dict]) -> list:
-    """
-    Builds all activities. Each activity builder receives current conditions
-    for the summary card and the full forecast for hourly timeline and
-    best window computation.
-    """
+    """Build activity summaries, hourly scores, and recommended windows."""
     return [
         build_activity(current, forecast, activity)
         for activity in VIEWER_ACTIVITIES

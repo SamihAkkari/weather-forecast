@@ -77,11 +77,11 @@ class ObservationHoraireRecord(BaseRecord):
     reference_time: datetime
     insert_time:    datetime
     validity_time:  datetime
-    t:              float | None # température sous abri en degrés kelvin
-    td:             float | None # dew point temperature measured for the air at 2 metres (about 6.6 feet) above the ground.
-    tx:             float | None # température maximale de l'air à 2 mètres au-dessus du sol en degrés kelvin
-    tn:             float | None # température minimale de l'air à 2 mètres au-dessus du sol en degrés kelvins
-    u:              float | None # humidité relative horaire en %
+    t:              float | None  # Air temperature at 2 m (K).
+    td:             float | None  # Dew-point temperature at 2 m (K).
+    tx:             float | None  # Maximum air temperature at 2 m (K).
+    tn:             float | None  # Minimum air temperature at 2 m (K).
+    u:              float | None  # Hourly relative humidity (%).
     ux:             float | None
     un:             float | None
     dd:             float | None
@@ -90,7 +90,7 @@ class ObservationHoraireRecord(BaseRecord):
     fxy:            float | None
     dxi:            float | None
     fxi:            float | None
-    rr1:            float | None  # Precipitation in the last hour (mm)
+    rr1:            float | None  # Precipitation in the previous hour (mm).
     t_10:           float | None
     t_20:           float | None
     t_50:           float | None

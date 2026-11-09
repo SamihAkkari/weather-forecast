@@ -1,25 +1,8 @@
-"""
-PV Production Estimator using pvlib PVWatts model.
+"""Estimate hourly solar production from forecast irradiance with pvlib.
 
-Pipeline:
-    1. Convert GHI from J/m² → instantaneous W/m²
-    2. Build a pvlib Location object from lat/lng/altitude
-    3. Compute solar position for each timestep
-    4. Decompose GHI into DNI and DHI using the Erbs model
-    5. Compute Plane of Array (POA) irradiance using the Haydavies model
-    6. Run PVWatts DC and AC power model
-    7. Return hourly production (Wh) and total energy (kWh)
-
-Why Erbs decomposition?
-    We only have GHI (global horizontal irradiance) from AROME.
-    pvlib needs DNI (direct normal) and DHI (diffuse horizontal) separately.
-    Erbs is a standard decomposition model when only GHI is available.
-    It uses the clearness index (GHI vs extraterrestrial radiation) to split.
-
-Why Haydavies transposition?
-    We need POA irradiance   irradiance hitting the tilted panel surface.
-    Haydavies (also called Hay-Davies) is reliable for tilted surfaces
-    and only requires DNI, DHI and GHI which we have after Erbs.
+The forecast provides global horizontal irradiance (GHI). Erbs estimates its
+direct and diffuse components, Hay-Davies transposes them to the panel plane,
+and PVWatts estimates DC and AC output.
 """
 
 import logging
@@ -40,14 +23,12 @@ def convert_ghi_to_wm2(forecast: list[dict]) -> list[float]:
         for entry in forecast
     ]
 
-# ── Step 2   Build time index ──────────────────────────────────────────────────
-
 def build_time_index(forecast: list[dict]) -> pd.DatetimeIndex:
     """Timestamps are real UTC instants; pvlib needs tz-aware times."""
     times = pd.DatetimeIndex(pd.to_datetime([e["time_step_fr"] for e in forecast], utc=True))
     return times.tz_convert("Europe/Paris")
 
-# Rounded, editable assumptions used only for the comparison sentence
+# Assumptions used in the production comparison message.
 HOUSEHOLD_KWH_PER_DAY = 13.0   # roughly 4,700 kWh per year for an average French household
 EV_KM_PER_KWH = 6.0            # about 16-17 kWh per 100 km, mixed driving
 
@@ -71,8 +52,6 @@ def build_insight(total_kwh, capacity_kw, n_hours, clipping_pct):
 
 
 
-# ── Step 3   Core PV computation ──────────────────────────────────────────────
-
 def compute_pv_production(
     forecast: list[dict],
     lat: float,
@@ -86,28 +65,12 @@ def compute_pv_production(
     inverter_efficiency:float = 0.96,
     albedo: float = 0.25
 ) -> dict:
-    """
-    Main entry point. Computes hourly PV production from forecast data.
+    """Estimate hourly PV output and aggregate energy for the forecast period.
 
-    Parameters
-    ----------
-    forecast : list of forecast dictionaries from the query layer
-    lat, lng : location coordinates (from map click)
-    altitude : station altitude in metres
-    system_capacity_kw : installed PV capacity in kW (e.g. 3.0 for a 3kWp system)
-    tilt : panel tilt angle in degrees (0=flat, 90=vertical)
-    azimuth : panel azimuth in degrees (180=south, 90=east, 270=west)
-    losses_pct : total system losses in percent (default 14% per PVWatts standard)
-
-    Returns
-    -------
-    dict shaped for the frontend:
-    {
-        "hourly": [{"time": ..., "power_w": ..., "ghi_wm2": ...}, ...],
-        "total_energy_kwh": float,
-        "peak_power_w": float,
-        "peak_hour": str,
-    }
+    ``forecast`` must contain hourly timestamps, irradiance, temperature, and
+    wind speed. Coordinates and altitude define solar position; the remaining
+    parameters describe the PV system. The result includes hourly estimates,
+    total energy, peak output, inverter clipping, and a summary message.
     """
     if not forecast:
         raise ValueError("Empty forecast   cannot compute PV production")
@@ -116,24 +79,14 @@ def compute_pv_production(
         f"Computing PV production: {system_capacity_kw}kWp, "
         f"tilt={tilt}°, azimuth={azimuth}°, losses={losses_pct}%"
     )
-    # ── 1. Convert GHI energy to average irradiance ────────────────────────
     ghi_wm2 = convert_ghi_to_wm2(forecast)
 
-    # ── 2. Build time index ───────────────────────────────────────────────
     times = build_time_index(forecast)
 
-    # ── 3. Compute solar position ─────────────────────────────────────────
-    # Returns: apparent_zenith, azimuth, elevation etc. for each timestep
     solar_position = get_solarposition(times, lat, lng, altitude)
 
-    # ── 4. Extraterrestrial radiation ─────────────────────────────────────
-    # Radiation that would reach Earth's surface with no atmosphere.
-    # Used by Erbs decomposition as a reference.
     dni_extra = get_extra_radiation(times)
 
-    # ── 5. Erbs decomposition: GHI → DNI + DHI ───────────────────────────
-    # erbs() takes GHI, solar zenith, and extraterrestrial radiation
-    # Returns a DataFrame with 'dni' and 'dhi' columns
     ghi_series = pd.Series(ghi_wm2, index=times)
     erbs_result = erbs(
         ghi=ghi_series,
@@ -143,8 +96,6 @@ def compute_pv_production(
     dni = erbs_result["dni"]
     dhi = erbs_result["dhi"]
 
-    # ── 6. POA irradiance using Haydavies transposition ───────────────────
-    # Converts horizontal irradiance to irradiance on the tilted panel surface
     poa_result = pvlib.irradiance.get_total_irradiance(
         surface_tilt=tilt,
         surface_azimuth=azimuth,
@@ -158,16 +109,7 @@ def compute_pv_production(
         model="haydavies",
     )
     
-    # poa_result is a Series of total POA irradiance in W/m²
     poa_global  = poa_result ["poa_global"].fillna(0).clip(lower=0)
-
-    # ── 7. PVWatts DC power model ─────────────────────────────────────────
-    # PVWatts DC model: P_dc = capacity * (POA / 1000) * temp_correction
-    # Temperature correction uses the Sandia cell temperature model.
-    # We use the simplified approach: assume cell temp = air temp + 25°C
-    # at 1000 W/m² irradiance (NOCT-based linear approximation).
-    # This avoids needing wind speed in the cell temperature model,
-    # keeping the computation robust when wind data is missing.
 
     system_capacity_w = system_capacity_kw * 1000.0
 
@@ -186,8 +128,7 @@ def compute_pv_production(
         wind_speed=wind_speed ,
     )
 
-    # Temperature coefficient for power (typical silicon: -0.004 per °C)
-    # Reference temperature is 25°C (STC)
+    # Typical silicon temperature coefficient relative to the 25°C reference.
     temp_coeff = -0.004
 
     dc_power_w = pvlib.pvsystem.pvwatts_dc(
@@ -197,9 +138,7 @@ def compute_pv_production(
         gamma_pdc=temp_coeff,
     )
 
-    # ── 8. PVWatts AC power (apply losses) ───────────────────────────────
-    # losses_pct covers: soiling, shading, wiring, mismatch, inverter etc.
-    # PVWatts applies them as a single derate factor
+    # Apply aggregate system losses before converting DC to AC power.
     derate_factor = 1.0 - (losses_pct / 100.0)
     dc_power_w_after_losses_w= (dc_power_w * derate_factor).clip(lower=0)
 
@@ -211,7 +150,7 @@ def compute_pv_production(
         eta_inv_nom=inverter_efficiency,
     )
 
-    # Hypothetical AC power without the AC clipping limit
+    # Estimate AC output without the inverter clipping limit.
     zeta = dc_power_w_after_losses_w / inverter_pdc0_w
     
     eta = (
@@ -224,7 +163,6 @@ def compute_pv_production(
     ).clip(lower=0, upper=1)
     unclipped_ac_power_w = (eta * dc_power_w_after_losses_w).clip(lower=0)
     
-    # Instantaneous power lost to clipping (W)
     clipping_perc = (
         1 - ac_power_w / unclipped_ac_power_w.where(
             unclipped_ac_power_w > 0
@@ -232,14 +170,12 @@ def compute_pv_production(
     ).mul(100).clip(lower=0).fillna(0)
     
 
-    # ── 9. Build response ────────────────────────────────────────────────
-    # Since timestep = 1 hour, power in W == energy in Wh for that hour
     hourly = []
     for i, (entry, power, clip_perc) in enumerate(zip(forecast, ac_power_w, clipping_perc)):
         hourly.append({
             "time":      str(entry.get("time_step_fr", "")),
             "power_w":   round(float(power), 1),
-            "energy_wh": round(float(power), 1),  # 1h timestep: W == Wh
+            "energy_wh": round(float(power), 1),
             "clipping_percentage": round(float(clip_perc)),
             "ghi_wm2":   round(ghi_wm2[i], 1),
             "poa_wm2":   round(float(poa_global.iloc[i]), 1),
@@ -250,10 +186,8 @@ def compute_pv_production(
     total_energy_wh = sum(h["energy_wh"] for h in hourly)
     total_energy_kwh = total_energy_wh / 1000.0
  
-    # Potential AC energy without clipping (kWh)
     unclipped_energy_kwh = unclipped_ac_power_w.sum() / 1000
 
-    # Percentage of potential AC energy lost
     clipping_percentage_energy = (
         100 - round(100 * total_energy_kwh / unclipped_energy_kwh)
         if unclipped_energy_kwh > 0 else 0

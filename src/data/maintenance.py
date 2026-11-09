@@ -17,7 +17,7 @@ SILVER_FORECAST = Config.SILVER_FORECAST_AROME_TABLE_NAME
 
 
 def _vacuum(tables: list[tuple[str, str]], full: bool = False) -> None:
-    """tables = [(schema, table), ...]. VACUUM cannot run inside a transaction."""
+    """Vacuum the specified tables outside a transaction."""
     options = "FULL, ANALYZE" if full else "ANALYZE"
     with DatabaseConnection() as conn:
         conn.autocommit = True
@@ -27,14 +27,14 @@ def _vacuum(tables: list[tuple[str, str]], full: bool = False) -> None:
                     cur.execute(f'VACUUM ({options}) "{schema}"."{table}"')
                     logger.info("%s.%s: VACUUM (%s) done", schema, table, options)
         finally:
-            conn.autocommit = False      # the connection goes back to the pool
+            # Restore the pooled connection's default transaction behavior.
+            conn.autocommit = False
 
 def thin_forecast_runs(dry_run: bool = False, lookback_days: int = 30, full_vacuum: bool = False) -> None:
     """
-    For every COMPLETED day (Paris date < today), keep ONE random forecast run and
-    delete the other runs of that day from silver AND bronze.
-    The latest run overall (the one shown on the front) is never touched: a day that
-    contains it is skipped and handled on a later night.
+    Keep one random forecast run for each completed day in the lookback window and
+    delete the other runs from bronze and silver. Preserve the latest run so the
+    viewer continues to use it; process its day after a newer run is available.
     """
     today = datetime.now(PARIS).date()
     tables_to_compact = [SILVER_FORECAST] + BRONZE_FORECAST_TABLES
@@ -61,11 +61,11 @@ def thin_forecast_runs(dry_run: bool = False, lookback_days: int = 30, full_vacu
 
             for day, day_runs in sorted(by_day.items()):
                 if day >= today:
-                    continue                      # today is still in progress
+                    continue  # The current day is still in progress.
                 if latest in day_runs:
-                    continue                      # protect the run displayed on the front
+                    continue  # Keep the latest run available to the viewer.
                 if len(day_runs) <= 1:
-                    continue                      # already thinned
+                    continue  # This day already has one run.
 
                 keep = random.choice(day_runs)
                 to_delete = [r for r in day_runs if r != keep]
@@ -86,7 +86,7 @@ def thin_forecast_runs(dry_run: bool = False, lookback_days: int = 30, full_vacu
                     )
                     logger.info("  bronze.%s: %d rows deleted", table, cur.rowcount)
 
-    # Deletions are committed when the first DatabaseConnection closes.
+    # The connection context commits the deletions before vacuuming.
     _vacuum([(SILVER, SILVER_FORECAST), 
              (BRONZE, Config.BRONZE_SP1_FORECAST_TABLE_NAME),
              (BRONZE, Config.BRONZE_SP2_FORECAST_TABLE_NAME)], full = full_vacuum)
@@ -109,7 +109,7 @@ def purge_old_bronze(keep_days: int = 3, full_vacuum:bool = False) -> None:
             )
             logger.info("bronze.observations_hourly: %d old rows deleted", cur.rowcount)
     
-    # Second: physically compact the tables.
+    # Reclaim space after deleting old rows.
     _vacuum([(BRONZE, Config.OBSERVATIONS_TABLE_NAME_HOURLY), 
              (BRONZE, Config.BRONZE_SP1_FORECAST_TABLE_NAME),
              (BRONZE, Config.BRONZE_SP2_FORECAST_TABLE_NAME)], full = full_vacuum)

@@ -51,7 +51,7 @@ class GribProcessor:
             stations = queries.get_stations()
 
 
-            variables = records_class.forecast_variables()  # all non-metadata fields
+            variables = records_class.forecast_variables()
             extracted_data = GribProcessor.extract_forecast_variables_data(self.datasets, variables)
             records = GribProcessor.extract_data_at_stations_records(extracted_data, stations, grid_lats, grid_lons, self.run_time, records_class)
             return records
@@ -64,12 +64,7 @@ class GribProcessor:
         datasets: list[xr.Dataset],
         variables: set[str] | None = None,
     ) -> dict[str, xr.DataArray]:
-        """
-        Flatten list of datasets into a direct variable-name → DataArray mapping.
-        No implicit grouping   every variable is a first-class citizen.
-        
-        If variables is provided, only extract those (e.g. BronzeForecastRecords columns).
-        """
+        """Map dataset variables to their DataArrays, optionally filtering by name."""
         result = {}
 
         for ds in datasets:
@@ -94,8 +89,7 @@ class GribProcessor:
         ingestion_ts = pd.Timestamp('now', tz='UTC')
         station_ids  = [idx.station_id for idx in indices]
 
-        # --- 1. Build per-variable time index ---
-        # { var: { pd.Timestamp: array(n_stations,) } }
+        # Map each variable and valid time to values for all stations.
         var_time_arrays: dict[str, dict[pd.Timestamp, np.ndarray]] = {}
 
         for var, da in data.items():
@@ -105,12 +99,12 @@ class GribProcessor:
                 for t_idx, vt in enumerate(da.valid_time.values)
             }
 
-        # --- 2. Find the union of all valid_times ---
+        # Keep timestamps that are present in at least one variable.
         all_valid_times: set[pd.Timestamp] = set()
         for times in var_time_arrays.values():
             all_valid_times.update(times.keys())
 
-        # --- 3. Warn on misalignments ---
+        # Missing variable/timestamp pairs are set to None when records are built.
         for var, times in var_time_arrays.items():
             missing = all_valid_times - set(times.keys())
             if missing:
@@ -119,7 +113,6 @@ class GribProcessor:
                     f"{sorted(missing)}   will be filled with None"
                 )
 
-        # --- 4. Build records over union of times ---
         records = []
         for s_idx, station_id in enumerate(station_ids):
             for valid_time in sorted(all_valid_times):

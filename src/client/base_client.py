@@ -17,19 +17,6 @@ class TokenManager:
     def get_token(self):
         return self.token
 
-    # def is_token_valid(self, response):
-    #     status = response.status_code
-    #     content_type = response.headers.get('Content-Type', '')
-    #     if status == 401 and self.api.accept_header['Accept'] in content_type:
-    #         try:
-    #             repJson = response.json()
-    #             if 'description' in repJson and 'Invalid JWT token' in repJson['description']:
-    #                 logger.warning("JWT token is invalid or expired")
-    #                 return False
-    #         except Exception as e:
-    #             logger.exception("Failed to parse token validation response")
-    #     return True
-
     def is_token_valid(self, response):
         status = response.status_code
         if status == 401:
@@ -65,7 +52,8 @@ class BaseClient(object):
         self.api = api
         self.session = requests.Session()
         self.session.headers.update(api.accept_header)
-        self.session.headers.update({"Connection": "close"})  # no persistent connections
+        # Ask the server to close the connection after each response.
+        self.session.headers.update({"Connection": "close"})
 
         logger.info("Client initialized for API: %s with endpoint: %s", api.name, api.full_url)
         self.token_manager = TokenManager(self, api)
@@ -76,11 +64,7 @@ class BaseClient(object):
         logger.info("Session headers updated with new token")
 
     def request(self, params):
-        """
-        params: Dict
-        this dictionary should contain two keys necessary for the service API
-        """
-        
+        """Send an authenticated GET request using the endpoint parameters."""
         url = self.api.full_url
         logger.info("Sending request to %s with params %s", url, params)
 
@@ -100,10 +84,3 @@ class BaseClient(object):
             )
         logger.info("Request completed with status code %s", self.response.status_code)
         return self.response
-    
-    # def reset_session(self):
-    #     """This is called after the long inter-run wait."""
-    #     logger.info("Resetting session before new api fetch")
-    #     self.session.close()
-    #     self.session = requests.Session()
-    #     self.session.headers.update(self.api.accept_header)

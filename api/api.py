@@ -15,7 +15,6 @@ app = FastAPI(title="Weather Forecast API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    # allow_origins=["http://127.0.0.1:5173"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -83,10 +82,10 @@ def get_analysis(
     lng: float | None = None,
     days: int = 7,
 ):
-    """
-    lat, lng : optional   if provided, finds nearest station.
-               if omitted, aggregates over all stations.
-    days     : how many past days to include in the analysis.
+    """Return forecast accuracy metrics for the last ``days`` days.
+
+    With both coordinates, results are limited to the nearest station; otherwise
+    they are aggregated across all stations.
     """
     if lat is not None and lng is not None:
         ensure_in_france(lat, lng)

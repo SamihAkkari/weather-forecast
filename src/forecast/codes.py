@@ -1,76 +1,23 @@
-"""
-WMO Weather Interpretation Code computation.
+"""Map AROME forecast values to WMO weather codes.
 
-This script is dapted from the open-meteo implementation:
-https://github.com/open-meteo/open-meteo/blob/main/Sources/App/Helper/WeatherCode.swift
+The classification follows Open-Meteo's weather-code logic, adapted to the
+fields available in this forecast. Visibility and freezing-rain data are not
+available; CAPE is used as a proxy for convective precipitation.
 
-Variables used from AROME forecast:
-    precipitation_mm      : accumulated precipitation for the timestep (mm)
-    snow_precipitation_mm : total snow precipitation (mm water equivalent)
-    cape_m2_s2            : CAPE instantaneous (J/kg)
-    total_cloud_cover     : total cloud cover (%)
-    temperature_celsius   : 2m temperature (°C)
-    wind_gust_m_per_s     : 10m wind gust (m/s) optional, used for thunderstorm
-
-Variables NOT available from meteofrance that open-meteo uses (skipped in this implementation):
-    categoricalFreezingRain  → freezing rain codes (56, 57, 66, 67) skipped
-    visibilityMeters         → fog codes (45, 48) skipped
-    liftedIndex              → thunderstorm probability degraded
-    convectiveInhibition     → thunderstorm probability degraded
-    pblHeight                → thunderstorm probability degraded
-    convectivePrecipitation  → we use cape >= 800 as proxy instead
+Reference: https://github.com/open-meteo/open-meteo/blob/main/Sources/App/Helper/WeatherCode.swift
 """
 
 from __future__ import annotations
 import math
 
-# {
-# 	"0": "Clear sky",
-# 	"1": "Mainly clear",
-# 	"2": "Partly cloudy",
-# 	"3": "Overcast",
-# 	"45": "Fog",
-# 	"48": "Depositing rime fog",
-# 	"51": "Light drizzle",
-# 	"53": "Moderate drizzle",
-# 	"55": "Dense drizzle",
-# 	"56": "Light freezing drizzle",
-# 	"57": "Dense freezing drizzle",
-# 	"61": "Slight rain",
-# 	"63": "Moderate rain",
-# 	"65": "Heavy rain",
-# 	"66": "Light freezing rain",
-# 	"67": "Heavy freezing rain",
-# 	"71": "Slight snowfall",
-# 	"73": "Moderate snowfall",
-# 	"75": "Heavy snowfall",
-# 	"77": "Snow grains",
-# 	"80": "Slight rain showers",
-# 	"81": "Moderate rain showers",
-# 	"82": "Violent rain showers",
-# 	"85": "Slight snow showers",
-# 	"86": "Heavy snow showers",
-# 	"95": "Thunderstorm",
-# 	"96": "Thunderstorm with slight hail",
-# 	"97": "Heavy thunderstorm",
-# 	"99": "Thunderstorm with heavy hail"
-# }
-
-# ── Model timestep ─────────────────────────────────────────────────────────────
-# AROME SP1 package timestep is 1 hour.
-# All thresholds from open-meteo are in per-hour rates,
-# so dividing by MODEL_DT_HOURS gives the hourly rate.
+# AROME SP1 data and the classification thresholds use hourly intervals.
 MODEL_DT_HOURS: float = 1.0
 
-
-# ── Guard ──────────────────────────────────────────────────────────────────────
 
 def _ok(*values) -> bool:
     """True if all values are not None and finite."""
     return all(v is not None and math.isfinite(float(v)) for v in values)
 
-
-# ── Thunderstorm ───────────────────────────────────────────────────────────────
 
 def _thunderstorm_probability(
     cape: float,
@@ -85,12 +32,13 @@ def _thunderstorm_probability(
     because we track accumulatedScore / totalWeight.
     """
 
-    # Hard blockers   same as open-meteo
+    # Suppress the estimate when CAPE or cloud cover is too low.
     if cape <= 10.0:
         return 0.0
     if cloud_cover < 30.0:
         return 0.0
 
+    # Normalize by included weights because several input fields are unavailable.
     accumulated = 0.0
     total_weight = 0.0
 
@@ -101,7 +49,7 @@ def _thunderstorm_probability(
     total_weight += cape_weight
 
     # Precipitation score (weight 0.25 in open-meteo)
-    # Without convective precip field we use total precip with a 0.6 penalty
+    # Total precipitation includes non-convective precipitation, so apply a penalty.
     precip_weight = 0.25
     reference_precip = 2.0 * MODEL_DT_HOURS  # 2 mm/h reference
     fallback_reference = reference_precip * 1.6
@@ -128,8 +76,6 @@ def _thunderstorm_probability(
     return max(0.0, min(probability, 100.0))
 
 
-# ── Main function ──────────────────────────────────────────────────────────────
-
 def compute_hourly_code(entry: dict) -> int:
     """
     Assigns a WMO weather code to a single forecast timestep.
@@ -145,16 +91,15 @@ def compute_hourly_code(entry: dict) -> int:
         8. Cloud cover
     """
 
-    precip    = entry.get("precipitation_mm")     #
-    tsnowp    = entry.get("snow_precipitation_mm")               # 
+    precip = entry.get("precipitation_mm")
+    tsnowp = entry.get("snow_precipitation_mm")
     cape      = entry.get("cape_m2_s2")
-    cloud     = entry.get("total_cloud_cover")    # %
-    temp      = entry.get("temperature_celsius")  # °C
-    gusts     = entry.get("wind_gust_m_per_s")                 # m/s, optional
+    cloud = entry.get("total_cloud_cover")
+    temp = entry.get("temperature_celsius")
+    gusts = entry.get("wind_gust_m_per_s")
 
-    # Hourly rates (open-meteo normalises everything to per-hour)
     precip_rate = precip / MODEL_DT_HOURS if _ok(precip) else None
-    # tsnowp is mm water eq. → treat as cm snow depth (density ≈ 100 kg/m³)
+    # At 100 kg/m^3, mm water equivalent is numerically equal to cm snow depth.
     snow_rate   = tsnowp / MODEL_DT_HOURS if _ok(tsnowp) else None
 
     # ── 1. Thunderstorm ────────────────────────────────────────────────────
@@ -168,8 +113,7 @@ def compute_hourly_code(entry: dict) -> int:
     # ── 2. Freezing rain   skipped (no categoricalFreezingRain) ───────────
 
     # ── 3 & 4. Convective precipitation   showers ─────────────────────────
-    # open-meteo condition: convectivePrecipitation > 0 OR cape >= 800
-    # We use cape >= 800 as proxy since we have no convective precip field
+    # Use CAPE as a proxy because convective precipitation is unavailable.
     is_convective = _ok(cape) and cape >= 800
 
     if is_convective:
@@ -234,16 +178,12 @@ def compute_hourly_code(entry: dict) -> int:
             return 2    # partly cloudy
         return 3        # overcast
 
-    # Fallback if no data at all
+    # Use clear sky when no available field indicates another condition.
     return 0
 
 
 def compute_daily_code(entries: list[dict]) -> int:
-    """
-    Returns the most severe WMO code across all hourly entries of a day.
-    Severity order mirrors open-meteo: thunderstorm > showers > snow > rain
-    > drizzle > cloudy > clear.
-    """
+    """Return the most severe WMO code across the day's forecast entries."""
     if not entries:
         return 0
 

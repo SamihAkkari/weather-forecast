@@ -34,7 +34,7 @@ class BaseIngestor(ABC):
     @abstractmethod
     def run(self, *args): ...
 
-    def trigger_dbt(self, tag): # rigid function to change later         
+    def trigger_dbt(self, tag):
         if Config.DBT_MODE == "docker_exec":
             cmd = ["docker", "exec", "-w", "/usr/app/dbt/weather_project",
                    "dbt_runner", "dbt", "run", "--select", f"tag:{tag}"]
@@ -44,8 +44,8 @@ class BaseIngestor(ABC):
                    "--profiles-dir", Config.DBT_PROFILES_DIR]
         try:
             subprocess.run(cmd, check=True, 
-            capture_output=True, # This captures stdout and stderr
-            text=True            # This returns strings instead of bytes
+            capture_output=True,
+            text=True
             )
             logger.info("dbt model executed successfully Success!")
 
@@ -71,7 +71,7 @@ class BaseIngestor(ABC):
         self.logger.error(f"{context}: {error}")
 
 class ObservationsIngestor(BaseIngestor):
-    """Continuously ingest real-time weather observations"""
+    """Fetch and ingest pending observation intervals."""
 
     def __init__(self, api_client):
         super().__init__()
@@ -84,7 +84,7 @@ class ObservationsIngestor(BaseIngestor):
     def fetch(self, params):
         """Fetch data from API"""
         try:
-            response = self.api_client.fetch_data(params = params)  # your API method
+            response = self.api_client.fetch_data(params=params)
             observation_processor = ObservationProcessor(response)
             records = observation_processor.get_ready_to_ingest_records(self.records_class)
             self._log_fetch("observations", len(records))
@@ -103,7 +103,7 @@ class ObservationsIngestor(BaseIngestor):
             raise
 
     def run(self):
-        """This can be used later with advanced schedulers"""        
+        """Fetch and ingest observations that are not already stored."""
         ingested_any = False
         for step_back in reversed(range(0, self.steps_back)):
             date = time_utils.last_interval_iso(self.time_steps_seconds, step_back)
@@ -133,10 +133,7 @@ class ObservationsIngestor(BaseIngestor):
 
 
 class ForecastIngestor(BaseIngestor):
-    """
-    Ingest one AROME forecast run per call.
-    Trigger externally (cron, scheduler)   this class does not manage timing.
-    """
+    """Fetch and ingest available intervals for the latest AROME run."""
 
     def __init__(self, data_api_clients, description_api_client):
         super().__init__()
@@ -152,7 +149,6 @@ class ForecastIngestor(BaseIngestor):
     
         reference_time = params.get("referencetime")
     
-        # Retry the network operation only, not GRIB processing.
         for attempt in range(1, max_attempts + 1):
             try:
                 response = client.fetch_data(params=params)
@@ -164,7 +160,6 @@ class ForecastIngestor(BaseIngestor):
                 Timeout,
                 HTTPError,
             ) as exc:
-                # Retry only transient network errors and selected HTTP statuses.
                 retryable = not isinstance(exc, HTTPError) or (
                     exc.response is not None
                     and exc.response.status_code
@@ -196,7 +191,6 @@ class ForecastIngestor(BaseIngestor):
     
                 time.sleep(delay)
     
-        # Process the response only after a successful fetch.
         if not response:
             self._log_skip(
                 f"No GRIB data found for reference time {reference_time}"
@@ -295,7 +289,7 @@ class ForecastIngestor(BaseIngestor):
 
                 if not records or records == []:
                     logger.info("Run %s interval %s not available yet", run_time, interval)
-                    break  # later intervals won't be there either
+                    break  # Later intervals are not available yet.
 
                 self.ingest(client, records)
                 ingested_any = True

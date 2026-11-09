@@ -1,15 +1,19 @@
 """
 Analysis processor:   
-computes forecast accuracy metrics by joining
+
+Computes forecast accuracy metrics by joining
 silver.forecast_arome with silver.observations_hourly.
 
-All heavy computation happens in SQL (indexed join + GROUP BY).
-Python only post-processes the rows into the frontend response shape.
+Heavy computations are performed in SQL (indexed joins and GROUP BY),
+while Python handles post-processing and transforms the results into
+the response structure expected by the frontend.
 
-In this script I intentionally provide a seperate builder for each analysed variable
-since I want a clear separation between them even if there are some similarities in some places
-like between temperature and wind (for this scale only 3 parameters this is not a problem)
+Each analyzed variable has its own dedicated builder to maintain
+a clear separation and make variable-specific
+logic easier to maintain and extend. 
 
+Similar variables can be grouped like temperature and wind but at this scale
+of 3 parameters it is fine.
 """
 
 from __future__ import annotations
@@ -19,15 +23,10 @@ import math
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Mapping, Sequence
+
 from src.data.db import fetch_dicts
 
-# from src.data.db import DatabaseConnection
-
 logger = logging.getLogger(__name__)
-
-# =============================================================================
-# Analysis definitions and response contracts
-# =============================================================================
 
 RAIN_THRESHOLD_MM = 0.1
 NO_DATA_INSIGHT = "No data available."
@@ -73,9 +72,8 @@ class RainResult:
 
 @dataclass(frozen=True)
 class AnalysisDefinition:
-    """
-    Connects an analysis key to its builder and output contract.
-    """
+    """Associate an analysis key with its builder and result type."""
+
     builder: Callable[[Sequence[Mapping[str, object]]], object]
     output_type: type
 
@@ -176,15 +174,6 @@ def _fetch_step_metrics(
         "rain_thresh": RAIN_THRESHOLD_MM,
     }
     return fetch_dicts(sql, params)
-    # try:
-    #     with DatabaseConnection() as conn:
-    #         with conn.cursor() as cursor:
-    #             cursor.execute(sql, params)
-    #             columns = [column[0] for column in cursor.description]
-    #             return [dict(zip(columns, row)) for row in cursor.fetchall()]
-    # except Exception:
-    #     logger.exception("Analysis query failed")
-    #     raise
 
 
 def _safe(value: object, decimals: int = 2) -> float | None:
@@ -237,9 +226,7 @@ def _percentage(numerator: int, denominator: int) -> int | None:
     return round(100 * numerator / denominator)
 
 
-# =============================================================================
 # Analysis-specific insight generators
-# =============================================================================
 
 def _temperature_insight(mae: float | None, bias: float | None) -> str:
     if mae is None:
@@ -333,7 +320,6 @@ def _rain_insight(tp: int, fp: int, fn: int, f1: int | None) -> str:
 
 # =============================================================================
 # Analysis-specific builders
-# =============================================================================
 
 def _empty_temperature_result() -> TemperatureResult:
     return TemperatureResult(

@@ -25,12 +25,12 @@ class ActivityScoringTests(unittest.TestCase):
             unknown="unknown",
         )
 
-        self.assertEqual(Scorer(None), (DEFAULT_SCORE, "unknown"))
-        self.assertAlmostEqual(Scorer(4.9)[0], 0.49)
-        self.assertEqual(Scorer(4.9)[1], "low: 4.9")
-        self.assertEqual(Scorer(5.0), (0.5, "middle: 5.0"))
-        self.assertEqual(Scorer(10.0), (1.0, "middle: 10.0"))
-        self.assertEqual(Scorer(10.1), (1.0, "high: 10.1"))
+        self.assertEqual(scorer(None), (DEFAULT_SCORE, "unknown"))
+        self.assertAlmostEqual(scorer(4.9)[0], 0.49)
+        self.assertEqual(scorer(4.9)[1], "low: 4.9")
+        self.assertEqual(scorer(5.0), (0.5, "middle: 5.0"))
+        self.assertEqual(scorer(10.0), (1.0, "middle: 10.0"))
+        self.assertEqual(scorer(10.1), (1.0, "high: 10.1"))
 
     def test_Scorer_rejects_invalid_points_and_message_limits(self):
         with self.assertRaisesRegex(ValueError, "increasing values"):
