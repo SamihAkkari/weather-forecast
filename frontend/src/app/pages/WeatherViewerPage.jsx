@@ -7,9 +7,6 @@ import useStationData from '../hooks/useStationData'
 import LifestyleWidget from '../components/weather/LifestyleWidget'
 import { useNavigate } from '../router-compat'
 
-// import { mockCurrentConditions, mockStation, mockForecast, mockWeatherDetails } from '../data/mockData'
-// import { mockLifestyle } from '../data/mockData'
-
 function PvEntryCard({ location }) {
   const navigate = useNavigate()
 

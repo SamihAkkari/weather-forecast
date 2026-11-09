@@ -42,39 +42,6 @@ function WindCompass({ direction }) {
   )
 }
 
-function SunArc({ progress }) {
-  const r = 28, cx = 40, cy = 38
-  const angle = Math.PI + progress * (0 - Math.PI)
-  const dotX = cx + r * Math.cos(angle)
-  const dotY = cy + r * Math.sin(angle)
-  return (
-    <div className="flex justify-center mb-2">
-      <svg width="80" height="42" viewBox="0 0 80 42">
-        <path d={`M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}`}
-          fill="none" stroke="#24456a" strokeWidth="3" strokeLinecap="round"/>
-        <path d={`M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${dotX} ${dotY}`}
-          fill="none" stroke="#fbbf24" strokeWidth="3" strokeLinecap="round"/>
-        <circle cx={dotX} cy={dotY} r="4" fill="#fbbf24" />
-      </svg>
-    </div>
-  )
-}
-
-function UvBar({ value }) {
-  const max = 11
-  const percent = (value / max) * 100
-  const color =
-    value <= 2  ? '#4ade80' :
-    value <= 5  ? '#fbbf24' :
-    value <= 7  ? '#f97316' :
-    value <= 10 ? '#ef4444' : '#7aa8e6'
-  return <ProgressBar percent={percent} color={color} />
-}
-
-/*
-  Widget now accepts an onClick prop and shows a small
-  arrow indicator in the top right corner.
-*/
 function Widget({ label, icon, value, unit, message, visual, onClick }) {
   return (
     <div
@@ -102,31 +69,8 @@ function Widget({ label, icon, value, unit, message, visual, onClick }) {
 function WeatherWidgets({ widgets }) {
   const navigate = useNavigate()
 
-  function parseSunProgress(sunriseStr, messageStr) {
-    try {
-      const now = new Date()
-      const [rH, rM] = sunriseStr.split(':').map(Number)
-      const sunsetMatch = messageStr.match(/(\d{2}):(\d{2})/)
-      if (!sunsetMatch) return 0.5
-      const [sH, sM] = [parseInt(sunsetMatch[1]), parseInt(sunsetMatch[2])]
-      const riseMinutes = rH * 60 + rM
-      const setMinutes  = sH * 60 + sM
-      const nowMinutes  = now.getHours() * 60 + now.getMinutes()
-      return Math.min(1, Math.max(0, (nowMinutes - riseMinutes) / (setMinutes - riseMinutes)))
-    } catch { return 0.5 }
-  }
-
-  // const { humidity, feels_like, wind, sunrise, uv_index, visibility, pressure } = widgets
   const { humidity, feels_like, wind, pressure } = widgets
-  // const sunProgress = parseSunProgress(sunrise.value, sunrise.message)
 
-  /*
-    handleWidgetClick navigates to /widget/:id and passes
-    the full widgets object in router state.
-    The detail page finds the right widget by id from state.
-    sunrise is excluded since it has no hourly forecast values
-    that make sense to chart.
-  */
   function handleWidgetClick(id) {
     navigate(`/widget/${id}`, { state: { widgets } })
   }
@@ -159,33 +103,6 @@ function WeatherWidgets({ widgets }) {
           visual={<WindCompass direction={wind.direction} />}
           onClick={() => handleWidgetClick('wind')}
         />
-
-        {/*
-          Sunrise widget is NOT clickable   no hourly data to show.
-          No onClick passed, no ↗ arrow rendered.
-        */}
-        {/* <Widget
-          label="Sunrise" icon="🌅"
-          value={sunrise.value} unit=""
-          message={sunrise.message}
-          visual={<SunArc progress={sunProgress} />}
-        /> */}
-
-        {/* <Widget
-          label="UV index" icon="🔆"
-          value={uv_index.value} unit=""
-          message={uv_index.message}
-          visual={<UvBar value={uv_index.value} />}
-          onClick={() => handleWidgetClick('uv_index')}
-        />
-
-        <Widget
-          label="Visibility" icon="👁"
-          value={visibility.value} unit={visibility.unit}
-          message={visibility.message}
-          visual={<ProgressBar percent={(visibility.value / 10) * 100} color="#5cbdb9" />}
-          onClick={() => handleWidgetClick('visibility')}
-        /> */}
 
         <Widget
           label="Pressure" icon="⬇"

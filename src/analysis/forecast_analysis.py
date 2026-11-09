@@ -83,13 +83,6 @@ class AnalysisDefinition:
 # More details are provided below where this dictionary is populated
 ANALYSIS_DEFINITIONS: dict[str, AnalysisDefinition]
 
-
-# =============================================================================
-# SQL
-# =============================================================================
-
-# TODO: Remove the NULLIF(..., 'NaN') workaround once NaN values are correctly
-# normalised in the silver layer.
 _ANALYSIS_SQL = """
 WITH forecast_with_step AS (
     SELECT
@@ -226,8 +219,6 @@ def _percentage(numerator: int, denominator: int) -> int | None:
     return round(100 * numerator / denominator)
 
 
-# Analysis-specific insight generators
-
 def _temperature_insight(mae: float | None, bias: float | None) -> str:
     if mae is None:
         return "Insufficient data to evaluate temperature accuracy."
@@ -317,9 +308,6 @@ def _rain_insight(tp: int, fp: int, fn: int, f1: int | None) -> str:
         "forecast run counts as one sample."
     )
 
-
-# =============================================================================
-# Analysis-specific builders
 
 def _empty_temperature_result() -> TemperatureResult:
     return TemperatureResult(
@@ -478,10 +466,6 @@ ANALYSIS_DEFINITIONS = {
     ),
 }
 
-
-# =============================================================================
-# Public entry point
-# =============================================================================
 
 def compute_analysis(
     days: int,

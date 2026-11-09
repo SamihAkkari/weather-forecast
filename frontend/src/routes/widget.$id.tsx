@@ -13,5 +13,5 @@ export const Route = createFileRoute("/widget/$id")({
       { property: "og:description", content: "Detailed view of a weather measurement." },
     ],
   }),
-  component: () => <ClientPage Page={Page} />,
+  component: () => <ClientPage Page={Page} props={{}} />,
 });

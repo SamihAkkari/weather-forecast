@@ -8,38 +8,6 @@ import {
 import { usePvProduction } from '../hooks/usePvProduction'
 import { formatHourFr } from '../utils/time'
 
-/*
-  Formats ISO time string to hour label.
-  "2026-10-22T13:00:00" → "13:00"
-*/
-// function formatHour(isoString) {
-//   const date = new Date(isoString)
-//   return `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`
-//   // return date.toLocaleTimeString('fr-FR', {
-//   //   hour: '2-digit',
-//   //   minute: '2-digit',
-//   //   timeZone: 'Europe/Paris',
-//   // })
-// }
-
-/*
-  Generates a human-readable insight sentence from total energy.
-  Uses simple fixed equivalences   easy to extend later.
-*/
-// function buildInsight(total_kwh, capacity_kw) {
-//   const washingMachine = (total_kwh / 0.5).toFixed(0)  // ~0.5 kWh per cycle
-//   const evKm           = (total_kwh * 6).toFixed(0)     // ~6 km per kWh (average EV)
-//   const fridgeHours    = (total_kwh / 0.04).toFixed(0)  // ~40W fridge
-
-//   return `Your ${capacity_kw} kWp system will produce ${total_kwh} kWh over the forecast period   
-// enough to run a washing machine ${washingMachine} times, 
-// cover approximately ${evKm} km of EV driving, 
-// or power a fridge for ${fridgeHours} hours.`
-// }
-
-/*
-  InputField   reusable labelled input used in the form.
-*/
 function InputField({ label, hint, value, onChange, min, max, step }) {
   return (
     <div>
@@ -58,9 +26,6 @@ function InputField({ label, hint, value, onChange, min, max, step }) {
   )
 }
 
-/*
-  SummaryCard   one of the three metric cards at the top of results.
-*/
 function SummaryCard({ label, value, unit, sub }) {
   return (
     <div className="glass border border-border rounded-2xl p-4">
@@ -237,13 +202,6 @@ function PvProductionPage({ selectedLocation }) {
             )}
             </button>
 
-          {/* <button
-            onClick={handleCompute}
-            disabled={!loc || loading}
-            className="w-full py-2 bg-gradient-primary text-primary-foreground text-grey text-sm rounded-lg hover:opacity-90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Computing...' : 'Compute production'}
-          </button> */}
         </div>
 
         {/* Error state */}
@@ -307,11 +265,7 @@ function PvProductionPage({ selectedLocation }) {
                     tick={{ fontSize: 10, fill: '#8fb3c4' }}
                     tickLine={false}
                     axisLine={false}
-                    interval="preserveStartEnd"                  
-                    // dataKey="hour"
-                    // tick={{ fontSize: 10, fill: '#8fb3c4' }}
-                    // tickLine={false}
-                    // axisLine={false}
+                    interval="preserveStartEnd"
                   />
                   <YAxis
                     tick={{ fontSize: 10, fill: '#8fb3c4' }}
@@ -347,13 +301,6 @@ function PvProductionPage({ selectedLocation }) {
                         }
                         return null
                     }}
-                    // formatter={v => [`${v} kW`, 'AC Power']}
-                    // labelFormatter={label => `Hour: ${label}`}
-                    // contentStyle={{
-                    //   border: '0.5px solid #24456a',
-                    //   borderRadius: '8px',
-                    //   fontSize: 12,
-                    // }}
                   />
                   {/*
                     ReferenceLine shows the inverter capacity limit.
@@ -401,12 +348,7 @@ function PvProductionPage({ selectedLocation }) {
                     tick={{ fontSize: 10, fill: '#8fb3c4' }}
                     tickLine={false}
                     axisLine={false}
-                    interval="preserveStartEnd"   
-
-                    // dataKey="hour"
-                    // tick={{ fontSize: 10, fill: '#8fb3c4' }}
-                    // tickLine={false}
-                    // axisLine={false}
+                    interval="preserveStartEnd"
                   />
                   <YAxis
                     tick={{ fontSize: 10, fill: '#8fb3c4' }}

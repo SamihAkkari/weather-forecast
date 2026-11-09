@@ -9,7 +9,10 @@ export const Route = createFileRoute("/viewer")({
   head: () => ({
     meta: [
       { title: "Weather viewer   MeteoApp" },
-      { name: "description", content: "Pick a station on the map and see current conditions and the forecast." },
+      {
+        name: "description",
+        content: "Pick a station on the map and see current conditions and the forecast.",
+      },
       { property: "og:title", content: "Weather viewer   MeteoApp" },
       { property: "og:description", content: "Station conditions and forecasts across France." },
     ],
@@ -19,5 +22,7 @@ export const Route = createFileRoute("/viewer")({
 
 function Viewer() {
   const { selectedLocation, setSelectedLocation } = useSelectedLocation();
-  return <ClientPage Page={Page} props={{ selectedLocation, onLocationChange: setSelectedLocation }} />;
+  return (
+    <ClientPage Page={Page} props={{ selectedLocation, onLocationChange: setSelectedLocation }} />
+  );
 }

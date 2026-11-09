@@ -13,5 +13,5 @@ export const Route = createFileRoute("/activity/$id")({
       { property: "og:description", content: "Best time windows for your outdoor activity." },
     ],
   }),
-  component: () => <ClientPage Page={Page} />,
+  component: () => <ClientPage Page={Page} props={{}} />,
 });

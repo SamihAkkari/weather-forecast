@@ -8,10 +8,13 @@ export const Route = createFileRoute("/analysis")({
   head: () => ({
     meta: [
       { title: "Analysis tool   MeteoApp" },
-      { name: "description", content: "Compare stations, explore historical weather data and export CSV files." },
+      {
+        name: "description",
+        content: "Compare stations, explore historical weather data and export CSV files.",
+      },
       { property: "og:title", content: "Analysis tool   MeteoApp" },
       { property: "og:description", content: "Historical weather analysis and CSV export." },
     ],
   }),
-  component: () => <ClientPage Page={Page} />,
+  component: () => <ClientPage Page={Page} props={{}} />,
 });

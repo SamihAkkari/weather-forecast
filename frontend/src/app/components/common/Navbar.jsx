@@ -1,11 +1,5 @@
 import { Link } from '../../router-compat'
 
-const LINKS = [
-  // { to: '/viewer', label: 'Viewer' },
-  // { to: '/analysis', label: 'Analysis' },
-  // { to: '/pv', label: 'Solar' },
-]
-
 function Navbar() {
   return (
     <nav className="sticky top-0 z-[1000] border-b border-border glass">
@@ -18,18 +12,6 @@ function Navbar() {
             Meteo<span className="text-primary">App</span>
           </span>
         </Link>
-        <div className="flex items-center gap-1">
-          {LINKS.map(l => (
-            <Link
-              key={l.to}
-              to={l.to}
-              activeProps={{ className: 'bg-muted text-foreground' }}
-              className="px-3.5 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              {l.label}
-            </Link>
-          ))}
-        </div>
       </div>
     </nav>
   )

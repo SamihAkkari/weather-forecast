@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class EndpointConfig:
     path: str
-    record_class:    Optional[Type[data_models.BaseRecord]] = None      # <-- schema lives here
+    record_class:    Optional[Type[data_models.BaseRecord]] = None    
     required_params: list[str] = field(default_factory=list) # list of required parameters for this endpoint (ensures an empty list if it was not defined)
     optional_params: list[str] = field(default_factory=list) # list of optional parameters for this endpoint
     bronze_table: Optional[str] = None # target table for this endpoint's data
@@ -46,7 +46,6 @@ class MeteoFranceBase:
         self.token_headers = token_headers
         self.timeout = timeout
 
-        # Endpoint config unpacked from the descriptor for easy access
         self.service = service
         cfg: EndpointConfig = self.endpoints[service]
         self.record_class = cfg.record_class

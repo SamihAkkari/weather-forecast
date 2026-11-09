@@ -17,19 +17,6 @@ const FEATURES = [
     text: 'Compare AROME forecasts against real observations, explore history and export CSV files.',
     cta: 'Open analyser',
   },
-  // {
-  //   to: '/pv',
-  //   icon: '☀️',
-  //   title: 'Solar production',
-  //   text: 'Estimate the hourly output of your solar panels from the local forecast.',
-  //   cta: 'Estimate output',
-  // },
-]
-
-const STATS = [
-  { value: '6 min', label: 'Update interval' },
-  { value: 'AROME', label: 'Forecast model' },
-  { value: '1 km', label: 'Grid resolution' },
 ]
 
 function HomePage() {
@@ -92,18 +79,6 @@ function HomePage() {
           ))}
         </div>
 
-        {/* <div className="mt-10 grid grid-cols-3 gap-5">
-          {STATS.map(s => (
-            <div key={s.label} className="text-center rounded-2xl border border-border py-6">
-              <p className="font-display text-2xl sm:text-3xl font-semibold text-gradient">{s.value}</p>
-              <p className="mt-1 text-xs uppercase tracking-widest text-subtle">{s.label}</p>
-            </div>
-          ))}
-        </div>
-
-        <p className="text-center text-xs text-subtle mt-14">
-          Data source: Météo-France · Updated every 6 minutes
-        </p> */}
       </main>
     </div>
   )

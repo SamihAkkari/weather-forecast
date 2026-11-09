@@ -40,7 +40,7 @@ function buildCurvePath(points) {
 }
 
 function DailyForecast({ daily }) {
-  // Guard   if no data return nothing
+  // There is nothing to render before daily forecast data is available.
   if (!daily || daily.length === 0) return null;
 
   /*

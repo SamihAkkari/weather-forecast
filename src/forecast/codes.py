@@ -49,7 +49,7 @@ def _thunderstorm_probability(
     total_weight += cape_weight
 
     # Precipitation score (weight 0.25 in open-meteo)
-    # Total precipitation includes non-convective precipitation, so apply a penalty.
+    # Total precipitation includes non-convective precipitation, so we apply a penalty.
     precip_weight = 0.25
     reference_precip = 2.0 * MODEL_DT_HOURS  # 2 mm/h reference
     fallback_reference = reference_precip * 1.6
@@ -102,7 +102,7 @@ def compute_hourly_code(entry: dict) -> int:
     # At 100 kg/m^3, mm water equivalent is numerically equal to cm snow depth.
     snow_rate   = tsnowp / MODEL_DT_HOURS if _ok(tsnowp) else None
 
-    # ── 1. Thunderstorm ────────────────────────────────────────────────────
+    # 1. Thunderstorm ────────────────────────────────────────────────────
     if _ok(cape, precip, cloud):
         prob = _thunderstorm_probability(cape, precip, cloud, gusts)
         if prob > 85:
@@ -110,9 +110,9 @@ def compute_hourly_code(entry: dict) -> int:
         if prob > 60:
             return 95   # thunderstorm slight or moderate
 
-    # ── 2. Freezing rain   skipped (no categoricalFreezingRain) ───────────
+    # 2. Freezing rain   skipped (no categoricalFreezingRain) ───────────
 
-    # ── 3 & 4. Convective precipitation   showers ─────────────────────────
+    # 3 & 4. Convective precipitation   showers ─────────────────────────
     # Use CAPE as a proxy because convective precipitation is unavailable.
     is_convective = _ok(cape) and cape >= 800
 
@@ -133,7 +133,7 @@ def compute_hourly_code(entry: dict) -> int:
             if precip_rate >= 7.6:
                 return 82   # violent rain showers
 
-    # ── 5. Stratiform snowfall ─────────────────────────────────────────────
+    # 5. Stratiform snowfall ─────────────────────────────────────────────
     if _ok(snow_rate):
         if 0.01 <= snow_rate < 0.2:
             return 71   # slight snowfall
@@ -142,7 +142,7 @@ def compute_hourly_code(entry: dict) -> int:
         if snow_rate >= 0.8:
             return 75   # heavy snowfall
 
-    # ── 6. Stratiform rain / drizzle ──────────────────────────────────────
+    # 6. Stratiform rain / drizzle ──────────────────────────────────────
     # open-meteo thresholds (mm/h):
     # 0.01–0.5  → drizzle light
     # 0.5–1.0   → drizzle moderate
@@ -164,9 +164,9 @@ def compute_hourly_code(entry: dict) -> int:
         if precip_rate >= 7.6:
             return 65   # heavy rain
 
-    # ── 7. Fog   skipped (no visibility data) ─────────────────────────────
+    # 7. Fog   skipped (no visibility data) ─────────────────────────────
 
-    # ── 8. Cloud cover ─────────────────────────────────────────────────────
+    # 8. Cloud cover ─────────────────────────────────────────────────────
     # open-meteo thresholds: 0–20 clear, 20–50 mainly clear,
     # 50–80 partly cloudy, 80+ overcast
     if _ok(cloud):

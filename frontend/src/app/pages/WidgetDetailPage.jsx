@@ -52,25 +52,6 @@ const WIDGET_CONFIG = {
   },
 }
 
-/*
-  Formats ISO time string to a short hour label for the X axis.
-  "2026-10-22T14:00:00+00:00" → "14:00"
-*/
-// function formatHour(isoString) {
-//   const match = isoString.match(/[T ](\d{2}):(\d{2})/);
-
-//   if (!match) return '';
-
-//   return `${match[1]}:${match[2]}`;
-  
-  // const date = new Date(isoString)
-  // return date.toLocaleTimeString('fr-FR', {
-  //   hour: '2-digit',
-  //   minute: '2-digit',
-  //   timeZone: 'Europe/Paris',
-  // })
-// }
-
 function WidgetDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -156,11 +137,6 @@ function WidgetDetailPage() {
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
-                // dataKey="hour"
-                // tick={{ fontSize: 10, fill: '#8fb3c4' }}
-                // tickLine={false}
-                // axisLine={false}
-                // interval="preserveStartEnd"
               />
               <YAxis
                 tick={{ fontSize: 10, fill: '#8fb3c4' }}

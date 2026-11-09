@@ -117,10 +117,6 @@ const windHeadline = analysisData
     ? `MAE ${analysisData.wind.mae} m/s`
     : "No data available"
   : "No data available";
-  // const rainHeadline = analysisData
-  //   ? `ACC ${analysisData.rain.accuracy}%`
-  //   : null
-
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -271,8 +267,6 @@ const windHeadline = analysisData
               label="Rain detection"
               icon="🌧"
               info="Rain detection is evaluated hourly. In general, AROME performs better at detecting rain when precipitation is assessed cumulatively over periods longer than 6 hours."
-              // headline={rainHeadline} // I commented those out since not clear what metric to put
-              // accentColor="#5cbdb9"
             >
               <DetectionAnalysis data={analysisData.rain} />
             </VariableWidget>

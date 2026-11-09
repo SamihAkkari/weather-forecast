@@ -86,7 +86,6 @@ def thin_forecast_runs(dry_run: bool = False, lookback_days: int = 30, full_vacu
                     )
                     logger.info("  bronze.%s: %d rows deleted", table, cur.rowcount)
 
-    # The connection context commits the deletions before vacuuming.
     _vacuum([(SILVER, SILVER_FORECAST), 
              (BRONZE, Config.BRONZE_SP1_FORECAST_TABLE_NAME),
              (BRONZE, Config.BRONZE_SP2_FORECAST_TABLE_NAME)], full = full_vacuum)

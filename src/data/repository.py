@@ -7,10 +7,6 @@ import re
 from datetime import datetime, timedelta, timezone
 logger = logging.getLogger(__name__)
 
-
-
-
-
 class DatabaseRepository:
 
     @staticmethod

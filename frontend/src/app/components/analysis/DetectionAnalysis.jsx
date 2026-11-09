@@ -56,29 +56,6 @@ function MetricBar({ label, percent }) {
   )
 }
 
-// function MetricBar({ label, percent }) {
-//   const display = percent
-//   const color =
-//     display >= 80 ? 'bg-success' :
-//     display >= 60 ? 'bg-warning' :
-//     'bg-destructive'
-
-//   return (
-//     <div>
-//       <div className="flex justify-between items-center mb-1">
-//         <p className="text-xs text-muted-foreground">{label}</p>
-//         <p className="text-xs font-medium text-foreground">{display}%</p>
-//       </div>
-//       <div className="w-full bg-muted rounded-full h-1.5">
-//         <div
-//           className={`h-1.5 rounded-full ${color}`}
-//           style={{ width: `${display}%` }}
-//         />
-//       </div>
-//     </div>
-//   )
-// }
-
 function DetectionAnalysis({ data }) {
   return (
     <div>

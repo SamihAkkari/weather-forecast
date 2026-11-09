@@ -136,7 +136,7 @@ services:
 
 
   cadvisor:
-    profiles: ["monitoring"]
+    profiles: ["dev"]
     image: ghcr.io/google/cadvisor:v0.57.0
     restart: unless-stopped
     privileged: true
@@ -155,7 +155,7 @@ services:
       - /dev/disk:/dev/disk:ro
 
   prometheus:
-    profiles: ["monitoring"]
+    profiles: ["dev"]
     image: prom/prometheus:latest
     restart: unless-stopped
     ports:
@@ -168,7 +168,7 @@ services:
       - prometheus_data:/prometheus
 
   grafana:
-    profiles: ["monitoring"]
+    profiles: ["dev"]
     image: grafana/grafana:latest
     restart: unless-stopped
     environment:
