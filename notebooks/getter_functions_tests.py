@@ -10,9 +10,9 @@ os.chdir('c:\\Users\\sakkari\\Code\\weather-forecast')
 from src.config import Config
 from src.data.db import DatabaseConnection
 from src.data.getter import DatabaseGetter
-from geo import spatial
+from src.geo import spatial
 from src.ingestion.time_manager import TimeManager
-from geo.spatial import find_nearest_station
+from src.geo.spatial import find_nearest_station
 
 from src.forecast.viewer_service import get_viewer_data
 

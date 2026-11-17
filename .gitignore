@@ -39,3 +39,5 @@ dbt/.user.yml
 dbt/weather_project/target/
 dbt/weather_project/dbt_packages/
 dbt/weather_project/logs/
+
+docs/drawio/

@@ -32,7 +32,7 @@ function BestWindows({ best_window }) {
             return (
               <div key={index} className={`flex-1 ${styles.bg} rounded-lg p-4 text-center`}>
                 <p className={`text-lg font-medium ${styles.text} mb-1`}>
-                  {formatTime(window.from)} – {formatTime(window.to)}
+                  {formatTime(window.from)} - {formatTime(window.to)}
                 </p>
                 <p className="text-xs text-muted-foreground">{window.reason}</p>
               </div>
