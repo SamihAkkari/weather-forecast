@@ -41,3 +41,6 @@ dbt/weather_project/dbt_packages/
 dbt/weather_project/logs/
 
 docs/drawio/
+
+notebooks/
+tests/
