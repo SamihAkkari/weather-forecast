@@ -32,17 +32,9 @@ Real **Météo-France** observations and **AROME** forecasts, turned into hourly
 | 🛠 | **Data platform** | A scheduled ingestion pipeline (GRIB2 → PostgreSQL → dbt), a bronze/silver layered database, storage-retention jobs, and a resource-monitoring stack to size a production VM. |
 
 ### 🎬 Demo
+[▶ Watch the application demo](./docs/videos/Webapp-presentation.mp4)
 
-> 📌 **Add your interface video here** so visitors see the result before cloning anything.
->
-> ```md
-> [![MeteoApp demo](docs/images/demo-thumbnail.png)](https://YOUR-VIDEO-LINK)
-> ```
->
-> or drop an animated GIF: `![demo](docs/images/demo.gif)`
-
-<!-- TODO: replace this block with the video / GIF -->
-
+Click the image to watch the demo.
 ---
 
 ## 📑 Table of contents
@@ -51,6 +43,7 @@ Real **Météo-France** observations and **AROME** forecasts, turned into hourly
     - [French weather, from the source.](#french-weather-from-the-source)
   - [📖 What is this project?](#-what-is-this-project)
     - [🎬 Demo](#-demo)
+  - [Click the image to watch the demo.](#click-the-image-to-watch-the-demo)
   - [📑 Table of contents](#-table-of-contents)
   - [🏗 Architecture at a glance](#-architecture-at-a-glance)
   - [🧰 Tech stack](#-tech-stack)
