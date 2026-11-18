@@ -34,7 +34,6 @@ Real **Météo-France** observations and **AROME** forecasts, turned into hourly
 ### 🎬 Demo
 [▶ Watch the application demo](./docs/videos/Webapp-presentation.mp4)
 
-Click the image to watch the demo.
 ---
 
 ## 📑 Table of contents
@@ -43,7 +42,6 @@ Click the image to watch the demo.
     - [French weather, from the source.](#french-weather-from-the-source)
   - [📖 What is this project?](#-what-is-this-project)
     - [🎬 Demo](#-demo)
-  - [Click the image to watch the demo.](#click-the-image-to-watch-the-demo)
   - [📑 Table of contents](#-table-of-contents)
   - [🏗 Architecture at a glance](#-architecture-at-a-glance)
   - [🧰 Tech stack](#-tech-stack)
