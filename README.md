@@ -51,14 +51,7 @@ Click the image to watch the demo.
     - [Data flow: source → bronze → silver → API](#data-flow-source--bronze--silver--api)
     - [Schema diagram](#schema-diagram)
     - [Bronze layer: data dictionary](#bronze-layer-data-dictionary)
-      - [`bronze.stations`](#bronzestations)
-      - [`bronze.observations_hourly`](#bronzeobservations_hourly)
-      - [`bronze.forecast_sp1_arome`](#bronzeforecast_sp1_arome)
-      - [`bronze.forecast_sp2_arome`](#bronzeforecast_sp2_arome)
     - [Silver layer: data dictionary](#silver-layer-data-dictionary)
-      - [`silver.stations`](#silverstations)
-      - [`silver.observations_hourly` (hypertable on `time_step_fr`)](#silverobservations_hourly-hypertable-on-time_step_fr)
-      - [`silver.forecast_arome` (hypertable on `run_time`)](#silverforecast_arome-hypertable-on-run_time)
     - [Bronze → silver transformations](#bronze--silver-transformations)
     - [Storage \& retention strategy](#storage--retention-strategy)
   - [⏱ Ingestion scheduler](#-ingestion-scheduler)
@@ -136,9 +129,11 @@ The database follows a **medallion-style** layout with two layers:
 
 ### Bronze layer: data dictionary
 
-Bronze tables are plain PostgreSQL tables created by `scripts/initialiser.py`.
+Bronze tables are plain PostgreSQL tables created by `scripts/initialiser.py`. Click a table below to expand its columns.
 
-#### `bronze.stations`
+<details>
+<summary><b>📋 <code>bronze.stations</code></b> — 8 columns (click to expand)</summary>
+
 Loaded **once** from the CSV by the initialiser (skipped if the table already has rows).
 
 | Column | Type | Definition |
@@ -151,11 +146,12 @@ Loaded **once** from the CSV by the initialiser (skipped if the table already ha
 | `openning_date` | TEXT | Date the station opened (source spelling kept). |
 | `pack` | TEXT | Observation package the station belongs to. |
 
-#### `bronze.observations_hourly`
-One row per station per hour, as returned by the API (`stations/horaire`). Times are kept as TEXT at this stage. Temperatures are in KELVIN.
+</details>
 
 <details>
-<summary><b>Show all 32 columns</b></summary>
+<summary><b>📋 <code>bronze.observations_hourly</code></b> — 32 columns (click to expand)</summary>
+
+One row per station per hour, as returned by the API (`stations/horaire`). Times are kept as TEXT at this stage. Temperatures are in **Kelvin**.
 
 | Column | Definition (source unit) |
 |---|---|
@@ -186,7 +182,9 @@ One row per station per hour, as returned by the API (`stations/horaire`). Times
 
 </details>
 
-#### `bronze.forecast_sp1_arome`
+<details>
+<summary><b>📋 <code>bronze.forecast_sp1_arome</code></b> — 13 columns (click to expand)</summary>
+
 One row per **station × run × valid time** after sampling the AROME *SP1* GRIB grid.
 
 | Column | Type | Definition |
@@ -205,7 +203,11 @@ One row per **station × run × valid time** after sampling the AROME *SP1* GRIB
 | `tsnowp` | DOUBLE | Total snow precipitation, accumulated (kg/m²). |
 | `ingestion_time` | TIMESTAMPTZ | When the row was ingested. |
 
-#### `bronze.forecast_sp2_arome`
+</details>
+
+<details>
+<summary><b>📋 <code>bronze.forecast_sp2_arome</code></b> — 8 columns (click to expand)</summary>
+
 Same keys as SP1, with cloud and convection variables.
 
 | Column | Type | Definition |
@@ -216,13 +218,15 @@ Same keys as SP1, with cloud and convection variables.
 | `hcc` | DOUBLE | High cloud cover (%). |
 | `CAPE_INS` | DOUBLE | Instantaneous Convective Available Potential Energy (m²/s²): a thunderstorm-potential proxy. |
 
-> 📚 `src/data/api_reference.py` documents the **full** list of variables the APIs expose (not used at runtime). The `models.py` classes are the subset the pipeline actually ingests. Because the column list of each bronze table is derived from these dataclasses, adding a variable means: extend the model → extend `initialiser.py` → extend the dbt model.
+</details>
+
 
 ### Silver layer: data dictionary
 
-Silver tables are cleaned, typed (`timestamptz`), renamed to explicit names/units, and limited to what the app needs.
+Silver tables are cleaned, typed (`timestamptz`), renamed to explicit names/units, and limited to what the app needs. Click a table below to expand its columns.
 
-#### `silver.stations`
+<details>
+<summary><b>📋 <code>silver.stations</code></b> — 9 columns (click to expand)</summary>
 
 | Column | Type | Definition |
 |---|---|---|
@@ -234,7 +238,10 @@ Silver tables are cleaned, typed (`timestamptz`), renamed to explicit names/unit
 | `station_type` | TEXT | Station package/type. |
 | `transfer_time_fr` | TIMESTAMPTZ | Load timestamp into silver. |
 
-#### `silver.observations_hourly` (hypertable on `time_step_fr`)
+</details>
+
+<details>
+<summary><b>📋 <code>silver.observations_hourly</code></b> — 9 columns, hypertable on <code>time_step_fr</code> (click to expand)</summary>
 
 | Column | Type | Definition |
 |---|---|---|
@@ -248,7 +255,10 @@ Silver tables are cleaned, typed (`timestamptz`), renamed to explicit names/unit
 | `global_radiation_J_m2` | DOUBLE | Global radiation over the hour (J/m²). |
 | `transfer_time_fr` | TIMESTAMPTZ | Load timestamp into silver. |
 
-#### `silver.forecast_arome` (hypertable on `run_time`)
+</details>
+
+<details>
+<summary><b>📋 <code>silver.forecast_arome</code></b> — 19 columns, hypertable on <code>run_time</code> (click to expand)</summary>
 
 | Column | Type | Definition |
 |---|---|---|
@@ -264,13 +274,15 @@ Silver tables are cleaned, typed (`timestamptz`), renamed to explicit names/unit
 | `CUMUL_precipitation_mm` | DOUBLE | Precipitation accumulated since run start (mm). |
 | `precipitation_mm` | DOUBLE | **Hourly** precipitation (mm): difference of the cumulative value. |
 | `CUMUL_global_radiation_J_m2` | DOUBLE | Radiation accumulated since run start (J/m²). |
-| `global_radiation_J_m2` | DOUBLE | **Hourly** radiation (J/m²)   used by the PV model. |
+| `global_radiation_J_m2` | DOUBLE | **Hourly** radiation (J/m²), used by the PV model. |
 | `CUMUL_snow_precipitation_mm` | DOUBLE | Snow accumulated since run start (mm w.e.). |
 | `snow_precipitation_mm` | DOUBLE | **Hourly** snow (mm w.e.). |
 | `total_cloud_cover` | DOUBLE | Total cloud cover (%). |
 | `cape_m2_s2` | DOUBLE | Convective energy (m²/s²). |
 | `mean_sea_level_pressure` | DOUBLE | Sea-level pressure (**Pa**; the API divides by 100 to show hPa). |
 | `transfer_time_fr` | TIMESTAMPTZ | Load timestamp into silver. |
+
+</details>
 
 ### Bronze → silver transformations
 
