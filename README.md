@@ -586,10 +586,6 @@ To also start monitoring: add `--profile dev` (see below).
 | `caddy` | `caddy:2` | Reverse proxy: `/api/*` → API, everything else → frontend | `prod` profile. |
 | `cadvisor`, `prometheus`, `grafana` | official images | Monitoring | `dev` profile. |
 
-**Image design (backend `Dockerfile`)**
-
-- `python:3.11-slim` + the **ecCodes** C library (needed to read GRIB).
-- **dbt in its own virtualenv** (`/opt/dbt-venv`) to avoid dependency conflicts.
 
 **Handy commands**
 
